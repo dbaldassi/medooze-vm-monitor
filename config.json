@@ -1,0 +1,6 @@
+{
+    "time_interval": 500,
+    "ram_usage_file": "memory.current",
+    "ram_free_file": "memory.total",
+    "swap_usage_file": "swap.current"
+}
