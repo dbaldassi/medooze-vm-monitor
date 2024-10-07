@@ -64,4 +64,12 @@ function update_info(data) {
         let msg = JSON.parse(message.data);
         update_info(msg);
     }
+
+    let slider = document.getElementById("slider");
+    let slider_text = document.getElementById("slidertext");
+
+    slider.oninput = () => {
+        slider_text.innerHTML = slider.value;
+        ws.send(JSON.stringify({ cmd: "maxram", max: slider.value * 1024 * 1024 }));
+    };
 })()

@@ -92,7 +92,7 @@ function set_max_ram(max) {
 function medooze_connected(ws) {
     info.is_medooze_connected = true;
 
-    set_max_ram(3*1024*1024*1024);
+    set_max_ram(4*1024*1024*1024);
     setInterval(fetch_memory, config.time_interval);
 
     ws.on('close', () => {
