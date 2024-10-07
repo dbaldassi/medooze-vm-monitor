@@ -22,9 +22,12 @@ var gauges = [];
 for (var i=0;i<targets.length;++i)
 {
     gauges[i] = new Gauge(targets[i]).setOptions (opts); // create sexy gauge!
-    gauges[i].animationSpeed = 10000; // set animation speed (32 is default value)
+    gauges[i].animationSpeed = 32; // set animation speed (32 is default value)
     gauges[i].set (0); // set actual value
+    gauges[i].maxValue = 8192;
 }
+
+var texts = document.querySelectorAll('.gaugeChartLabel');
 
 function update_info(data) {
     let publisher_state = document.getElementById("publisherstate");
@@ -36,9 +39,17 @@ function update_info(data) {
     let viewer_count = document.getElementById("viewercount");
     viewer_count.innerHTML = "Viewer: " + data.viewer_count;
 
-    gauges[0].set(data.ram_usage ?? 0);
-    gauges[1].set(data.ram_free ?? 0);
-    gauges[2].set(data.swap_usage ?? 0);
+    let ram = data.ram_usage ?? 0;
+    let free = data.ram_free ?? 0;
+    let swap = data.swap_usage ?? 0;
+    
+    gauges[0].set(ram);
+    gauges[1].set(free);
+    gauges[2].set(swap);
+
+    texts[0].innerText = ram;
+    texts[1].innerText = free;
+    texts[2].innerText = swap;
 }
 
 (function () {

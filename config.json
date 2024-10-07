@@ -1,6 +1,7 @@
 {
     "time_interval": 500,
     "ram_usage_file": "memory.current",
-    "ram_free_file": "memory.total",
-    "swap_usage_file": "swap.current"
+    "ram_total_file": "memory.max",
+    "swap_usage_file": "memory.swap.current",
+    "memory_stats_path": "/sys/fs/cgroup/machine.slice/machine-qemu\\x2d2\\x2dmedooze.scope"
 }

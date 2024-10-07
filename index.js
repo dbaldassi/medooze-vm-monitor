@@ -1,9 +1,9 @@
-const Express		   = require("express");
-const CORS 			   = require("cors");
-const FS			   = require("fs");
-const { createServer } = require("https");
-const Path			   = require("path");
-const {WebSocketServer}  = require ("ws");
+const Express           = require("express");
+const CORS              = require("cors");
+const FS                = require("fs");
+const { createServer }  = require("https");
+const Path              = require("path");
+const {WebSocketServer} = require ("ws");
 
 const config = require('./config.json');
 
@@ -54,17 +54,18 @@ function update_viewer_bitrate(msg) {
 }
 
 function fetch_ram_usage() {
-	const path = Path.join(config.memory_stats_path, config.ram_usage_file);
-	const data = FS.readFileSync(path);
+    const path = Path.join(config.memory_stats_path, config.ram_usage_file);
+    const data = FS.readFileSync(path);
 
-	info.ram_usage = parseInt(data);
+    info.ram_usage = parseInt(parseInt(data) / (1024*1024));
 }
 
 function fetch_ram_free() {
-	const path = Path.join(config.memory_stats_path, config.ram_total_file);
-	const data = FS.readFileSync(path);
-
-	info.ram_free = parseInt(data);
+    const path = Path.join(config.memory_stats_path, config.ram_total_file);
+    const data = FS.readFileSync(path);
+    
+    info.ram_free = parseInt(parseInt(data) / (1024*1024)) - info.ram_usage;
+    // console.log(parseInt(data), info.ram_free);
 }
 
 function fetch_swap_usage() {
@@ -89,14 +90,16 @@ function set_max_ram(max) {
 }
 
 function medooze_connected(ws) {
-	info.is_medooze_connected = true;
-	setInterval(fetch_memory, config.time_interval);
+    info.is_medooze_connected = true;
 
-	ws.on('close', () => {
-		info.is_medooze_connected = false
-		clearInterval();
-		update_listener();
-	});
+    set_max_ram(3*1024*1024*1024);
+    setInterval(fetch_memory, config.time_interval);
+
+    ws.on('close', () => {
+	info.is_medooze_connected = false
+	clearInterval();
+	update_listener();
+    });
 }
 
 function publisher_connected(ws) {
@@ -109,7 +112,7 @@ function publisher_connected(ws) {
 
 //Load certs
 const options = {
-	key	    : FS.readFileSync ("server.key"),
+	key     : FS.readFileSync ("server.key"),
 	cert	: FS.readFileSync ("server.cert")
 };
 
@@ -132,7 +135,7 @@ wss.on("connection", (ws) => {
 			handle_new_receiver(ws);
 			return;
 		}
-		else if(msg.cmd === "new_publisher")     publisher_connected();
+		else if(msg.cmd === "new_publisher")     publisher_connected(ws);
 		else if(msg.cmd === "publisher_bitrate") info.publisher_bitrate = msg.bitrate;
 		else if(msg.cmd === "viewer_count")      info.viewer_count = msg.count;
 		else if(msg.cmd === "iammedooze")        medooze_connected(ws);
