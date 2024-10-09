@@ -36,6 +36,7 @@ let info = {
 	ram_usage: undefined,
 	ram_free: undefined,
 	swap_usage: undefined,
+	maxram: config.initial_max_ram
 };
 
 function handle_new_receiver(ws) {
@@ -88,20 +89,22 @@ function fetch_memory() {
 
 function set_max_ram(max) {
 	// todo write max to memory.max
+	console.log(max);
+	info.maxram = max;
 	const path = Path.join(config.memory_stats_path, config.ram_total_file);
-	FS.writeFileSync(path, String(max));
+	FS.writeFileSync(path, String(max * MEGA));
 }
 
 function medooze_connected(ws) {
     info.is_medooze_connected = true;
 
-    set_max_ram(config.initial_max_ram * MEGA);
+    set_max_ram(config.initial_max_ram);
     setInterval(fetch_memory, config.time_interval);
 
     ws.on('close', () => {
-	info.is_medooze_connected = false
-	clearInterval();
-	update_listener();
+		info.is_medooze_connected = false
+		clearInterval();
+		update_listener();
     });
 }
 

@@ -21,7 +21,7 @@ var opts = {
 
 var targets = document.querySelectorAll('.gaugeChart'); // your canvas element
 var gauges = [];
-for (var i=0;i<targets.length;++i)
+for (var i=0; i < targets.length; ++i)
 {
     gauges[i] = new Gauge(targets[i]).setOptions (opts); // create sexy gauge!
     gauges[i].animationSpeed = 32; // set animation speed (32 is default value)
@@ -30,6 +30,7 @@ for (var i=0;i<targets.length;++i)
 }
 
 var texts = document.querySelectorAll('.gaugeChartLabel');
+var max_texts = document.querySelectorAll('.gaugeChartMax');
 
 function update_info(data) {
     let publisher_state = document.getElementById("publisherstate");
@@ -45,6 +46,11 @@ function update_info(data) {
     let free = data.ram_free ?? 0;
     let swap = data.swap_usage ?? 0;
     
+    gauges[0].maxValue = data.maxram;
+    gauges[1].maxValue = data.maxram;
+    max_texts[0].innerText = data.maxram;
+    max_texts[1].innerText = data.maxram;
+
     gauges[0].set(ram);
     gauges[1].set(free);
     gauges[2].set(swap);
@@ -67,20 +73,22 @@ function update_info(data) {
     let slider_text = document.getElementById("slidertext");
 
     ws.onmessage = async (message) => {
-        let msg = JSON.parse(message.data);
-        update_info(msg);
+        let data = JSON.parse(message.data);
+        update_info(data);
 
         if(!setup_slider) {
-            slider.maxValue = data.maxram;
-            slider.value = data.maxram;
+            console.log(data)
+
+            slider.max = data.maxram;
+            slider.value = slider.max;
             slider_text.innerHTML = slider.value;
 
-            setup_slider = false;
+            setup_slider = true;
         }
     }
 
     slider.oninput = () => {
         slider_text.innerHTML = slider.value;
-        ws.send(JSON.stringify({ cmd: "maxram", max: slider.value * MEGA }));
+        ws.send(JSON.stringify({ cmd: "maxram", max: slider.value }));
     };
 })()

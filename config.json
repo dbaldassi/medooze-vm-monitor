@@ -3,6 +3,6 @@
     "ram_usage_file": "memory.current",
     "ram_total_file": "memory.max",
     "swap_usage_file": "memory.swap.current",
-    "memory_stats_path": "/sys/fs/cgroup/machine.slice/machine-qemu\\x2d2\\x2dmedooze.scope",
-    "inital_max_ram": 4096
+    "memory_stats_path": "/sys/fs/cgroup/machine.slice/machine-qemu\\x2d1\\x2dmedooze.scope",
+    "initial_max_ram": 4096
 }
