@@ -26,7 +26,7 @@ for (var i=0; i < targets.length; ++i)
     gauges[i] = new Gauge(targets[i]).setOptions (opts); // create sexy gauge!
     gauges[i].animationSpeed = 32; // set animation speed (32 is default value)
     gauges[i].set (0); // set actual value
-    gauges[i].maxValue = 8192;
+    gauges[i].maxValue = 0;
 }
 
 var texts = document.querySelectorAll('.gaugeChartLabel');
@@ -45,19 +45,23 @@ function update_info(data) {
     let ram = data.ram_usage ?? 0;
     let free = data.ram_free ?? 0;
     let swap = data.swap_usage ?? 0;
+    let publisher_bitrate = data.publisher_bitrate ?? 0;
     
     gauges[0].maxValue = data.maxram;
     gauges[1].maxValue = data.maxram;
+    gauges[3].maxValue = 2000;
     max_texts[0].innerText = data.maxram;
     max_texts[1].innerText = data.maxram;
 
     gauges[0].set(ram);
     gauges[1].set(free);
     gauges[2].set(swap);
+    gauges[3].set(publisher_bitrate);
 
     texts[0].innerText = ram;
     texts[1].innerText = free;
     texts[2].innerText = swap;
+    texts[3].innerText = publisher_bitrate;
 }
 
 (function () {
