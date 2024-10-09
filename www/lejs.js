@@ -1,5 +1,7 @@
 const url = "wss://" + window.location.hostname + ":" + window.location.port;
 
+const MEGA = 1024 * 1024;
+
 var opts = {
     lines: 12, // The number of lines to draw
     angle: 0.15, // The length of each line
@@ -60,16 +62,25 @@ function update_info(data) {
         ws.send(JSON.stringify({cmd: "receiver"}));
     }
 
-    ws.onmessage = async (message) => {
-        let msg = JSON.parse(message.data);
-        update_info(msg);
-    }
-
+    let setup_slider = false;
     let slider = document.getElementById("slider");
     let slider_text = document.getElementById("slidertext");
 
+    ws.onmessage = async (message) => {
+        let msg = JSON.parse(message.data);
+        update_info(msg);
+
+        if(!setup_slider) {
+            slider.maxValue = data.maxram;
+            slider.value = data.maxram;
+            slider_text.innerHTML = slider.value;
+
+            setup_slider = false;
+        }
+    }
+
     slider.oninput = () => {
         slider_text.innerHTML = slider.value;
-        ws.send(JSON.stringify({ cmd: "maxram", max: slider.value * 1024 * 1024 }));
+        ws.send(JSON.stringify({ cmd: "maxram", max: slider.value * MEGA }));
     };
 })()

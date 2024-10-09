@@ -8,6 +8,9 @@ const {WebSocketServer} = require ("ws");
 const config = require('./config.json');
 
 const PORT = 9000;
+const KILO = 1024;
+const MEGA = 1024 * KILO;
+const GIGA = 1024 * MEGA;
 
 //Check 
 if (process.argv.length!=3)
@@ -57,14 +60,14 @@ function fetch_ram_usage() {
     const path = Path.join(config.memory_stats_path, config.ram_usage_file);
     const data = FS.readFileSync(path);
 
-    info.ram_usage = parseInt(parseInt(data) / (1024*1024));
+    info.ram_usage = parseInt(parseInt(data) / MEGA);
 }
 
 function fetch_ram_free() {
     const path = Path.join(config.memory_stats_path, config.ram_total_file);
     const data = FS.readFileSync(path);
     
-    info.ram_free = parseInt(parseInt(data) / (1024*1024)) - info.ram_usage;
+    info.ram_free = parseInt(parseInt(data) / (MEGA)) - info.ram_usage;
     // console.log(parseInt(data), info.ram_free);
 }
 
@@ -72,7 +75,7 @@ function fetch_swap_usage() {
 	const path = Path.join(config.memory_stats_path, config.swap_usage_file);
 	const data = FS.readFileSync(path);
 
-	info.swap_usage = parseInt(data);
+	info.swap_usage = parseInt(parseInt(data) / MEGA);
 }
 
 function fetch_memory() {
@@ -92,7 +95,7 @@ function set_max_ram(max) {
 function medooze_connected(ws) {
     info.is_medooze_connected = true;
 
-    set_max_ram(4*1024*1024*1024);
+    set_max_ram(config.initial_max_ram * MEGA);
     setInterval(fetch_memory, config.time_interval);
 
     ws.on('close', () => {
