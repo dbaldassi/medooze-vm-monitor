@@ -46,22 +46,33 @@ function update_info(data) {
     let free = data.ram_free ?? 0;
     let swap = data.swap_usage ?? 0;
     let publisher_bitrate = data.publisher_bitrate ?? 0;
+    let vm_ram_usage = data.vm_ram_usage ?? 0;
+    let vm_ram_free = data.vm_ram_free ?? 0;
     
     gauges[0].maxValue = data.maxram;
     gauges[1].maxValue = data.maxram;
-    gauges[3].maxValue = 2000;
+    gauges[3].maxValue = data.maxram;
+    gauges[4].maxValue = data.maxram;
+    gauges[5].maxValue = Math.max(publisher_bitrate, gauges[3].maxValue);
+
     max_texts[0].innerText = data.maxram;
     max_texts[1].innerText = data.maxram;
+    max_texts[3].innerText = data.maxram;
+    max_texts[4].innerText = data.maxram;
 
     gauges[0].set(ram);
     gauges[1].set(free);
     gauges[2].set(swap);
-    gauges[3].set(publisher_bitrate);
+    gauges[3].set(vm_ram_usage);
+    gauges[4].set(vm_ram_free);
+    gauges[5].set(publisher_bitrate);
 
     texts[0].innerText = ram;
     texts[1].innerText = free;
     texts[2].innerText = swap;
-    texts[3].innerText = publisher_bitrate;
+    texts[3].innerText = vm_ram_usage;
+    texts[4].innerText = vm_ram_free;
+    texts[5].innerText = publisher_bitrate;
 }
 
 (function () {

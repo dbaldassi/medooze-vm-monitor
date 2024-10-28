@@ -5,6 +5,22 @@ const { createServer }  = require("https");
 const Path              = require("path");
 const {WebSocketServer} = require ("ws");
 
+const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+const csvWriter = createCsvWriter({
+    path: 'stats.csv',
+    header: [
+        {id: 'time', title: 'TIME'},
+        {id: 'ram_usage', title: 'MEMORY USED'},
+        {id: 'ram_free', title: 'MEMORY FREE'},
+        {id: 'maxram', title: 'MEMORY MAX'},
+        {id: 'swap_usage', title: 'SWAP'},
+        {id: 'publisher_bitrate', title: 'PUBLISHER BITRATE'},
+        {id: 'viewer_count', title: 'VIEWER COUNT'},
+        {id: 'vm_ram_usage', title: 'VM MEMORY USAGE'},
+        {id: 'vm_ram_free', title: 'VM MEMORY FREE'}
+    ]
+}); 
+
 const config = require('./config.json');
 
 const PORT = 9000;
@@ -27,6 +43,7 @@ let receivers = [];
 
 let info = {
 	last_modified: undefined,
+	time: 0,
 
  	viewer_count: 0,
 	is_publisher_connected: false,
@@ -36,8 +53,15 @@ let info = {
 	ram_usage: undefined,
 	ram_free: undefined,
 	swap_usage: undefined,
-	maxram: config.initial_max_ram
+	maxram: config.initial_max_ram,
+	vm_ram_usage: undefined,
+	vm_ram_free: undefined,
 };
+
+async function log_info() {
+	const records = [info];
+	await csvWriter.writeRecords(records);
+}
 
 function handle_new_receiver(ws) {
 	receivers.push(ws);
@@ -84,6 +108,9 @@ function fetch_memory() {
 	fetch_ram_free();
 	fetch_swap_usage();
 
+	info.time += config.time_interval;
+	log_info();
+
 	update_listener()
 }
 
@@ -114,6 +141,11 @@ function publisher_connected(ws) {
 		info.is_medooze_connected = false
 		update_listener();
 	});
+}
+
+function handle_vm_stats(stats) {
+	info.vm_ram_free = stats.freemem / MEGA;
+	info.vm_ram_usage = (stats.totalmem - stats.freemem) / MEGA;
 }
 
 //Load certs
@@ -147,6 +179,7 @@ wss.on("connection", (ws) => {
 		else if(msg.cmd === "iammedooze")        medooze_connected(ws);
 		else if(msg.cmd === "viewer_bitrate")    update_viewer_bitrate(msg);
 		else if(msg.cmd === "maxram")            set_max_ram(msg.max);
+		else if(msg.cmd === "vm_stats")          handle_vm_stats(msg.stats);
 		else return;
 
 		update_listener();
