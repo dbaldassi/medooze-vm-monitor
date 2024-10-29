@@ -53,7 +53,7 @@ function update_info(data) {
     gauges[1].maxValue = data.maxram;
     gauges[3].maxValue = data.maxram;
     gauges[4].maxValue = data.maxram;
-    gauges[5].maxValue = Math.max(publisher_bitrate, gauges[3].maxValue);
+    gauges[5].maxValue = Math.max(publisher_bitrate, gauges[5].maxValue);
 
     max_texts[0].innerText = data.maxram;
     max_texts[1].innerText = data.maxram;

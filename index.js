@@ -27,6 +27,7 @@ const PORT = 9000;
 const KILO = 1024;
 const MEGA = 1024 * KILO;
 const GIGA = 1024 * MEGA;
+const SECONDS = 1000;
 
 //Check 
 if (process.argv.length!=3)
@@ -114,6 +115,7 @@ function fetch_memory() {
 	update_listener()
 }
 
+// Max in MiB
 function set_max_ram(max) {
 	// todo write max to memory.max
 	console.log(max);
@@ -126,26 +128,44 @@ function medooze_connected(ws) {
     info.is_medooze_connected = true;
 
     set_max_ram(config.initial_max_ram);
-    setInterval(fetch_memory, config.time_interval);
+    const timeout = setInterval(fetch_memory, config.time_interval);
 
     ws.on('close', () => {
 		info.is_medooze_connected = false
-		clearInterval();
+		clearInterval(timeout[Symbol.toPrimitive]());
 		update_listener();
     });
 }
 
+function memory_reduction() {
+	const increment = 100;
+
+	if(info.ram_free > increment) {
+		set_max_ram(info.ram_usage);
+	}
+	else {
+		if(info.ram_usage > info.vm_ram_usage) {
+			set_max_ram(info.ram_usage - increment);
+		}
+	}
+}
+
 function publisher_connected(ws) {
 	info.is_publisher_connected = true;
+
+	const timeout = setInterval(memory_reduction, 10 * SECONDS);
+
 	ws.on('close', () => {
 		info.is_medooze_connected = false
 		update_listener();
+
+		clearInterval(timeout[Symbol.toPrimitive]());
 	});
 }
 
 function handle_vm_stats(stats) {
-	info.vm_ram_free = stats.freemem / MEGA;
-	info.vm_ram_usage = (stats.totalmem - stats.freemem) / MEGA;
+	info.vm_ram_free = parseInt(stats.freemem / MEGA);
+	info.vm_ram_usage = parseInt((stats.totalmem - stats.freemem) / MEGA);
 }
 
 //Load certs
