@@ -5,20 +5,23 @@ const { createServer }  = require("https");
 const Path              = require("path");
 const {WebSocketServer} = require ("ws");
 
+const headers = [
+	{id: 'time', title: 'TIME'},
+	{id: 'ram_usage', title: 'MEMORY USED'},
+	{id: 'ram_free', title: 'MEMORY FREE'},
+	{id: 'maxram', title: 'MEMORY MAX'},
+	{id: 'swap_usage', title: 'SWAP'},
+	{id: 'publisher_bitrate', title: 'PUBLISHER BITRATE'},
+	{id: 'viewer_count', title: 'VIEWER COUNT'},
+	{id: 'vm_ram_usage', title: 'VM MEMORY USAGE'},
+	{id: 'vm_ram_free', title: 'VM MEMORY FREE'}
+];
+
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
-const csvWriter = createCsvWriter({
+var csvWriter = createCsvWriter({
     path: 'stats.csv',
-    header: [
-        {id: 'time', title: 'TIME'},
-        {id: 'ram_usage', title: 'MEMORY USED'},
-        {id: 'ram_free', title: 'MEMORY FREE'},
-        {id: 'maxram', title: 'MEMORY MAX'},
-        {id: 'swap_usage', title: 'SWAP'},
-        {id: 'publisher_bitrate', title: 'PUBLISHER BITRATE'},
-        {id: 'viewer_count', title: 'VIEWER COUNT'},
-        {id: 'vm_ram_usage', title: 'VM MEMORY USAGE'},
-        {id: 'vm_ram_free', title: 'VM MEMORY FREE'}
-    ]
+    header: headers,
+	append: false
 }); 
 
 const config = require('./config.json');
@@ -29,11 +32,7 @@ const MEGA = 1024 * KILO;
 const GIGA = 1024 * MEGA;
 const SECONDS = 1000;
 
-//Check 
-if (process.argv.length!=3)
-	 throw new Error("Missing IP address\nUsage: node index.js <ip>");
-//Get ip
-const ip = process.argv[2];
+const ip = config.host;
 
 //Create rest api
 const rest = Express();
@@ -127,10 +126,13 @@ function set_max_ram(max) {
 function medooze_connected(ws) {
     info.is_medooze_connected = true;
 
+	// console.log("medooze_connected");
     set_max_ram(config.initial_max_ram);
+	// console.log("Max ram set");
     const timeout = setInterval(fetch_memory, config.time_interval);
 
     ws.on('close', () => {
+		console.log("Nedooze_close");
 		info.is_medooze_connected = false
 		clearInterval(timeout[Symbol.toPrimitive]());
 		update_listener();
@@ -168,6 +170,45 @@ function handle_vm_stats(stats) {
 	info.vm_ram_usage = parseInt((stats.totalmem - stats.freemem) / MEGA);
 }
 
+function handle_new_viewer(name) {
+	console.log("new viewer", name);
+
+	let target_id = name + "_target";
+	let bitrate_id = name + "_bitrate";
+	let fps_id = name + "_fps";
+
+	headers.push({ id: target_id, title: target_id.toUpperCase() });
+	headers.push({ id: bitrate_id, title: bitrate_id.toUpperCase() });
+	headers.push({ id: fps_id, title: fps_id.toUpperCase() });
+
+	csvWriter = createCsvWriter({
+		path: 'stats.csv',
+		header: headers,
+		append: true
+	}); 
+
+	info[target_id] = 0;
+	info[bitrate_id] = 0;
+	info[fps_id] = 0;
+}
+
+function handle_viewer_target(msg) {	
+	let target_id = msg.name + "_target";
+	info[target_id] = parseInt(msg.target);
+
+	// console.log(info);
+}
+
+function handle_viewer_bitrate(msg) {
+	let bitrate_id = msg.name + "_bitrate";
+	let fps_id = msg.name + "_fps";
+
+	info[bitrate_id] = parseInt(msg.bitrate);
+	info[fps_id] = parseInt(msg.fps);
+
+	// console.log(bitrate_id, msg.bitrate);
+}
+
 //Load certs
 const options = {
 	key     : FS.readFileSync ("server.key"),
@@ -186,8 +227,10 @@ wss.on("connection", (ws) => {
 	ws.on('error', console.error);
 	ws.on('message', (message) => {
 		// console.log(`received ${message}`);
-		console.log('message');
+		// console.log('message');
 		let msg = JSON.parse(message);
+
+		// console.log(msg.cmd);
 
 		if(msg.cmd === "receiver") {
 			handle_new_receiver(ws);
@@ -197,9 +240,12 @@ wss.on("connection", (ws) => {
 		else if(msg.cmd === "publisher_bitrate") info.publisher_bitrate = msg.bitrate;
 		else if(msg.cmd === "viewer_count")      info.viewer_count = msg.count;
 		else if(msg.cmd === "iammedooze")        medooze_connected(ws);
-		else if(msg.cmd === "viewer_bitrate")    update_viewer_bitrate(msg);
 		else if(msg.cmd === "maxram")            set_max_ram(msg.max);
+		else if(msg.cmd === "viewer_bitrate")    update_viewer_bitrate(msg);
 		else if(msg.cmd === "vm_stats")          handle_vm_stats(msg.stats);
+		else if(msg.cmd === "new_viewer")        handle_new_viewer(msg.name);
+		else if(msg.cmd === "viewertarget")      handle_viewer_target(msg);
+		else if(msg.cmd === "viewerbitrate")     handle_viewer_bitrate(msg);
 		else return;
 
 		update_listener();
