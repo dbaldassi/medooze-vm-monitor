@@ -12,10 +12,26 @@ const headers = [
 	{id: 'maxram', title: 'MEMORY MAX'},
 	{id: 'swap_usage', title: 'SWAP'},
 	{id: 'publisher_bitrate', title: 'PUBLISHER BITRATE'},
+	{id: 'publisher_pc_state', title: 'CONNECTION STATE'},
 	{id: 'viewer_count', title: 'VIEWER COUNT'},
 	{id: 'vm_ram_usage', title: 'VM MEMORY USAGE'},
-	{id: 'vm_ram_free', title: 'VM MEMORY FREE'}
+	{id: 'vm_ram_free', title: 'VM MEMORY FREE'},
+	{id: 'medooze_incoming_lost', title: 'MEDOOZE INCOMING LOST'},
+	{id: 'medooze_incoming_drop', title: 'MEDOOZE INCOMING DROP'},
+	{id: 'medooze_incoming_bitrate', title: 'MEDOOZE INCOMING BITRATE'},
+	{id: 'medooze_incoming_nack', title: 'MEDOOZE INCOMING NACK'},
+	{id: 'medooze_incoming_pli', title: 'MEDOOZE INCOMING PLI'},
 ];
+
+const connection_state_map = new Map();
+connection_state_map.set('disconnected', 1);
+connection_state_map.set('closed', 0);
+connection_state_map.set('connecting', 2);
+connection_state_map.set('new', 2);
+connection_state_map.set('connected', 3);
+connection_state_map.set('failed', 4);
+connection_state_map.set('checking', 5);
+connection_state_map.set('completed', 6);
 
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 var csvWriter = createCsvWriter({
@@ -48,14 +64,22 @@ let info = {
  	viewer_count: 0,
 	is_publisher_connected: false,
 	is_medooze_connected: false,
-	viewer_bitrate: [],
 	publisher_bitrate: undefined,
+	publisher_pc_state: 0,
 	ram_usage: undefined,
 	ram_free: undefined,
 	swap_usage: undefined,
 	maxram: config.initial_max_ram,
 	vm_ram_usage: undefined,
 	vm_ram_free: undefined,
+
+	// medooze incoming
+	medooze_incoming_lost: 0,
+	medooze_incoming_drop: 0,
+	medooze_incoming_bitrate: 0,
+	medooze_incoming_nack: 0,
+	medooze_incoming_pli: 0,
+
 };
 
 async function log_info() {
@@ -126,13 +150,11 @@ function set_max_ram(max) {
 function medooze_connected(ws) {
     info.is_medooze_connected = true;
 
-	// console.log("medooze_connected");
     set_max_ram(config.initial_max_ram);
-	// console.log("Max ram set");
     const timeout = setInterval(fetch_memory, config.time_interval);
 
     ws.on('close', () => {
-		console.log("Nedooze_close");
+		console.log("Medooze_close");
 		info.is_medooze_connected = false
 		clearInterval(timeout[Symbol.toPrimitive]());
 		update_listener();
@@ -155,13 +177,13 @@ function memory_reduction() {
 function publisher_connected(ws) {
 	info.is_publisher_connected = true;
 
-	const timeout = setInterval(memory_reduction, 10 * SECONDS);
+	// const timeout = setInterval(memory_reduction, 10 * SECONDS);
 
 	ws.on('close', () => {
 		info.is_medooze_connected = false
 		update_listener();
 
-		clearInterval(timeout[Symbol.toPrimitive]());
+		// clearInterval(timeout[Symbol.toPrimitive]());
 	});
 }
 
@@ -195,8 +217,6 @@ function handle_new_viewer(name) {
 function handle_viewer_target(msg) {	
 	let target_id = msg.name + "_target";
 	info[target_id] = parseInt(msg.target);
-
-	// console.log(info);
 }
 
 function handle_viewer_bitrate(msg) {
@@ -205,8 +225,16 @@ function handle_viewer_bitrate(msg) {
 
 	info[bitrate_id] = parseInt(msg.bitrate);
 	info[fps_id] = parseInt(msg.fps);
+}
 
-	// console.log(bitrate_id, msg.bitrate);
+function handle_medooze_incoming(msg) {
+	// console.log(msg);
+
+	info.medooze_incoming_bitrate = msg.stats.bitrate;
+	info.medooze_incoming_lost = msg.stats.lost;
+	info.medooze_incoming_drop = msg.stats.drop;
+	info.medooze_incoming_pli = msg.stats.pli;
+	info.medooze_incoming_nack = msg.stats.nack;
 }
 
 //Load certs
@@ -230,22 +258,22 @@ wss.on("connection", (ws) => {
 		// console.log('message');
 		let msg = JSON.parse(message);
 
-		// console.log(msg.cmd);
-
 		if(msg.cmd === "receiver") {
 			handle_new_receiver(ws);
 			return;
 		}
-		else if(msg.cmd === "new_publisher")     publisher_connected(ws);
-		else if(msg.cmd === "publisher_bitrate") info.publisher_bitrate = msg.bitrate;
-		else if(msg.cmd === "viewer_count")      info.viewer_count = msg.count;
-		else if(msg.cmd === "iammedooze")        medooze_connected(ws);
-		else if(msg.cmd === "maxram")            set_max_ram(msg.max);
-		else if(msg.cmd === "viewer_bitrate")    update_viewer_bitrate(msg);
-		else if(msg.cmd === "vm_stats")          handle_vm_stats(msg.stats);
-		else if(msg.cmd === "new_viewer")        handle_new_viewer(msg.name);
-		else if(msg.cmd === "viewertarget")      handle_viewer_target(msg);
-		else if(msg.cmd === "viewerbitrate")     handle_viewer_bitrate(msg);
+		else if(msg.cmd === "new_publisher")      publisher_connected(ws);
+		else if(msg.cmd === "publisher_bitrate")  info.publisher_bitrate = msg.bitrate;
+		else if(msg.cmd === "viewer_count")       info.viewer_count = msg.count;
+		else if(msg.cmd === "iammedooze")         medooze_connected(ws);
+		else if(msg.cmd === "maxram")             set_max_ram(msg.max);
+		else if(msg.cmd === "viewer_bitrate")     update_viewer_bitrate(msg);
+		else if(msg.cmd === "vm_stats")           handle_vm_stats(msg.stats);
+		else if(msg.cmd === "new_viewer")         handle_new_viewer(msg.name);
+		else if(msg.cmd === "viewertarget")       handle_viewer_target(msg);
+		else if(msg.cmd === "viewerbitrate")      handle_viewer_bitrate(msg);
+		else if(msg.cmd === "medooze_incoming")   handle_medooze_incoming(msg);
+		else if(msg.cmd === "publisher_pc_state") info.publisher_pc_state = connection_state_map.get(msg.state);
 		else return;
 
 		update_listener();
