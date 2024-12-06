@@ -6,3 +6,4 @@ index_test.js
 node_modules/
 package-lock.json
 stats.csv
+stats_reordered.csv

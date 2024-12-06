@@ -1,3 +1,4 @@
+// Node modules
 const Express           = require("express");
 const CORS              = require("cors");
 const FS                = require("fs");
@@ -5,6 +6,7 @@ const { createServer }  = require("https");
 const Path              = require("path");
 const {WebSocketServer} = require ("ws");
 
+// csv stats headers
 const headers = [
 	{id: 'time', title: 'TIME'},
 	{id: 'ram_usage', title: 'MEMORY USED'},
@@ -32,6 +34,7 @@ const headers = [
 	{id: 'tx_missed', title: 'TX MISSED'},
 ];
 
+// Peerconnection state map to write number in stat.csv
 const connection_state_map = new Map();
 connection_state_map.set('disconnected', 1);
 connection_state_map.set('closed', 0);
@@ -42,6 +45,7 @@ connection_state_map.set('failed', 4);
 connection_state_map.set('checking', 5);
 connection_state_map.set('completed', 6);
 
+// Create csv logger to log all stats
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 var csvWriter = createCsvWriter({
     path: 'stats.csv',
@@ -49,25 +53,32 @@ var csvWriter = createCsvWriter({
 	append: false
 }); 
 
+// Get config
 const config = require('./config.json');
 
+// HTTP port
 const PORT = 9000;
+const ip = config.host;
+
+// Units
 const KILO = 1024;
 const MEGA = 1024 * KILO;
 const GIGA = 1024 * MEGA;
 const SECONDS = 1000;
-
-const ip = config.host;
 
 //Create rest api
 const rest = Express();
 rest.use(CORS());
 rest.use(Express.static("www"));
 
-let receivers = [];
+// Viewers that conencted to monitor
+var receivers = [];
+// Client that runs publisher on demand
 var publisher_launchers = [];
+// Client that runs viewers on demand
+var viewer_launchers = [];
 
-let info = {
+var info = {
 	last_modified: undefined,
 	time: 0,
 
@@ -103,20 +114,25 @@ let info = {
 };
 
 async function log_info() {
+	// write a new line into the csv file
 	const records = [info];
 	await csvWriter.writeRecords(records);
 }
 
 function handle_new_receiver(ws) {
+	// Keep ref on the new viewer
 	receivers.push(ws);
+	// Send current info so it init itself
 	ws.send(JSON.stringify(info));
 	ws.on('close', () => {
+		// remove the ref now that the viewer is off
 		const index = receivers.indexOf(ws);
 		if(index > -1) receivers.splice(index, 1);
 	});
 }
 
 function update_listener() {
+	// Send info object to all listeners so they know whats going on
 	receivers.forEach(elt => elt.send(JSON.stringify(info)));
 }
 
@@ -126,9 +142,11 @@ function update_viewer_bitrate(msg) {
 }
 
 function fetch_ram_usage() {
+	// Read current memory usage from cgroup file
     const path = Path.join(config.memory_stats_path, config.ram_usage_file);
     const data = FS.readFileSync(path);
 
+	// Log it in csv file
     info.ram_usage = parseInt(parseInt(data) / MEGA);
 }
 
@@ -162,25 +180,36 @@ function fetch_memory() {
 function set_max_ram(max) {
 	// todo write max to memory.max
 	console.log(max);
+	// log in csv stats new max
 	info.maxram = max;
+	// Get path to the cgroup file
 	const path = Path.join(config.memory_stats_path, config.ram_total_file);
+	// Write new max in the file
 	FS.writeFileSync(path, String(max * MEGA));
 }
 
 function medooze_connected(ws) {
+	// Update medooze connection state
     info.is_medooze_connected = true;
 
+	// Set up max memory as the current max of the vm
+	// This is to avoid having 'inf' in the cgroup file
     set_max_ram(config.initial_max_ram);
+
+	// Setup timout to gather memory stats
     const timeout = setInterval(fetch_memory, config.time_interval);
 
     ws.on('close', () => {
 		console.log("Medooze_close");
+		// update medooze connection state
 		info.is_medooze_connected = false
+		// Clear timeout that fetch memory
 		clearInterval(timeout[Symbol.toPrimitive]());
+		// Update all listeners
 		update_listener();
     });
 
-	console.log(publisher_launchers);
+	// Time to publish a video to medooze
     publisher_launchers.forEach(p => p.send(JSON.stringify({"cmd":"launch"})));
 }
 
@@ -188,29 +217,54 @@ function memory_reduction() {
 	const increment = 100;
 
 	if(info.ram_free > increment) {
+		// Set the new max as the current ram usage (removing all free memory)
 		set_max_ram(info.ram_usage);
 	}
 	else {
 		if(info.ram_usage > info.vm_ram_usage) {
+			// Removing ${increment}MiB of memory from current usage
 			set_max_ram(info.ram_usage - increment);
 		}
 	}
 }
 
 function publisher_connected(ws) {
+	// Update publisher connection state
 	info.is_publisher_connected = true;
 
+	// Start algorithm to reduce memory
 	// const timeout = setInterval(memory_reduction, 10 * SECONDS);
 
 	ws.on('close', () => {
+		// Update publisher connection state
 		info.is_medooze_connected = false
+		// Update all listeners
 		update_listener();
 
+		// Clear interval running the memory reduction algo
 		// clearInterval(timeout[Symbol.toPrimitive]());
 	});
+
+	// Running viewers
+	let obj = {
+		cmd: "run",
+		count: 1	
+	};
+
+	// First viewer after 5sec
+	setTimeout(() => {
+		viewer_launchers[0].send(JSON.stringify(obj));
+	}, 5000);
+
+	// 10 more after 10sec later
+	setTimeout(() => {
+		obj.count = 10;
+		viewer_launchers[0].send(JSON.stringify(obj));
+	}, 15000);
 }
 
 function handle_vm_stats(stats) {
+	// Update VM memory and cpu usage
 	info.vm_ram_free = parseInt(stats.freemem / MEGA);
 	info.vm_ram_usage = parseInt((stats.totalmem - stats.freemem) / MEGA);
 	info.vm_cpu_usage = stats.cpu;
@@ -219,34 +273,42 @@ function handle_vm_stats(stats) {
 function handle_new_viewer(name) {
 	console.log("new viewer", name);
 
+	// Create new stats IDs for this viewer stats 
 	let target_id = name + "_target";
 	let bitrate_id = name + "_bitrate";
 	let fps_id = name + "_fps";
 
+	// Add new IDs to the csv header
 	headers.push({ id: target_id, title: target_id.toUpperCase() });
 	headers.push({ id: bitrate_id, title: bitrate_id.toUpperCase() });
 	headers.push({ id: fps_id, title: fps_id.toUpperCase() });
 
+	// Re-create the csv writer to write stats for the new viewer
 	csvWriter = createCsvWriter({
 		path: 'stats.csv',
 		header: headers,
 		append: true
 	}); 
 
+	// Set default values
 	info[target_id] = 0;
 	info[bitrate_id] = 0;
 	info[fps_id] = 0;
 }
 
 function handle_viewer_target(msg) {	
+	// Retrieve csv header id
 	let target_id = msg.name + "_target";
+	// Update stats
 	info[target_id] = parseInt(msg.target);
 }
 
 function handle_viewer_bitrate(msg) {
+	// Retrieve csv header id
 	let bitrate_id = msg.name + "_bitrate";
 	let fps_id = msg.name + "_fps";
 
+	// Update stats 
 	info[bitrate_id] = parseInt(msg.bitrate);
 	info[fps_id] = parseInt(msg.fps);
 }
@@ -254,6 +316,7 @@ function handle_viewer_bitrate(msg) {
 function handle_medooze_incoming(msg) {
 	// console.log(msg);
 
+	// Incoming medooze stats (stats from publisher side)
 	info.medooze_incoming_bitrate = msg.stats.bitrate;
 	info.medooze_incoming_lost = msg.stats.lost;
 	info.medooze_incoming_drop = msg.stats.drop;
@@ -262,11 +325,13 @@ function handle_medooze_incoming(msg) {
 }
 
 function handle_iplink_stats(msg) {
+	// Received kernel packets stats
 	info.rx_packet = msg.rx.packet;
 	info.rx_dropped = msg.rx.dropped;
 	info.rx_errors = msg.rx.errors;
 	info.rx_missed = msg.rx.missed;
 
+	// Sent kernel packets stats
 	info.tx_packet = msg.tx.packet;
 	info.tx_dropped = msg.tx.dropped;
 	info.tx_errors = msg.tx.errors;
@@ -277,6 +342,24 @@ function handle_publisher_launchers(ws) {
 	console.log("New publisher launcher");
     // keep ref on ws to notify it
     publisher_launchers.push(ws);
+}
+
+function handle_viewer_launchers(ws) {
+	console.log("New viewer launcher");
+	// keep ref on ws to notify it
+	viewer_launchers.push(ws);
+
+	// environment variable for viewer launcher
+	let obj = {
+		"cmd": "env",
+		"medooze_port": 8084,
+		"medooze_host": "134.59.133.76",
+		"monitor_port": 9000,
+		"monitor_host": "134.59.133.57"
+	};
+
+	// Send to viewer launcher to setup its environment
+	ws.send(JSON.stringify(obj));
 }
 
 //Load certs
@@ -297,15 +380,18 @@ wss.on("connection", (ws) => {
 	ws.on('error', console.error);
 	ws.on('message', (message) => {
 	    // console.log(`received ${message}`);
-	    // return;
-		// console.log('message');
+
+		let msg = "";
 		try {
-			let msg = JSON.parse(message);
+			// parse json
+			msg = JSON.parse(message);
 		} catch(err) {
+			// return if not json
 			console.error(err)
 			return
 		}
 
+		// Parse and run cmd in json message
 		if(msg.cmd === "receiver") {
 			handle_new_receiver(ws);
 			return;
@@ -324,10 +410,12 @@ wss.on("connection", (ws) => {
 		else if(msg.cmd === "iplink_stats")       handle_iplink_stats(msg);
 	    else if(msg.cmd === "publisher_pc_state") info.publisher_pc_state = connection_state_map.get(msg.state);
 	    else if(msg.cmd === "publisher_launcher") handle_publisher_launchers(ws);
+		else if(msg.cmd === "viewer_launcher")      handle_viewer_launchers(ws);
 		else return;
 
 		update_listener();
 	});
 });
 
+// HTTP server listen
 server.listen(PORT);
