@@ -16,11 +16,20 @@ const headers = [
 	{id: 'viewer_count', title: 'VIEWER COUNT'},
 	{id: 'vm_ram_usage', title: 'VM MEMORY USAGE'},
 	{id: 'vm_ram_free', title: 'VM MEMORY FREE'},
+	{id: 'vm_cpu_usage', title: 'VM CPU USAGE'},
 	{id: 'medooze_incoming_lost', title: 'MEDOOZE INCOMING LOST'},
 	{id: 'medooze_incoming_drop', title: 'MEDOOZE INCOMING DROP'},
 	{id: 'medooze_incoming_bitrate', title: 'MEDOOZE INCOMING BITRATE'},
 	{id: 'medooze_incoming_nack', title: 'MEDOOZE INCOMING NACK'},
 	{id: 'medooze_incoming_pli', title: 'MEDOOZE INCOMING PLI'},
+	{id: 'rx_packet', title: 'RX PACKET'},
+	{id: 'rx_dropped', title: 'RX DROPPED'},
+	{id: 'rx_errors', title: 'RX ERRORS'},
+	{id: 'rx_missed', title: 'RX MISSED'},
+	{id: 'tx_packet', title: 'TX PACKET'},
+	{id: 'tx_dropped', title: 'TX DROPPED'},
+	{id: 'tx_errors', title: 'TX ERRORS'},
+	{id: 'tx_missed', title: 'TX MISSED'},
 ];
 
 const connection_state_map = new Map();
@@ -56,6 +65,7 @@ rest.use(CORS());
 rest.use(Express.static("www"));
 
 let receivers = [];
+var publisher_launchers = [];
 
 let info = {
 	last_modified: undefined,
@@ -72,6 +82,7 @@ let info = {
 	maxram: config.initial_max_ram,
 	vm_ram_usage: undefined,
 	vm_ram_free: undefined,
+	vm_cpu_usage: undefined,
 
 	// medooze incoming
 	medooze_incoming_lost: 0,
@@ -80,6 +91,15 @@ let info = {
 	medooze_incoming_nack: 0,
 	medooze_incoming_pli: 0,
 
+	//ip link stats
+	rx_packet: 0,
+	rx_dropped: 0,
+	rx_missed: 0,
+	rx_errors: 0,
+	tx_packet: 0,
+	tx_dropped: 0,
+	tx_missed: 0,
+	tx_errors: 0,
 };
 
 async function log_info() {
@@ -159,6 +179,9 @@ function medooze_connected(ws) {
 		clearInterval(timeout[Symbol.toPrimitive]());
 		update_listener();
     });
+
+	console.log(publisher_launchers);
+    publisher_launchers.forEach(p => p.send(JSON.stringify({"cmd":"launch"})));
 }
 
 function memory_reduction() {
@@ -190,6 +213,7 @@ function publisher_connected(ws) {
 function handle_vm_stats(stats) {
 	info.vm_ram_free = parseInt(stats.freemem / MEGA);
 	info.vm_ram_usage = parseInt((stats.totalmem - stats.freemem) / MEGA);
+	info.vm_cpu_usage = stats.cpu;
 }
 
 function handle_new_viewer(name) {
@@ -237,6 +261,24 @@ function handle_medooze_incoming(msg) {
 	info.medooze_incoming_nack = msg.stats.nack;
 }
 
+function handle_iplink_stats(msg) {
+	info.rx_packet = msg.rx.packet;
+	info.rx_dropped = msg.rx.dropped;
+	info.rx_errors = msg.rx.errors;
+	info.rx_missed = msg.rx.missed;
+
+	info.tx_packet = msg.tx.packet;
+	info.tx_dropped = msg.tx.dropped;
+	info.tx_errors = msg.tx.errors;
+	info.tx_missed = msg.tx.missed;
+}
+
+function handle_publisher_launchers(ws) {
+	console.log("New publisher launcher");
+    // keep ref on ws to notify it
+    publisher_launchers.push(ws);
+}
+
 //Load certs
 const options = {
 	key     : FS.readFileSync ("server.key"),
@@ -254,9 +296,15 @@ const wss = new WebSocketServer ({ server });
 wss.on("connection", (ws) => {
 	ws.on('error', console.error);
 	ws.on('message', (message) => {
-		// console.log(`received ${message}`);
+	    // console.log(`received ${message}`);
+	    // return;
 		// console.log('message');
-		let msg = JSON.parse(message);
+		try {
+			let msg = JSON.parse(message);
+		} catch(err) {
+			console.error(err)
+			return
+		}
 
 		if(msg.cmd === "receiver") {
 			handle_new_receiver(ws);
@@ -273,7 +321,9 @@ wss.on("connection", (ws) => {
 		else if(msg.cmd === "viewertarget")       handle_viewer_target(msg);
 		else if(msg.cmd === "viewerbitrate")      handle_viewer_bitrate(msg);
 		else if(msg.cmd === "medooze_incoming")   handle_medooze_incoming(msg);
-		else if(msg.cmd === "publisher_pc_state") info.publisher_pc_state = connection_state_map.get(msg.state);
+		else if(msg.cmd === "iplink_stats")       handle_iplink_stats(msg);
+	    else if(msg.cmd === "publisher_pc_state") info.publisher_pc_state = connection_state_map.get(msg.state);
+	    else if(msg.cmd === "publisher_launcher") handle_publisher_launchers(ws);
 		else return;
 
 		update_listener();
