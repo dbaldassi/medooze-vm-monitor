@@ -5,5 +5,39 @@
     "swap_usage_file": "memory.swap.current",
     "memory_stats_path": "/sys/fs/cgroup/machine.slice/machine-qemu\\x2d1\\x2dmedooze.scope",
     "initial_max_ram": 4096,
-    "host": "134.59.133.57"
+    "host": "134.59.133.57",
+    "port": 9000,
+    "medooze_server": {
+        "host": "134.59.133.76",
+        "port": 8084,
+        "exec_start": "virsh reboot medooze",
+        "exec_stop": null
+    },
+    "publisher_launchers": [
+        {
+            "id": "mac",
+            "exec_start": "ssh david@134.59.129.227 \"run_publisher\"",
+            "exec_stop": "ssh david@134.59.129.227 \"run_publisher\""
+        }
+    ],
+    "viewer_launchers": [
+        {
+            "id": "baleze",
+            "exec_start": "ssh exp@134.59.129.175 \"screen -L -S viewer -dm /home/exp/run_viewers.sh\"",
+            "exec_stop": "ssh exp@134.59.129.175 \"screen -XS viewer quit; pkill run_viewer.sh\"",
+            "capabilities": {
+                "max": 200,
+                "capacities": ["normal"]
+            }
+        },
+        {
+            "id": "vivodebian",
+            "exec_start": "ssh exp@134.59.129.175 \"screen -L -S viewer -dm /home/exp/run_viewers.sh\"",
+            "exec_stop": "ssh exp@vivodebian.local \"screen -XS viewer quit; pkill run_viewer.sh\"",
+            "capalities": {
+                "max": 50,
+                "network": ["normal", "tc"]
+            }
+        }
+    ]
 }

@@ -6,6 +6,8 @@ const { createServer }  = require("https");
 const Path              = require("path");
 const {WebSocketServer} = require ("ws");
 
+const { exec } = require('node:child_process')
+
 // csv stats headers
 const headers = [
 	{id: 'time', title: 'TIME'},
@@ -55,10 +57,6 @@ var csvWriter = createCsvWriter({
 
 // Get config
 const config = require('./config.json');
-
-// HTTP port
-const PORT = 9000;
-const ip = config.host;
 
 // Units
 const KILO = 1024;
@@ -210,7 +208,7 @@ function medooze_connected(ws) {
     });
 
 	// Time to publish a video to medooze
-    publisher_launchers.forEach(p => p.send(JSON.stringify({"cmd":"launch"})));
+    publisher_launchers.forEach(p => p.send(JSON.stringify({"cmd":"run"})));
 }
 
 function memory_reduction() {
@@ -256,11 +254,20 @@ function publisher_connected(ws) {
 		viewer_launchers[0].send(JSON.stringify(obj));
 	}, 5000);
 
-	// 10 more after 10sec later
+	// 2 more after 10sec later
 	setTimeout(() => {
-		obj.count = 10;
+		obj.count = 2;
 		viewer_launchers[0].send(JSON.stringify(obj));
 	}, 15000);
+
+	// sotp everythin after 1mn
+	setTimeout(() => {
+		stop_viewer_launchers(["baleze"]);
+		stop_publisher_launchers(["mac"]);
+		stop_medooze();
+
+		process.exit(0);
+	}, 75000);
 }
 
 function handle_vm_stats(stats) {
@@ -352,14 +359,65 @@ function handle_viewer_launchers(ws) {
 	// environment variable for viewer launcher
 	let obj = {
 		"cmd": "env",
-		"medooze_port": 8084,
-		"medooze_host": "134.59.133.76",
-		"monitor_port": 9000,
-		"monitor_host": "134.59.133.57"
+		"medooze_port": config.medooze_server.port,
+		"medooze_host": config.medooze_server.host,
+		"monitor_port": config.port,
+		"monitor_host": config.host
 	};
 
 	// Send to viewer launcher to setup its environment
 	ws.send(JSON.stringify(obj));
+}
+
+function quick_exec(cmd) {
+	exec(cmd, (err, output) => {
+		if(err) console.error(err);
+		else console.log(output);
+	});
+}
+
+function start_medooze() {
+	quick_exec(config.medooze_server.exec_start);
+}
+
+function start_viewer_launchers(ids) {
+	for(let id of ids) {
+		let launcher = config.viewer_launchers.find(elt => elt.id === id);
+		quick_exec(launcher.exec_start);
+	}
+}
+
+function start_publisher_launchers(ids) {
+	for(let id of ids) {
+		let launcher = config.publisher_launchers.find(elt => elt.id === id);
+		quick_exec(launcher.exec_start);
+	}
+}
+
+function stop_medooze() {
+	if(config.exec_stop) {
+		quick_exec(config.medooze_server.exec_stop);
+	}
+}
+
+function stop_viewer_launchers(ids) {
+	for(let id of ids) {
+		let launcher = config.viewer_launchers.find(elt => elt.id === id);
+		quick_exec(launcher.exec_stop);
+	}
+}
+
+function stop_publisher_launchers(ids) {
+	for(let id of ids) {
+		let launcher = config.publisher_launchers.find(elt => elt.id === id);
+		quick_exec(launcher.exec_stop);
+	}	
+}
+
+function run() {
+	start_publisher_launchers(["mac"]);
+	start_viewer_launchers(["baleze"]);
+	start_medooze();
 }
 
 //Load certs
@@ -410,7 +468,7 @@ wss.on("connection", (ws) => {
 		else if(msg.cmd === "iplink_stats")       handle_iplink_stats(msg);
 	    else if(msg.cmd === "publisher_pc_state") info.publisher_pc_state = connection_state_map.get(msg.state);
 	    else if(msg.cmd === "publisher_launcher") handle_publisher_launchers(ws);
-		else if(msg.cmd === "viewer_launcher")      handle_viewer_launchers(ws);
+		else if(msg.cmd === "viewer_launcher")    handle_viewer_launchers(ws);
 		else return;
 
 		update_listener();
@@ -418,4 +476,6 @@ wss.on("connection", (ws) => {
 });
 
 // HTTP server listen
-server.listen(PORT);
+server.listen(config.port);
+
+run();
