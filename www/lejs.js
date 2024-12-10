@@ -76,11 +76,11 @@ function update_info(data) {
 }
 
 (function () {
-    const ws = new WebSocket(url);
+    const ws = new WebSocket(url, 'receiver');
 
     ws.onopen = async () => {
         // console.log("Websocket is open");
-        ws.send(JSON.stringify({cmd: "receiver"}));
+        // ws.send(JSON.stringify({cmd: "receiver"}));
     }
 
     let setup_slider = false;
