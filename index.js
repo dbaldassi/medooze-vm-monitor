@@ -3,15 +3,16 @@ const Express           = require("express");
 const CORS              = require("cors");
 const FS                = require("fs");
 const { createServer }  = require("https");
-const Path              = require("path");
 const WebSocketServer = require ("websocket").server;
-
-const { exec } = require('node:child_process')
 
 // Get config
 const config = require('./config.json');
 // Get logger
 const logger = require('./stats.js');
+// Get system manager
+const SystemManager = require('./system_manager.js');
+const sys_manager = new SystemManager;
+
 // Get Update listener function
 const update_listener = require('./lib/receivers.js').update_listener;
 
@@ -31,93 +32,26 @@ const publisher_launchers = require('./lib/publisher_launcher.js').launchers;
 // Client that runs viewers on demand
 const viewer_launchers = require('./lib/viewer_launcher.js').launchers;
 
-function fetch_ram_usage() {
-	// Read current memory usage from cgroup file
-    const path = Path.join(config.memory_stats_path, config.ram_usage_file);
-    const data = FS.readFileSync(path);
-
-	// Log it in csv file
-    logger.info.ram_usage = parseInt(parseInt(data) / MEGA);
-}
-
-function fetch_ram_free() {
-    const path = Path.join(config.memory_stats_path, config.ram_total_file);
-    const data = FS.readFileSync(path);
-    
-    logger.info.ram_free = parseInt(parseInt(data) / (MEGA)) - logger.info.ram_usage;
-    // console.log(parseInt(data), info.ram_free);
-}
-
-function fetch_swap_usage() {
-	const path = Path.join(config.memory_stats_path, config.swap_usage_file);
-	const data = FS.readFileSync(path);
-
-	logger.info.swap_usage = parseInt(parseInt(data) / MEGA);
-}
-
-function fetch_memory() {
-	fetch_ram_usage();
-	fetch_ram_free();
-	fetch_swap_usage();
-
-	logger.info.time += config.time_interval;
-	logger.log_info();
-
-	update_listener()
-}
-
-// Max in MiB
-function set_max_ram(max) {
-	// todo write max to memory.max
-	console.log(max);
-	// log in csv stats new max
-	logger.info.maxram = max;
-	// Get path to the cgroup file
-	const path = Path.join(config.memory_stats_path, config.ram_total_file);
-	// Write new max in the file
-	FS.writeFileSync(path, String(max * MEGA));
-}
-
-var fetch_memory_timeout;
-
 function medooze_connected() {
 	// Set up max memory as the current max of the vm
 	// This is to avoid having 'inf' in the cgroup file
-    set_max_ram(config.initial_max_ram);
-
-	// Setup timout to gather memory stats
-    fetch_memory_timeout = setInterval(fetch_memory, config.time_interval);
-
+    sys_manager.set_max_ram(config.initial_max_ram);
+	// Start collecting cgroup stats
+    sys_manager.start_collecting(config.time_interval, (time) => update_listener());
 	// Time to publish a video to medooze
     publisher_launchers.forEach(p => p.sendUTF(JSON.stringify({"cmd":"run"})));
 }
 
 function medooze_disconnected() {
-	// Clear timeout that fetch memory
-	clearInterval(fetch_memory_timeout[Symbol.toPrimitive]());
+	// Stop collecting memory stats
+	sys_manager.stop_collecting();
 	// Update all listeners
 	update_listener();
 }
 
-function memory_reduction() {
-	const increment = 100;
-
-	if(logger.info.ram_free > increment) {
-		// Set the new max as the current ram usage (removing all free memory)
-		set_max_ram(logger.info.ram_usage);
-	}
-	else {
-		if(info.ram_usage > logger.info.vm_ram_usage) {
-			// Removing ${increment}MiB of memory from current usage
-			set_max_ram(logger.info.ram_usage - increment);
-		}
-	}
-}
-
 function publisher_connected() {
 	// Start algorithm to reduce memory
-	// const timeout = setInterval(memory_reduction, 10 * SECONDS);
-
+	// const timeout = setInterval(sys_manager.memory_reduction, 10 * SECONDS);
 	console.log("publisher_connected");
 
 	// Running viewers
@@ -155,49 +89,37 @@ function publisher_disconnected() {
 	// clearInterval(timeout[Symbol.toPrimitive]());
 }
 
-function quick_exec(cmd) {
-	exec(cmd, (err, output) => {
-		if(err) console.error(err);
-		else console.log(output);
-	});
-}
-
 function start_medooze() {
-	quick_exec(config.medooze_server.exec_start);
-}
-
-function start_viewer_launchers(ids) {
-	for(let id of ids) {
-		let launcher = config.viewer_launchers.find(elt => elt.id === id);
-		quick_exec(launcher.exec_start);
-	}
-}
-
-function start_publisher_launchers(ids) {
-	for(let id of ids) {
-		let launcher = config.publisher_launchers.find(elt => elt.id === id);
-		quick_exec(launcher.exec_start);
-	}
+	SystemManager.quick_exec(config.medooze_server.exec_start);
 }
 
 function stop_medooze() {
 	if(config.exec_stop) {
-		quick_exec(config.medooze_server.exec_stop);
+		SystemManager.quick_exec(config.medooze_server.exec_stop);
 	}
+}
+
+function search_and_run(ids, component, cmd) {
+	for(let id of ids) {
+		let launcher = config[component].find(elt => elt.id === id);
+		SystemManager.quick_exec(launcher[cmd]);
+	}
+}
+
+function start_viewer_launchers(ids) {
+	search_and_run(ids, "viewer_launchers", "exec_start");
+}
+
+function start_publisher_launchers(ids) {
+	search_and_run(ids, "publisher_launchers", "exec_start");
 }
 
 function stop_viewer_launchers(ids) {
-	for(let id of ids) {
-		let launcher = config.viewer_launchers.find(elt => elt.id === id);
-		quick_exec(launcher.exec_stop);
-	}
+	search_and_run(ids, "viewer_launchers", "exec_stop");
 }
 
 function stop_publisher_launchers(ids) {
-	for(let id of ids) {
-		let launcher = config.publisher_launchers.find(elt => elt.id === id);
-		quick_exec(launcher.exec_stop);
-	}	
+	search_and_run(ids, "publisher_launchers", "exec_stop");
 }
 
 function run() {
@@ -206,16 +128,17 @@ function run() {
 	start_medooze();
 }
 
-//Load certs
+// Load certs
 const options = {
 	key     : FS.readFileSync ("server.key"),
 	cert	: FS.readFileSync ("server.cert")
 };
 
-//Manualy starty server
+// Manualy start server
 const server = createServer(options, rest);
 server.listen(config.port);
 
+// Subprotocols handler
 const handlers = {
 	"publisher"          : require('./lib/publisher.js'),
 	"medooze"            : require('./lib/medooze.js'),
@@ -225,12 +148,13 @@ const handlers = {
 	"receiver"           : require('./lib/receivers.js').handler
 };
 
+// Callback object to be passed to subprotocol handler
 let callbacks = {
 	medooze_connected: medooze_connected,
 	medooze_disconnected: medooze_disconnected,
 	publisher_connected: publisher_connected,
 	publisher_disconnected: publisher_disconnected,
-	set_max_ram: set_max_ram
+	set_max_ram: sys_manager.set_max_ram
 }
 
 //Launch wss server
@@ -239,8 +163,9 @@ console.log("Starting ws server");
 const wss = new WebSocketServer ({ httpServer: server, autoAcceptConnections: false });
 
 wss.on("request", (request) => {
+	// Get protocol
 	let protocol = request.requestedProtocols[0];
-	console.log("-Got request for: "+ protocol);
+	console.log("-Got request for: " + protocol);
 
 	//If not found
 	if (!handlers.hasOwnProperty (protocol))
@@ -250,7 +175,9 @@ wss.on("request", (request) => {
 	// Process it
 	handlers[protocol](request, protocol, callbacks);
 
+	// Update all listener
 	update_listener();
 });
 
+// RUN !!
 run();
