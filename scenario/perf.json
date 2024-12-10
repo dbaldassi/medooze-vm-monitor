@@ -1,0 +1,48 @@
+{
+    "name": "perf",
+    "publishers": ["mac"],
+    "viewers": ["baleze"],
+    "steps": [
+        {
+            "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
+            "start_publisher_launchers": ["mac"],
+            "start_viewer_launchers": ["baleze"],
+            "start_medooze": {}
+        },
+        {
+            "require": "medooze_connected",
+            "actions": ["add_publisher"],
+            "add_publisher" : [{
+                "id": "mac",
+                "codec": "vp8",
+                "maxbitrate" : 2500
+            }],
+            "repeat" : 1
+        },
+        {
+            "require": "publisher_connected",
+            "actions": ["add_viewer"],
+            "add_viewer" : [{
+                "id": "baleze",
+                "count": 1
+            }],
+            "repeat": 2,
+            "wait": 5000
+        },
+        {
+            "actions":[],
+            "repeat":1,
+            "wait" : 20000
+        },
+        {
+            "actions" : ["stop_publisher_launchers", "stop_viewer_launchers", "stop_medooze"],
+            "stop_publisher_launchers": ["mac"],
+            "stop_viewer_launchers": ["baleze"],
+            "stop_medooze": {}
+        },
+        {
+            "actions" : ["exit"],
+            "exit" : {}
+        }
+    ]
+}

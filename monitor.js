@@ -27,8 +27,8 @@ class Monitor {
         this.sys_manager.set_max_ram(config.initial_max_ram);
         // Start collecting cgroup stats
         this.sys_manager.start_collecting(config.time_interval, (time) => update_listener());
-        // Time to publish a video to medooze
-        this.publisher_launchers.forEach(p => p.sendUTF(JSON.stringify({"cmd":"run"})));
+
+        this.medooze_connected_promise.resolve();
     }
     
     medooze_disconnected() {
@@ -42,6 +42,7 @@ class Monitor {
         // Start algorithm to reduce memory
         // const timeout = setInterval(sys_manager.memory_reduction, 10 * SECONDS);
         console.log("publisher_connected");
+        this.publisher_connected_promise.resolve();
     }
     
     publisher_disconnected() {
@@ -53,7 +54,12 @@ class Monitor {
     }
     
     start_medooze() {
+        console.log("Starting medooze");
+
         SystemManager.quick_exec(config.medooze_server.exec_start);
+
+        // Create promised to be resolved when medooze connects
+        this.medooze_connected_promise = Promise.withResolvers();
     }
     
     stop_medooze() {
@@ -84,11 +90,65 @@ class Monitor {
     stop_publisher_launchers(ids) {
         this.search_and_run(ids, "publisher_launchers", "exec_stop");
     }
+
+    add_publisher(opts) {
+        for(let opt of opts) {
+            // Get publisher by id
+            let launcher = this.publisher_launchers.find(e => e.id === opt.id);
+            // Run a publisher and publish video
+            // TODO: send publisher option
+            launcher.ws.sendUTF(JSON.stringify({ "cmd" : "run" }));
+
+            // Create promise to be resolved when publisher is connected
+            this.publisher_connected_promise = Promise.withResolvers();
+        }
+    }
+
+    add_viewer(opts) {
+        for(let opt of opts) {
+            // get launcher by id
+            let launcher = this.viewer_launchers.find(e => e.id === opt.id);
+            // Run  the specified amount of viewer
+            launcher.ws.sendUTF(JSON.stringify({ "cmd": "run", "count": opt.count }));
+        };
+    }
+
+    exit() {
+        process.exit(0);
+    }
+
+    async run_scenar(scenar) {  
+
+        for(let step of scenar.steps) {
+            // Await for requirement to be fullfilled before performing the step
+            if(step.require) { 
+                // Wait for medooze to be connected
+                if(step.require === "medooze_connected") await this.medooze_connected_promise.promise;
+                // Wait for a publisher to be connected
+                else if(step.require === "publisher_connected") await this.publisher_connected_promise.promise;
+            }
+
+            // Number of times to repeat this step
+            let repeat = step.repeat ?? 1;
+            for(let i = 0; i < repeat; ++i) {
+                // Perform all actions contained in this step
+                step.actions.forEach(action => this[action](step[action]));
+
+                // If the step speficieda wait time before going to next step
+                if(step.wait) {
+                    // Create promise with timout to wait
+                    const promise = new Promise((resolve, reject) => {
+                        setTimeout(() => { resolve(); }, step.wait);
+                      });
+                    // Wait for timout to expire
+                    await promise;
+                }
+            }
+        }
+    }
     
-    run() {
-        this.start_publisher_launchers(["mac"]);
-        this.start_viewer_launchers(["baleze"]);
-        this.start_medooze();
+    run(scenar) {
+        this.run_scenar(scenar);
     }
 }
 

@@ -59,4 +59,11 @@ wss.on("request", (request) => {
 	update_listener();
 });
 
-monitor.run();
+// Check if scenario provided
+if (process.argv.length === 3) {
+	// Get file name
+	const scenar_name = process.argv[2];
+	const scenar = require(`./scenario/${scenar_name}.json`);
+
+	monitor.run(scenar);
+}
