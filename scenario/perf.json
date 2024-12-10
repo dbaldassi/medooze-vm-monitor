@@ -1,7 +1,5 @@
 {
     "name": "perf",
-    "publishers": ["mac"],
-    "viewers": ["baleze"],
     "steps": [
         {
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
@@ -26,7 +24,7 @@
                 "id": "baleze",
                 "count": 1
             }],
-            "repeat": 2,
+            "repeat": 120,
             "wait": 5000
         },
         {
@@ -39,6 +37,10 @@
             "stop_publisher_launchers": ["mac"],
             "stop_viewer_launchers": ["baleze"],
             "stop_medooze": {}
+        },
+        {
+            "actions" : [ "save" ],
+            "save": {}
         },
         {
             "actions" : ["exit"],

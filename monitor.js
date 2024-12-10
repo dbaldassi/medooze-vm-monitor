@@ -1,3 +1,6 @@
+const FS   = require('fs');
+const Path = require('path');
+
 // Get config
 const config = require('./config.json');
 // Get logger
@@ -113,11 +116,28 @@ class Monitor {
         };
     }
 
+    save() {
+        const dest_dir = Path.join('results', this.exp_name);
+
+        if(!FS.existsSync(dest_dir)) {
+            FS.mkdirSync(dest_dir, { recursive: true });
+        }
+
+        console.log(new Date().toLocaleString('fr-FR'));
+        const date = new Date().toLocaleString('fr-FR').replaceAll(' ', '-').replaceAll('/', '-').replaceAll(':', '-');
+        const name = `${this.exp_name}_${date}.csv`;
+
+        const dest_path = Path.join(dest_dir, name);
+
+        FS.cpSync(logger.csv_name, dest_path);
+    }
+
     exit() {
         process.exit(0);
     }
 
     async run_scenar(scenar) {  
+        this.exp_name = scenar.name;
 
         for(let step of scenar.steps) {
             // Await for requirement to be fullfilled before performing the step

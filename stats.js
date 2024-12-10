@@ -5,6 +5,7 @@ const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 
 class StatsLogger {
     constructor() {
+        this.csv_name = 'stats.csv';
         this.csvWriter = undefined;
         
         // csv stats headers
@@ -79,7 +80,7 @@ class StatsLogger {
 
     create_writer(append) {
         this.csvWriter = createCsvWriter({
-            path: 'stats.csv',
+            path: this.csv_name,
             header: this.headers,
             append: append
         }); 
