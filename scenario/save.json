@@ -1,0 +1,13 @@
+{
+    "name": "perf",
+    "steps": [
+        {
+            "actions" : [ "save" ],
+            "save": {}
+        },
+        {
+            "actions" : ["exit"],
+            "exit" : {}
+        }
+    ]
+}

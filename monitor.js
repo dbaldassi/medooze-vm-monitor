@@ -99,8 +99,12 @@ class Monitor {
             // Get publisher by id
             let launcher = this.publisher_launchers.find(e => e.id === opt.id);
             // Run a publisher and publish video
-            // TODO: send publisher option
-            launcher.ws.sendUTF(JSON.stringify({ "cmd" : "run" }));
+            let obj = {
+                "cmd": "run",
+                "codec": opt.codec,
+                "scenar": opt.scenar
+            };
+            launcher.ws.sendUTF(JSON.stringify(obj));
 
             // Create promise to be resolved when publisher is connected
             this.publisher_connected_promise = Promise.withResolvers();
@@ -117,18 +121,23 @@ class Monitor {
     }
 
     save() {
+        // Get dest dir
         const dest_dir = Path.join('results', this.exp_name);
 
+        // Check if folder exists
         if(!FS.existsSync(dest_dir)) {
+            // If not create it
             FS.mkdirSync(dest_dir, { recursive: true });
         }
 
-        console.log(new Date().toLocaleString('fr-FR'));
+        // Setup final name : expname_date;
         const date = new Date().toLocaleString('fr-FR').replaceAll(' ', '-').replaceAll('/', '-').replaceAll(':', '-');
         const name = `${this.exp_name}_${date}.csv`;
 
+        // Get dest path
         const dest_path = Path.join(dest_dir, name);
 
+        // Copy stats.csv to dest path
         FS.cpSync(logger.csv_name, dest_path);
     }
 
@@ -136,14 +145,21 @@ class Monitor {
         process.exit(0);
     }
 
-    async run_scenar(scenar) {  
+    async run_scenar(scenar) {
+        // Save the name in class member
         this.exp_name = scenar.name;
 
         for(let step of scenar.steps) {
             // Await for requirement to be fullfilled before performing the step
             if(step.require) { 
                 // Wait for medooze to be connected
-                if(step.require === "medooze_connected") await this.medooze_connected_promise.promise;
+                if(step.require === "medooze_connected") {
+                    // Create promise in case monitor is not starting medooze by himself
+                    if(!this.medooze_connected_promise) 
+                        this.medooze_connected_promise = Promise.withResolvers();
+
+                    await this.medooze_connected_promise.promise;
+                }
                 // Wait for a publisher to be connected
                 else if(step.require === "publisher_connected") await this.publisher_connected_promise.promise;
             }
@@ -168,6 +184,9 @@ class Monitor {
     }
     
     run(scenar) {
+        // Make sure medooze promise is not set
+        this.medooze_connected_promise = undefined;
+        // RUN !!
         this.run_scenar(scenar);
     }
 }

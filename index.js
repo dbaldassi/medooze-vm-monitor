@@ -65,5 +65,12 @@ if (process.argv.length === 3) {
 	const scenar_name = process.argv[2];
 	const scenar = require(`./scenario/${scenar_name}.json`);
 
+	// RUN !!
+	monitor.run(scenar);
+}
+else {
+	// Get default scenario (max2500, don't start launcher and medooze)
+	const scenar = require(`./scenario/default.json`);
+	// RUN !!
 	monitor.run(scenar);
 }

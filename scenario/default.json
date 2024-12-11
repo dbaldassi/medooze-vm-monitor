@@ -1,0 +1,33 @@
+{
+    "name": "default",
+    "steps": [
+        {
+            "require": "medooze_connected",
+            "actions": ["add_publisher"],
+            "add_publisher" : [{
+                "id": "mac",
+                "codec": "vp8",
+                "scenar": "max2500"
+            }],
+            "repeat" : 1
+        },
+        {
+            "require": "publisher_connected",
+            "actions": ["add_viewer"],
+            "add_viewer" : [{
+                "id": "baleze",
+                "count": 1
+            }],
+            "repeat": 1,
+            "wait": 30000
+        },
+        {
+            "actions" : [ "save" ],
+            "save": {}
+        },
+        {
+            "actions" : ["exit"],
+            "exit" : {}
+        }
+    ]
+}
