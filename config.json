@@ -10,8 +10,8 @@
     "medooze_server": {
         "host": "134.59.133.76",
         "port": 8084,
-        "exec_start": "virsh reboot medooze",
-        "exec_stop": null
+        "exec_start": "ssh ap@134.59.133.76 \"cd test-server-uptodate; screen -L -S medooze -dm node . 134.59.133.76\"",
+        "exec_stop": "ssh ap@134.59.133.76 \"screen -XS medooze kill\""
     },
     "publisher_launchers": [
         {
@@ -32,7 +32,7 @@
         },
         {
             "id": "vivodebian",
-            "exec_start": "ssh exp@134.59.129.175 \"screen -L -S viewer -dm /home/exp/run_viewers.sh\"",
+            "exec_start": "ssh exp@vivodebian.local \"screen -L -S viewer -dm /home/exp/run_viewers.sh\"",
             "exec_stop": "ssh exp@vivodebian.local \"screen -XS viewer quit; pkill run_viewer.sh\"",
             "capalities": {
                 "max": 50,

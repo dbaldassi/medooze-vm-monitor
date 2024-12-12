@@ -66,7 +66,7 @@ class Monitor {
     }
     
     stop_medooze() {
-        if(config.exec_stop) {
+        if(config.medooze_server.exec_stop) {
             SystemManager.quick_exec(config.medooze_server.exec_stop);
         }
     }
@@ -116,7 +116,12 @@ class Monitor {
             // get launcher by id
             let launcher = this.viewer_launchers.find(e => e.id === opt.id);
             // Run  the specified amount of viewer
-            launcher.ws.sendUTF(JSON.stringify({ "cmd": "run", "count": opt.count }));
+            let obj = {
+                "cmd": "run",
+                "count": opt.count,
+                "network": opt.network ?? "none"
+            };
+            launcher.ws.sendUTF(JSON.stringify(obj));
         };
     }
 
