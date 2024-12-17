@@ -1,0 +1,43 @@
+{
+    "name": "perf-simulcast-vp8-L1T1-host",
+    "steps": [
+        {
+            "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
+            "start_publisher_launchers": ["mac"],
+            "start_viewer_launchers": ["baleze"],
+            "start_medooze": "host"
+        },
+        {
+            "require": "medooze_connected",
+            "actions": ["add_publisher"],
+            "add_publisher" : [{ "id": "mac", "scenar" : "simulcast" }],
+            "repeat" : 1
+        },
+        {
+            "require": "publisher_connected",
+            "actions": ["add_viewer"],
+            "add_viewer" : [{ "id": "baleze", "count": 1 }],
+            "repeat": 120,
+            "wait": 5000
+        },
+        {
+            "actions":[],
+            "repeat":1,
+            "wait" : 15000
+        },
+        {
+            "actions" : ["stop_publisher_launchers", "stop_viewer_launchers", "stop_medooze"],
+            "stop_publisher_launchers": ["mac"],
+            "stop_viewer_launchers": ["baleze"],
+            "stop_medooze": {}
+        },
+        {
+            "actions" : [ "save" ],
+            "save": {}
+        },
+        {
+            "actions" : ["exit"],
+            "exit" : {}
+        }
+    ]
+}
