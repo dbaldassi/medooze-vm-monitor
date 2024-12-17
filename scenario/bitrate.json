@@ -1,11 +1,11 @@
 {
-    "name": "bitrate",
+    "name": "bitrate-vp8-l1t1",
     "steps": [
         {
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
             "start_publisher_launchers": ["mac"],
-            "start_viewer_launchers": ["vivodebian", "baleze"],
-            "start_medooze": {}
+            "start_viewer_launchers": ["vivodebian"],
+            "start_medooze": "vm"
         },
         {
             "require": "medooze_connected",
@@ -21,17 +21,16 @@
             "require": "publisher_connected",
             "actions": ["add_viewer"],
             "add_viewer" : [
-                { "id": "vivodebian","count": 1, "network" : "bitrate" }, 
-                { "id": "vivodebian","count": 1, "network" : "none" }, 
-                { "id": "baleze", "count": 2 }
+                { "id": "vivodebian", "count": 1, "network" : "bitrate", "viewerid": "docker-tc" }, 
+                { "id": "vivodebian", "count": 1, "network" : "none",  "viewerid": "docker-none"}
             ],
             "repeat": 1,
-            "wait": 60000
+            "wait": 90000
         },
         {
             "actions" : ["stop_publisher_launchers", "stop_viewer_launchers", "stop_medooze"],
             "stop_publisher_launchers": ["mac"],
-            "stop_viewer_launchers": ["vivodebian", "baleze"],
+            "stop_viewer_launchers": ["vivodebian"],
             "stop_medooze": {}
         },
         {

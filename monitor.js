@@ -10,6 +10,8 @@ const SystemManager = require('./system_manager.js');
 // Get Update listener function
 const update_listener = require('./lib/receivers.js').update_listener;
 
+const SECONDS = 1000;
+
 class Monitor {
     constructor() {
         // Create system manager
@@ -29,7 +31,12 @@ class Monitor {
         // This is to avoid having 'inf' in the cgroup file
         this.sys_manager.set_max_ram(config.initial_max_ram);
         // Start collecting cgroup stats
-        this.sys_manager.start_collecting(config.time_interval, (time) => update_listener());
+        this.sys_manager.start_collecting(config.time_interval, (time) => {
+            logger.info.time += config.time_interval;
+
+            update_listener();
+            logger.log_info();
+        });
 
         this.medooze_connected_promise.resolve();
     }
@@ -42,8 +49,6 @@ class Monitor {
     }
     
     publisher_connected() {
-        // Start algorithm to reduce memory
-        // const timeout = setInterval(sys_manager.memory_reduction, 10 * SECONDS);
         console.log("publisher_connected");
         this.publisher_connected_promise.resolve();
     }
@@ -51,23 +56,36 @@ class Monitor {
     publisher_disconnected() {
         // Update all listeners
         update_listener();
-    
+    }
+
+    get_medooze_info() {
+        return this.medooze_server;
+    }
+
+    start_naive_memory_reduction() {
+        // Start algorithm to reduce memory
+        this.memory_timeout = setInterval(() => this.sys_manager.memory_reduction(), 10 * SECONDS);
+    }
+
+    stop_naive_memory_reduction() {
         // Clear interval running the memory reduction algo
-        // clearInterval(timeout[Symbol.toPrimitive]());
+        clearInterval(this.memory_timeout[Symbol.toPrimitive]());
     }
     
-    start_medooze() {
-        console.log("Starting medooze");
+    start_medooze(id) {
+        console.log("Starting medooze", id);
 
-        SystemManager.quick_exec(config.medooze_server.exec_start);
+        this.medooze_server = config.medooze_server.find(elt => elt.id === id);
+
+        SystemManager.quick_exec(this.medooze_server.exec_start);
 
         // Create promised to be resolved when medooze connects
         this.medooze_connected_promise = Promise.withResolvers();
     }
     
-    stop_medooze() {
+    stop_medooze(id) {
         if(config.medooze_server.exec_stop) {
-            SystemManager.quick_exec(config.medooze_server.exec_stop);
+            SystemManager.quick_exec(this.medooze_server.exec_stop);
         }
     }
     
@@ -101,6 +119,7 @@ class Monitor {
             // Run a publisher and publish video
             let obj = {
                 "cmd": "run",
+                "host": `${this.medooze_server.host}:${this.medooze_server.port}`,
                 "codec": opt.codec,
                 "scenar": opt.scenar
             };
@@ -121,6 +140,9 @@ class Monitor {
                 "count": opt.count,
                 "network": opt.network ?? "none"
             };
+
+            if(opt.viewerid) obj.viewerid = opt.viewerid;
+            
             launcher.ws.sendUTF(JSON.stringify(obj));
         };
     }
@@ -144,6 +166,9 @@ class Monitor {
 
         // Copy stats.csv to dest path
         FS.cpSync(logger.csv_name, dest_path);
+
+        // Add viewers csv headers
+        logger.sync_headers_sync(dest_path);
     }
 
     exit() {

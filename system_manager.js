@@ -44,9 +44,6 @@ class SystemManager {
         this.fetch_ram_usage();
         this.fetch_ram_free();
         this.fetch_swap_usage();
-    
-        logger.info.time += this.time_interval;
-        logger.log_info();
     }
     
     // Max in MiB
@@ -79,12 +76,12 @@ class SystemManager {
     
         if(logger.info.ram_free > increment) {
             // Set the new max as the current ram usage (removing all free memory)
-            set_max_ram(logger.info.ram_usage);
+            this.set_max_ram(logger.info.ram_usage);
         }
         else {
-            if(info.ram_usage > logger.info.vm_ram_usage) {
+            if(logger.info.ram_usage > logger.info.vm_ram_usage) {
                 // Removing ${increment}MiB of memory from current usage
-                set_max_ram(logger.info.ram_usage - increment);
+                this.set_max_ram(logger.info.ram_usage - increment);
             }
         }
     }

@@ -1,4 +1,6 @@
 
+const FS = require("fs");
+
 const config = require('./config.json');
 // Create csv logger to log all stats
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
@@ -16,6 +18,8 @@ class StatsLogger {
             {id: 'maxram', title: 'MEMORY MAX'},
             {id: 'swap_usage', title: 'SWAP'},
             {id: 'publisher_bitrate', title: 'PUBLISHER BITRATE'},
+            {id: 'publisher_fps', title: 'PUBLISHER FPS'},
+            {id: 'publisher_res', title: 'PUBLISHER RESOLUTION'},
             {id: 'publisher_pc_state', title: 'CONNECTION STATE'},
             {id: 'viewer_count', title: 'VIEWER COUNT'},
             {id: 'vm_ram_usage', title: 'VM MEMORY USAGE'},
@@ -36,19 +40,33 @@ class StatsLogger {
             {id: 'tx_missed', title: 'TX MISSED'},
         ];
 
+        this.headers_init_len = this.headers.length;
+
         this.info = {
+            // Not used, why not remove it ? I'll think about it
             last_modified: undefined,
+
+            // time
             time: 0,
         
-             viewer_count: 0,
+            // all purpose ingo
+            viewer_count: 0,
             is_publisher_connected: false,
             is_medooze_connected: false,
+
+            // publisher stats
             publisher_bitrate: undefined,
+            publisher_fps: undefined,
+            publisher_res: undefined,
             publisher_pc_state: 0,
+
+            // cgroup memory stats
             ram_usage: undefined,
             ram_free: undefined,
             swap_usage: undefined,
             maxram: config.initial_max_ram,
+
+            // vm system stats
             vm_ram_usage: undefined,
             vm_ram_free: undefined,
             vm_cpu_usage: undefined,
@@ -76,6 +94,18 @@ class StatsLogger {
 
     add_header(id, title) {
         this.headers.push({id : id, title : title});
+    }
+
+    sync_headers_sync(file) {
+        // If no viewers added, nothing to do
+        if(this.headers.length === this.headers_init_len) return;
+
+        // Else rewrite csv headers
+        const data =  FS.readFileSync(file, 'utf8');
+        const new_headers = this.headers.map((e) => e.title).join(",");
+        console.log(new_headers);
+        const newData = data.replace(/.*/, new_headers);
+        FS.writeFileSync(file, newData);
     }
 
     create_writer(append) {

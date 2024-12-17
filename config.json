@@ -3,16 +3,33 @@
     "ram_usage_file": "memory.current",
     "ram_total_file": "memory.max",
     "swap_usage_file": "memory.swap.current",
-    "memory_stats_path": "/sys/fs/cgroup/machine.slice/machine-qemu\\x2d1\\x2dmedooze.scope",
+    "memory_stats_path": "/sys/fs/cgroup/machine.slice/machine-qemu\\x2d6\\x2dmedooze.scope",
     "initial_max_ram": 4096,
     "host": "134.59.133.57",
     "port": 9000,
-    "medooze_server": {
-        "host": "134.59.133.76",
-        "port": 8084,
-        "exec_start": "ssh ap@134.59.133.76 \"cd test-server-uptodate; screen -L -S medooze -dm node . 134.59.133.76\"",
-        "exec_stop": "ssh ap@134.59.133.76 \"screen -XS medooze kill\""
-    },
+    "medooze_server": [
+        {
+            "id": "vm",
+            "host": "134.59.133.76",
+            "port": 8084,
+            "exec_start": "ssh ap@134.59.133.76 \"cd test-server-uptodate; screen -L -S medooze -dm node . 134.59.133.76\"",
+            "exec_stop": "ssh ap@134.59.133.76 \"screen -XS medooze kill\""
+        },
+        {
+            "id": "vmservice",
+            "host": "134.59.133.76",
+            "port": 8084,
+            "exec_start": "virsh reboot medooze",
+            "exec_stop": ""
+        },
+        {
+            "id": "host",
+            "host": "134.59.133.57",
+            "port": 8084,
+            "exec_start": "cd /home/tobias/Documents/test-server; screen -L -S medooze -dm /home/tobias/Downloads/node-v20.18.0-linux-x64/bin/node . 134.59.133.57",
+            "exec_stop": "screen -XS medooze kill"
+        }
+    ],
     "publisher_launchers": [
         {
             "id": "mac",
