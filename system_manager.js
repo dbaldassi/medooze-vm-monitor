@@ -40,10 +40,30 @@ class SystemManager {
         logger.info.swap_usage = parseInt(parseInt(data) / MEGA);
     }
     
+    fetch_virsh_info() {
+        exec("virsh dommemstat --domain medooze", (err, output) => {
+            if(err) {
+                console.error(err);
+                return;
+            }
+            
+            let lines = output.split('\n');
+            for(let line of lines) {
+                let splitted = line.split(' ');
+                if(splitted.length === 2) {
+                    logger.info[`virsh_${splitted[0]}`] = splitted[1];
+                    // console.log(logger.info);
+                }
+            }
+        });
+    }
+
     fetch_memory() {
+        // console.log("fetch memory");
         this.fetch_ram_usage();
         this.fetch_ram_free();
         this.fetch_swap_usage();
+        this.fetch_virsh_info();
     }
     
     // Max in MiB
@@ -86,7 +106,21 @@ class SystemManager {
         }
     }
 
-     static quick_exec(cmd) {
+    memory_reduction_ballon() {
+        let new_vm_size = 0;
+
+        const increment = 0;
+
+        if(logger.info.virsh_unused < logger.info.virsh_usable * 1.02) {
+            new_vm_size = logger.info.virsh_actual - parseInt(logger.info.virsh_unused / 10);
+        } else {
+            new_vm_size = logger.info.virsh_actual - increment;
+        }
+
+        SystemManager.quick_exec(`virsh setmem --domain medooze --size ${new_vm_size}K --current`);
+    }
+
+    static quick_exec(cmd) {
         exec(cmd, (err, output) => {
             if(err) console.error(err);
             else console.log(output);

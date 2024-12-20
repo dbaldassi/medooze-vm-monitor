@@ -1,5 +1,5 @@
 {
-    "name": "perf-simulcast-vp8-L1T1-vm-double",
+    "name": "ballooning-10-simulcast-vp8",
     "steps": [
         {
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
@@ -10,20 +10,29 @@
         {
             "require": "medooze_connected",
             "actions": ["add_publisher"],
-            "add_publisher" : [{ "id": "mac", "scenar" : "simulcast" }],
+            "add_publisher" : [{ "id": "mac",  "codec": "vp8", "scenar": "simulcast" }],
             "repeat" : 1
         },
         {
             "require": "publisher_connected",
             "actions": ["add_viewer"],
-            "add_viewer" : [{ "id": "baleze", "count": 1 }],
-            "repeat": 120,
-            "wait": 5000
+            "add_viewer" : [ { "id": "baleze", "count": 10 } ],
+            "repeat": 1
         },
         {
-            "actions":[],
-            "repeat":1,
-            "wait" : 20000
+            "actions": ["start_balloon_reduction"],
+            "start_balloon_reduction": 5,
+            "repeat": 1
+        },
+        {
+            "actions": [],
+            "wait": 300000,
+            "repeat": 1
+        },
+        {
+            "actions": ["stop_balloon_reduction"],
+            "stop_balloon_reduction":{},
+            "repeat": 1
         },
         {
             "actions" : ["stop_publisher_launchers", "stop_viewer_launchers", "stop_medooze"],

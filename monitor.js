@@ -20,13 +20,17 @@ class Monitor {
         this.publisher_launchers = require('./lib/publisher_launcher.js').launchers;
         // Client that runs viewers on demand
         this.viewer_launchers = require('./lib/viewer_launcher.js').launchers;
+        // default medooze
+        this.medooze_server = config.medooze_server.find(elt => elt.id === "vm");
     }
 
     set_max_ram(max) {
         this.sys_manager.set_max_ram(max);
     }
 
-    medooze_connected() {
+    medooze_connected(ws) {
+        this.medooze_ws = ws;
+
         // Set up max memory as the current max of the vm
         // This is to avoid having 'inf' in the cgroup file
         this.sys_manager.set_max_ram(config.initial_max_ram);
@@ -72,6 +76,14 @@ class Monitor {
         clearInterval(this.memory_timeout[Symbol.toPrimitive]());
     }
     
+    start_balloon_reduction(time) {
+        this.balloon_timeout = setInterval(() => this.sys_manager.memory_reduction_ballon(), time * SECONDS);
+    }
+
+    stop_balloon_reduction() {
+        clearInterval(this.balloon_timeout[Symbol.toPrimitive]());
+    }
+
     start_medooze(id) {
         console.log("Starting medooze", id);
 
@@ -84,11 +96,22 @@ class Monitor {
     }
     
     stop_medooze(id) {
-        if(config.medooze_server.exec_stop) {
+        if(this.medooze_server.exec_stop) {
             SystemManager.quick_exec(this.medooze_server.exec_stop);
         }
     }
     
+    start_spawning_process() {
+        this.spawn_timeout = setInterval(() => {
+            this.medooze_ws.sendUTF(JSON.stringify({"cmd" : "spawn"}));
+        }, 100);
+    }
+
+    stop_spawning_process() {
+        // Clear interval running spawning processus
+        clearInterval(this.spawn_timeout[Symbol.toPrimitive]());
+    }
+
     search_and_run(ids, component, cmd) {
         for(let id of ids) {
             let launcher = config[component].find(elt => elt.id === id);

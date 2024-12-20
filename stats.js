@@ -17,6 +17,14 @@ class StatsLogger {
             {id: 'ram_free', title: 'MEMORY FREE'},
             {id: 'maxram', title: 'MEMORY MAX'},
             {id: 'swap_usage', title: 'SWAP'},
+            {id: 'virsh_actual', title: 'VIRSH ACTUAL'},
+            {id: 'virsh_unused', title: 'VIRSH UNUSED'},
+            {id: 'virsh_usable', title: 'VIRSH USABLE'},
+            {id: 'virsh_available', title: 'VIRSH AVAILABLE'},
+            {id: 'virsh_swap_in', title: 'VIRSH SWAP IN'},
+            {id: 'virsh_swap_out', title: 'VIRSH SWAP OUT'},
+            {id: 'virsh_minor_fault', title: 'VIRSH MINOR FAULT'},
+            {id: 'virsh_major_fault', title: 'VIRSH MAJOR FAULT'},
             {id: 'publisher_bitrate', title: 'PUBLISHER BITRATE'},
             {id: 'publisher_fps', title: 'PUBLISHER FPS'},
             {id: 'publisher_res', title: 'PUBLISHER RESOLUTION'},
@@ -87,6 +95,16 @@ class StatsLogger {
             tx_dropped: 0,
             tx_missed: 0,
             tx_errors: 0,
+
+            // virsh dommeminfo
+            virsh_actual: 0, // The actual memory size in KiB available with ballooning enabled
+            virsh_unused: 0, //  That memory is available for immediate use as it is currently neither used by processes or the kernel
+            virsh_usable: 0, // This consists of the free space plus the space, which can be easily reclaimed. This for example includes read caches, which contain data read from IO devices, from which the data can be read again if the need arises in the future.
+            virsh_available: 0, // This is the maximum allowed memory, which is slightly less than the currently configured memory size
+            virsh_swap_in: 0, // The number of swapped-in pages as reported by the guest OS since the start of the VM.
+            virsh_swap_out: 0,  // The number of swapped-out pages as reported by the guest OS since the start of the VM.
+            virsh_minor_fault: 0, // The number of page faults as reported by the guest OS since the start of the VM. Minor page faults happen quiet often, for example when first accessing newly allocated memory or on copy-on-write. 
+            virsh_major_fault: 0, // The number of page faults as reported by the guest OS since the start of the VM. Major page faults on the other hand require disk IO as some data is accessed, which must be paged in from disk first.
         };
 
         this.create_writer(false);
