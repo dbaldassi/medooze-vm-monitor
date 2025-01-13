@@ -75,6 +75,16 @@ class Monitor {
         // Clear interval running the memory reduction algo
         clearInterval(this.memory_timeout[Symbol.toPrimitive]());
     }
+
+    start_reclaim_reduction() {
+        // Start algorithm to reduce memory
+        this.reclaim_timeout = setInterval(() => this.sys_manager.memory_reclaim(), 10 * SECONDS);
+    }
+
+    stop_reclaim_reduction() {
+        // Clear interval running the memory reduction algo
+        clearInterval(this.reclaim_timeout[Symbol.toPrimitive]());
+    }
     
     start_balloon_reduction(time) {
         this.balloon_timeout = setInterval(() => this.sys_manager.memory_reduction_ballon(), time * SECONDS);
@@ -102,14 +112,28 @@ class Monitor {
     }
     
     start_spawning_process() {
+        this.process_promise = Promise.withResolvers();
+        this.num_process = 0;
+
         this.spawn_timeout = setInterval(() => {
-            this.medooze_ws.sendUTF(JSON.stringify({"cmd" : "spawn"}));
-        }, 100);
+            console.log("ram free ", logger.info.ram_free, logger.info.vm_ram_free);
+            if(!logger.info.vm_ram_free) return;
+            if(Math.min(logger.info.ram_free, logger.info.vm_ram_free) > 300) {
+                this.medooze_ws.sendUTF(JSON.stringify({"cmd" : "spawn"}));
+                this.num_process += 1;
+            } else this.stop_spawning_process();
+        }, 5000);
+    }
+
+    kill_process(percent) {
+        this.medooze_ws.sendUTF(JSON.stringify({ "cmd": "kill", count : parseInt(this.num_process * percent / 100) }));
     }
 
     stop_spawning_process() {
         // Clear interval running spawning processus
         clearInterval(this.spawn_timeout[Symbol.toPrimitive]());
+
+        if(this.process_promise) this.process_promise.resolve();
     }
 
     search_and_run(ids, component, cmd) {
@@ -133,6 +157,11 @@ class Monitor {
     
     stop_publisher_launchers(ids) {
         this.search_and_run(ids, "publisher_launchers", "exec_stop");
+    }
+
+    reclaim() {
+        let mem = logger.info.ram_usage - logger.info.vm_ram_usage;
+        if(mem > 0) this.sys_manager.reclaim_memory(mem);
     }
 
     add_publisher(opts) {
@@ -215,6 +244,7 @@ class Monitor {
                 }
                 // Wait for a publisher to be connected
                 else if(step.require === "publisher_connected") await this.publisher_connected_promise.promise;
+                else if(step.require === "memory_filled") await this.process_promise.promise;
             }
 
             // Number of times to repeat this step

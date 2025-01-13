@@ -8,5 +8,7 @@ cd "$(find /sys/fs/cgroup/machine.slice/ -name "*medooze.scope")"
 
 sudo su -c "chmod 664 memory.max"
 sudo su -c "chgrp tobias memory.max"
+sudo su -c "chmod 664 memory.reclaim"
+sudo su -c "chgrp tobias memory.reclaim"
 
 exit

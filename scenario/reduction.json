@@ -1,5 +1,5 @@
 {
-    "name": "naive-reduction-simulcast-vp8",
+    "name": "reclaim-reduction-simulcast-vp8",
     "steps": [
         {
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],

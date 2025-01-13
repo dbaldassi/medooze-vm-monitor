@@ -2,6 +2,7 @@
 const FS = require("fs");
 
 const config = require('./config.json');
+const { title } = require("process");
 // Create csv logger to log all stats
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 
@@ -17,6 +18,10 @@ class StatsLogger {
             {id: 'ram_free', title: 'MEMORY FREE'},
             {id: 'maxram', title: 'MEMORY MAX'},
             {id: 'swap_usage', title: 'SWAP'},
+            {id: 'pressure_avg10', title: 'MEMORY PRESSURE AVG10'},
+            {id: 'pressure_avg60', title: 'MEMORY PRESSURE AVG60'},
+            {id: 'pressure_avg300', title: 'MEMORY PRESSURE AVG300'},
+            {id: 'pressure_total', title: 'MEMORY PRESSURE TOTAL'},
             {id: 'virsh_actual', title: 'VIRSH ACTUAL'},
             {id: 'virsh_unused', title: 'VIRSH UNUSED'},
             {id: 'virsh_usable', title: 'VIRSH USABLE'},
@@ -28,6 +33,7 @@ class StatsLogger {
             {id: 'publisher_bitrate', title: 'PUBLISHER BITRATE'},
             {id: 'publisher_fps', title: 'PUBLISHER FPS'},
             {id: 'publisher_res', title: 'PUBLISHER RESOLUTION'},
+            {id: 'publisher_rtt', title: 'PUBLISHER RTT'},
             {id: 'publisher_pc_state', title: 'CONNECTION STATE'},
             {id: 'viewer_count', title: 'VIEWER COUNT'},
             {id: 'vm_ram_usage', title: 'VM MEMORY USAGE'},
@@ -66,14 +72,19 @@ class StatsLogger {
             publisher_bitrate: undefined,
             publisher_fps: undefined,
             publisher_res: undefined,
-            publisher_pc_state: 0,
+            publisher_pc_state: undefined,
+            publisher_rtt: undefined,
 
             // cgroup memory stats
             ram_usage: undefined,
             ram_free: undefined,
             swap_usage: undefined,
             maxram: config.initial_max_ram,
-
+            pressure_avg10: 0,
+            pressure_avg60: 0,
+            pressure_avg300: 0,
+            pressure_total: 0,
+            
             // vm system stats
             vm_ram_usage: undefined,
             vm_ram_free: undefined,

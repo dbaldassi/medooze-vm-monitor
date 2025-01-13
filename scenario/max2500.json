@@ -5,25 +5,18 @@
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
             "start_publisher_launchers": ["mac"],
             "start_viewer_launchers": ["baleze"],
-            "start_medooze": {}
+            "start_medooze": "vm"
         },
         {
             "require": "medooze_connected",
             "actions": ["add_publisher"],
-            "add_publisher" : [{
-                "id": "mac",
-                "codec": "vp8",
-                "scenar": "max2500"
-            }],
+            "add_publisher" : [{ "id": "mac", "codec": "vp8", "scenar": "max2500" }],
             "repeat" : 1
         },
         {
             "require": "publisher_connected",
             "actions": ["add_viewer"],
-            "add_viewer" : [{
-                "id": "baleze",
-                "count": 1
-            }],
+            "add_viewer" : [{ "id": "baleze", "count": 1 }],
             "repeat": 1,
             "wait": 30000
         },
