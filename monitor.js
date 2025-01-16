@@ -66,9 +66,9 @@ class Monitor {
         return this.medooze_server;
     }
 
-    start_naive_memory_reduction() {
+    start_naive_memory_reduction(time) {
         // Start algorithm to reduce memory
-        this.memory_timeout = setInterval(() => this.sys_manager.memory_reduction(), 10 * SECONDS);
+        this.memory_timeout = setInterval(() => this.sys_manager.memory_reduction(), time * SECONDS);
     }
 
     stop_naive_memory_reduction() {
@@ -76,9 +76,9 @@ class Monitor {
         clearInterval(this.memory_timeout[Symbol.toPrimitive]());
     }
 
-    start_reclaim_reduction() {
+    start_reclaim_reduction(time) {
         // Start algorithm to reduce memory
-        this.reclaim_timeout = setInterval(() => this.sys_manager.memory_reclaim(), 10 * SECONDS);
+        this.reclaim_timeout = setInterval(() => this.sys_manager.memory_reclaim(), time * SECONDS);
     }
 
     stop_reclaim_reduction() {
@@ -199,7 +199,7 @@ class Monitor {
         };
     }
 
-    save() {
+    save(opt) {
         // Get dest dir
         const dest_dir = Path.join('results', this.exp_name);
 
@@ -221,6 +221,14 @@ class Monitor {
 
         // Add viewers csv headers
         logger.sync_headers_sync(dest_path);
+
+        if(opt === "average_viewer") {
+            console.log("Run average_viewer.py");
+            // Run average viewer script
+            SystemManager.quick_exec_sync(`../../scripts/average_viewer.py ${name}`, { cwd : dest_dir });
+            // remove original file
+            FS.rmSync(dest_path);
+        }
     }
 
     exit() {

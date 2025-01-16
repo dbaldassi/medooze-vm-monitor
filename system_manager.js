@@ -2,7 +2,7 @@ const Path     = require("path");
 const FS       = require("fs");
 const Inotify  = require("node-inotify").Inotify;
 
-const { exec } = require('node:child_process')
+const { exec, execSync } = require('node:child_process')
 
 // Get logger
 const logger = require('./stats.js');
@@ -154,49 +154,42 @@ class SystemManager {
     memory_reduction() {
         const increment = 100;
     
-        if(logger.info.ram_free > increment) {
-            // Set the new max as the current ram usage (removing all free memory)
-            this.set_max_ram(Math.max(logger.info.ram_usage, logger.info.vm_ram_usage));
-            // this.reclaim_memory(increment);
-        }
-        else {
-            if(logger.info.ram_usage >= (logger.info.vm_ram_usage + increment)) {
-                // Removing ${increment}MiB of memory from current usage
-                this.set_max_ram(logger.info.ram_usage - increment);
-            }
+        console.log(logger.info.ram_usage, ((logger.info.virsh_available - logger.info.virsh_usable) / 1024 + 2 * increment));
+        if(logger.info.ram_usage > ((logger.info.virsh_available - logger.info.virsh_usable) / 1024 + 2 * increment)) {
+            this.set_max_ram(logger.info.maxram - increment);
         }
     }
 
     memory_reclaim() {
-        const increment = 100;
+        const increment = 100; // 100 MiB
     
-        if(logger.info.ram_free > increment) {
+        console.log(logger.info.ram_usage, ((logger.info.virsh_available - logger.info.virsh_usable) / 1024 + 2 * increment));
+        if(logger.info.ram_usage > ((logger.info.virsh_available - logger.info.virsh_usable) / 1024 + 2 * increment)) {
             this.reclaim_memory(increment);
-        }
-        else {
-            if(logger.info.ram_usage >= (logger.info.vm_ram_usage + increment)) {
-                // Removing ${increment}MiB of memory from current usage
-                // this.set_max_ram(logger.info.ram_usage - increment);
-            }
         }
     }
 
     memory_reduction_ballon() {
-        let new_vm_size = 0;
+        const increment = 100 * 1024; // 100M MiB
 
-        const increment = 0;
+        console.log(logger.info.virsh_usable / 1024, logger.info.virsh_available / 1024, logger.info.virsh_actual / 1024)
 
-        if(logger.info.virsh_unused < logger.info.virsh_usable * 1.02) {
-            new_vm_size = logger.info.virsh_actual - parseInt(logger.info.virsh_unused / 10);
-        } else {
-            new_vm_size = logger.info.virsh_actual - increment;
+        if(logger.info.virsh_usable > 2 * increment /*&& (logger.info.virsh_available > logger.info.virsh_usable + 2 * increment)*/) {
+            let new_vm_size = logger.info.virsh_actual - increment;
+            SystemManager.quick_exec(`virsh setmem --domain medooze --size ${new_vm_size}K --current`);
         }
 
-        SystemManager.quick_exec(`virsh setmem --domain medooze --size ${new_vm_size}K --current`);
     }
 
-    static quick_exec(cmd) {
-        exec(cmd, (err, output) => {
+    static quick_exec(cmd, opts) {
+        exec(cmd, opts, (err, output) => {
+            if(err) console.error(err);
+            else console.log(output);
+        });
+    }
+
+    static quick_exec_sync(cmd, opts) {
+        execSync(cmd, opts, (err, output) => {
             if(err) console.error(err);
             else console.log(output);
         });
