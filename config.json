@@ -7,7 +7,7 @@
     "memory_event_file": "memory.events.local",
     "memory_pressure_file": "memory.pressure",
     "memory_reclaim_file": "memory.reclaim",
-    "memory_stats_path": "/sys/fs/cgroup/machine.slice/machine-qemu\\x2d37\\x2dmedooze.scope",
+    "memory_stats_path": "/sys/fs/cgroup/machine.slice/machine-qemu\\x2d5\\x2dmedooze.scope",
     "initial_max_ram": 4096,
     "host": "134.59.133.57",
     "port": 9000,
@@ -23,7 +23,7 @@
             "id": "vmservice",
             "host": "134.59.133.76",
             "port": 8084,
-            "exec_start": "virsh reboot medooze",
+            "exec_start": "",
             "exec_stop": ""
         },
         {

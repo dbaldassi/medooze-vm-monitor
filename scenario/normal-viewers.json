@@ -1,0 +1,57 @@
+{
+    "name": "normal-viewers{{num_viewers:10}}-after-simulcast-vp8",
+    "steps": [
+        {
+            "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
+            "start_publisher_launchers": ["mac"],
+            "start_viewer_launchers": ["baleze"],
+            "start_medooze": "vmservice"
+        },
+        {
+            "require": "medooze_connected",
+            "actions": ["add_publisher"],
+            "add_publisher" : [{ "id": "mac",  "codec": "vp8", "scenar": "simulcast" }],
+            "repeat" : 1
+        },
+        {
+            "require": "publisher_connected",
+            "actions": ["add_viewer"],
+            "add_viewer" : [ { "id": "baleze", "count": 10 } ],
+            "repeat": 1
+        },
+        {
+            "actions": [],
+            "wait": 10000,
+            "repeat": 1
+        },
+        {
+            "actions": [],
+            "wait": 200000,
+            "repeat": 1
+        },
+        {
+            "actions": ["add_viewer"],
+            "add_viewer" : [ { "id": "baleze", "count": "{{num_viewers:10}}" } ],
+            "repeat": 1
+        },
+        {
+            "actions": [],
+            "wait": 200000,
+            "repeat": 1
+        },
+        {
+            "actions" : ["stop_publisher_launchers", "stop_viewer_launchers", "stop_medooze"],
+            "stop_publisher_launchers": ["mac"],
+            "stop_viewer_launchers": ["baleze"],
+            "stop_medooze": {}
+        },
+        {
+            "actions" : [ "save" ],
+            "save": "average_viewer"
+        },
+        {
+            "actions" : ["exit"],
+            "exit" : {}
+        }
+    ]
+}

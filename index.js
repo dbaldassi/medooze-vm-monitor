@@ -3,7 +3,8 @@ const Express           = require("express");
 const CORS              = require("cors");
 const FS                = require("fs");
 const { createServer }  = require("https");
-const WebSocketServer = require ("websocket").server;
+const parse             = require('json-templates');
+const WebSocketServer   = require ("websocket").server;
 
 // Get config
 const config = require('./config.json');
@@ -60,13 +61,29 @@ wss.on("request", (request) => {
 });
 
 // Check if scenario provided
-if (process.argv.length === 3) {
+if (process.argv.length >= 3) {
 	// Get file name
 	const scenar_name = process.argv[2];
 	const scenar = require(`./scenario/${scenar_name}.json`);
+	
+	const template = parse(scenar);
+
+	let args = process.argv.slice(3);
+	const obj = {};
+	console.log(args, template.parameters);
+
+	for(let arg of args) {
+		let split = arg.split(":");
+
+		let param = template.parameters.find(e => e.key === split[0]);
+	
+		if(param) obj[`${split[0]}`] = Number.isNaN(parseInt(split[1])) ? split[1] : parseInt(split[1]);
+	}
+
+    console.log(JSON.stringify(template(obj)));
 
 	// RUN !!
-	monitor.run(scenar);
+	monitor.run(template(obj));
 }
 else {
 	// Get default scenario (max2500, don't start launcher and medooze)

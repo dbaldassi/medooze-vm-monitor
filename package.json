@@ -3,6 +3,8 @@
     "cors": "^2.8.5",
     "csv-writer": "^1.6.0",
     "express": "^4.21.0",
+    "json-template": "^0.1.0",
+    "json-templates": "^5.1.0",
     "node-inotify": "^1.0.0",
     "websocket": "^1.0.35",
     "ws": "^8.18.0"

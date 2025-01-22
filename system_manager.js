@@ -153,8 +153,12 @@ class SystemManager {
 
     memory_reduction() {
         const increment = 100;
-    
+        const threshold = increment / 2;
+
         console.log(logger.info.ram_usage, ((logger.info.virsh_available - logger.info.virsh_usable) / 1024 + 2 * increment));
+        if(logger.info.swap_usage == 0 && logger.info.ram_free > threshold) {
+            this.set_max_ram(logger.info.ram_usage + increment);
+        }
         if(logger.info.ram_usage > ((logger.info.virsh_available - logger.info.virsh_usable) / 1024 + 2 * increment)) {
             this.set_max_ram(logger.info.maxram - increment);
         }
@@ -171,10 +175,11 @@ class SystemManager {
 
     memory_reduction_ballon() {
         const increment = 100 * 1024; // 100M MiB
+        const threshold = increment / 2;
 
         console.log(logger.info.virsh_usable / 1024, logger.info.virsh_available / 1024, logger.info.virsh_actual / 1024)
 
-        if(logger.info.virsh_usable > 2 * increment /*&& (logger.info.virsh_available > logger.info.virsh_usable + 2 * increment)*/) {
+        if(logger.info.virsh_usable > threshold /*&& (logger.info.virsh_available > logger.info.virsh_usable + 2 * increment)*/) {
             let new_vm_size = logger.info.virsh_actual - increment;
             SystemManager.quick_exec(`virsh setmem --domain medooze --size ${new_vm_size}K --current`);
         }

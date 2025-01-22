@@ -99,7 +99,9 @@ class Monitor {
 
         this.medooze_server = config.medooze_server.find(elt => elt.id === id);
 
-        SystemManager.quick_exec(this.medooze_server.exec_start);
+        if(this.medooze_server.exec_start) {
+            SystemManager.quick_exec(this.medooze_server.exec_start);
+        }
 
         // Create promised to be resolved when medooze connects
         this.medooze_connected_promise = Promise.withResolvers();
