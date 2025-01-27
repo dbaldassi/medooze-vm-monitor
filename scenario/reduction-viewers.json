@@ -1,5 +1,5 @@
 {
-    "name": "cgroups-max-reduction-lowthresh-viewers{{num_viewers:10}}-after-simulcast-vp8",
+    "name": "cgroups-max-reduction-viewers{{num_viewers:10}}-increase-simulcast-vp8",
     "steps": [
         {
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],

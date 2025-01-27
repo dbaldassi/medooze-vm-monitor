@@ -28,6 +28,8 @@ class SystemManager {
         this.memory_event_path = Path.join(config.memory_stats_path, config.memory_event_file);
         this.memory_pressure_path = Path.join(config.memory_stats_path, config.memory_pressure_file);
         this.memory_reclaim_path = Path.join(config.memory_stats_path, config.memory_reclaim_file);
+
+        this.swappiness = 0;
         
         // inotify.addWatch({ path: this.swap_event_path, watch_for: Inotify.IN_MODIFY, callback: event => this.swapevent_callback(event) });
         // inotify.addWatch({ path: this.memory_event_path, watch_for: Inotify.IN_MODIFY, callback: event => this.memoryevents_callback(event) });
@@ -126,14 +128,22 @@ class SystemManager {
         FS.writeFileSync(this.ram_total_path, String(max * MEGA));
     }
 
-    reclaim_memory(mem) {
-        console.log("Reclaiming", mem);
-
+    reclaim_memory(mem, swappiness) {
         try {
-            FS.writeFileSync(this.memory_reclaim_path, `${mem*1024*1024}`);
+            let cmd = `${mem*1024*1024}`
+            if(swappiness !== undefined) {
+                cmd = `${cmd} swappiness=${swappiness}`;
+            }
+
+            console.log("Reclaiming", mem);
+
+            FS.writeFileSync(this.memory_reclaim_path, cmd);
         } catch(error) {
             console.error(error);
+            return false
         }
+
+        return true
     }
 
     start_collecting(interval, callback) {
@@ -154,22 +164,35 @@ class SystemManager {
     memory_reduction() {
         const increment = 100;
         const threshold = increment / 2;
+        const vm_mem = (logger.info.virsh_available - logger.info.virsh_usable) / 1024;
 
-        console.log(logger.info.ram_usage, ((logger.info.virsh_available - logger.info.virsh_usable) / 1024 + 2 * increment));
+        console.log(logger.info.ram_usage, (vm_mem + 2 * increment));
         if(logger.info.swap_usage == 0 && logger.info.ram_free > threshold) {
-            this.set_max_ram(logger.info.ram_usage + increment);
+            this.set_max_ram(logger.info.ram_usage + increment); // remove all free memory at the beginning
         }
-        if(logger.info.ram_usage > ((logger.info.virsh_available - logger.info.virsh_usable) / 1024 + 2 * increment)) {
-            this.set_max_ram(logger.info.maxram - increment);
+        else if(logger.info.ram_usage > vm_mem + threshold) {
+            this.set_max_ram(logger.info.maxram - increment); // Progressively decrease max memory
+        }
+        else if(logger.info.ram_usage <  (vm_mem + threshold / 10)) {
+            this.set_max_ram(logger.info.maxram + 2 * increment);
         }
     }
 
     memory_reclaim() {
         const increment = 100; // 100 MiB
+        const threshold = increment / 2;
+        const vm_mem = (logger.info.virsh_available - logger.info.virsh_usable) / 1024;
     
-        console.log(logger.info.ram_usage, ((logger.info.virsh_available - logger.info.virsh_usable) / 1024 + 2 * increment));
-        if(logger.info.ram_usage > ((logger.info.virsh_available - logger.info.virsh_usable) / 1024 + 2 * increment)) {
-            this.reclaim_memory(increment);
+        console.log(logger.info.ram_usage, vm_mem + threshold);
+        if(logger.info.ram_usage > vm_mem + threshold) {
+            let ret = false;
+            while(!ret && this.swappiness < 100) {
+                ret = this.reclaim_memory(increment, this.swappiness);
+                if(!ret) {
+                    this.swappiness += 10;
+                    console.log(`Swappiness = ${this.swappiness}`);
+                }
+            }
         }
     }
 
@@ -179,11 +202,14 @@ class SystemManager {
 
         console.log(logger.info.virsh_usable / 1024, logger.info.virsh_available / 1024, logger.info.virsh_actual / 1024)
 
-        if(logger.info.virsh_usable > threshold /*&& (logger.info.virsh_available > logger.info.virsh_usable + 2 * increment)*/) {
+        if(logger.info.virsh_usable > threshold) {
             let new_vm_size = logger.info.virsh_actual - increment;
             SystemManager.quick_exec(`virsh setmem --domain medooze --size ${new_vm_size}K --current`);
         }
-
+        else if(logger.info.virsh_usable < threshold / 10) {
+            let new_vm_size = logger.info.virsh_actual + 2 * increment; // deflate
+            SystemManager.quick_exec(`virsh setmem --domain medooze --size ${new_vm_size}K --current`);
+        }
     }
 
     static quick_exec(cmd, opts) {

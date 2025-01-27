@@ -1,5 +1,5 @@
 {
-    "name": "cgroups-reclaim-reduction-simulcast-vp8",
+    "name": "cgroups-reclaim-swappiness2-simulcast-vp8",
     "steps": [
         {
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
