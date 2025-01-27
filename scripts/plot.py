@@ -1,0 +1,156 @@
+#!/usr/bin/python3
+
+import csv
+import sys
+import os
+from matplotlib import pyplot as plt
+
+plt.rc('font', size=18)          # controls default text sizes
+plt.rc('axes', titlesize=22)     # fontsize of the axes title
+plt.rc('axes', labelsize=22)    # fontsize of the x and y labels
+# plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+# plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=20)    # legend fontsize
+# plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+
+
+INDEX=0
+COLOR=1
+PROCESS=2
+LABEL=3
+
+# plt.rcParams["figure.figsize"] = (20,3)
+
+headers = { 'TIME': [0, None, lambda x : float(x) / 1000., "time (s)" ],
+'MEMORY_USED':[1, 'b', lambda x : float(x), "Memory (MiB)" ],
+'MEMORY_FREE':[2, 'm', lambda x : float(x), "Memory (MiB)" ],
+'MEMORY_MAX':[3, 'k', lambda x : float(x), "Memory (MiB)" ],
+'SWAP':[4, 'g', lambda x : float(x), "Memory (MiB)" ],
+'MEMORY_PRESSURE_AVG10':[5, 'darkRed', lambda x : float(x), "Pressure Stall Information (PSI)"],
+'MEMORY_PRESSURE_AVG60':[6],
+'MEMORY_PRESSURE_AVG300':[7],
+'MEMORY_PRESSURE_TOTAL':[8],
+'VIRSH_ACTUAL':[9, 'k', lambda x : float(x) / 1024., "Memory (MiB)" ],
+'VIRSH_UNUSED':[10, 'tomato', lambda x : float(x) / 1024., "Memory (MiB)" ],
+'VIRSH_USABLE':[11, 'm', lambda x : float(x) / 1024., "Memory (MiB)" ],
+'VIRSH_AVAILABLE':[12, 'r', lambda x : float(x) / 1024., "Memory (MiB)" ],
+'VIRSH_SWAP_IN':[13, '', lambda x : float(x) / 1024., "Memory (MiB)" ],
+'VIRSH_SWAP_OUT':[14, 'g', lambda x : float(x) / 1024., "Memory (MiB)" ],
+'VIRSH_MINOR_FAULT':[15],
+'VIRSH_MAJOR_FAULT':[16],
+'PUBLISHER_BITRATE':[17, 'b', lambda x : float(x), "Bitrate (kbps)"],
+'PUBLISHER_FPS':[18, 'r', lambda x : float(x), "FPS" ],
+'PUBLISHER_RES':[19],
+'PUBLISHER_RTT':[20, 'r', lambda x : float(x), "Delay (ms)"],
+'CONNECTION_STATE':[21],
+'VIEWER_COUNT':[22, 'y', lambda x : float(x), "Viewer Count"],
+'VM_MEMORY_USAGE':[23, 'midnightBlue', lambda x : float(x), "Memory (MiB)"],
+'VM_MEMORY_FREE':[24, 'tomato', lambda x : float(x), "Memory (MiB)" ],
+'VM_CPU_USAGE':[25, 'b', lambda x : float(x) * 100, "CPU (%)"],
+'MEDOOZE_INCOMING_LOST':[26],
+'MEDOOZE_INCOMING_DROP':[27],
+'MEDOOZE_INCOMING_BITRATE':[28],
+'MEDOOZE_INCOMING_NACK':[29],
+'MEDOOZE_INCOMING_PLI':[30],
+'RX_PACKET':[31],
+'RX_DROPPED':[32],
+'RX_ERRORS':[33],
+'RX_MISSED':[34],
+'TX_PACKET':[35],
+'TX_DROPPED':[36],
+'TX_ERRORS':[37],
+'TX_MISSED':[38],
+'VIEWER_TARGET':[39, 'k', lambda x : float(x), "Bitrate (kbps)"],
+'VIEWER_BITRATE':[40, 'g', lambda x : float(x), "Bitrate (kbps)"],
+'VIEWER_RTT':[41],
+'VIEWER_DELAY':[42, 'm', lambda x : float(x), "Delay (ms)"],
+'VIEWER_FPS':[43, 'm', lambda x : float(x), "FPS"],
+# 'VIEWER_RES':[44],
+'VIEWER_RID_H':[44, 'g', lambda x : float(x), "RID Count"],
+'VIEWER_RID_M':[45, 'b', lambda x : float(x), "RID Count"],
+'VIEWER_RID_L':[46, 'r', lambda x : float(x), "RID Count"],
+}
+
+def check_args(axis):
+    for name in axis:
+        if not name in headers:
+            print(name)
+            return False
+    return True
+
+
+def open_csv(filename):
+     with open(filename, 'r') as csv_file:
+        lines = [ line for line in csv.reader(csv_file, delimiter=',') ] # read file
+        lines.pop(0) # remove headers
+        return lines
+     
+     return None
+     
+
+if __name__ == "__main__":
+    x_axis = None
+    y_axis = []
+    y2_axis = []
+
+    if len(sys.argv) >= 4:
+        filename = sys.argv[1]
+
+        x_axis = sys.argv[2]
+        y_axis = sys.argv[3].split(',')
+    
+        if len(sys.argv) == 5:
+            y2_axis = sys.argv[4].split(',')
+    else:
+        print("Need at least 3 params to plot")
+        exit(1)
+
+    print(x_axis, y_axis, y2_axis)
+
+    is_valid = check_args([x_axis, *y_axis, *y2_axis])
+
+    if not is_valid:
+        print("You specified a column not valid")
+        exit(1)
+
+    lines = open_csv(filename)
+
+    px = 1 / plt.rcParams['figure.dpi']  # pixel in inches
+
+    fig,ax = plt.subplots(figsize=(1920*px, 960*px)) # 2:1 ratio
+
+    ax.set_xlabel(headers[x_axis][LABEL])
+    ax.set_ylabel(headers[y_axis[0]][LABEL])
+
+    x_axis_values = [ headers[x_axis][PROCESS](line[headers[x_axis][INDEX]]) for line in lines ]
+
+    for y in y_axis:
+        y_axis_value = [ headers[y][PROCESS](line[headers[y][INDEX]]) for line in lines ]
+        ax.plot(x_axis_values, y_axis_value, color=headers[y][COLOR], label=y, linewidth=4)
+
+    if len(y2_axis) > 0:
+        bx = ax.twinx()
+        bx.set_ylabel(headers[y2_axis[0]][LABEL])
+
+        for y in y2_axis:
+            y_axis_value = [ headers[y][PROCESS](line[headers[y][INDEX]]) for line in lines ]
+            bx.plot(x_axis_values, y_axis_value, color=headers[y][COLOR], label=y, linestyle='--', linewidth=4)
+
+        # bx.legend()
+
+
+    # ax.legend()
+    ax.grid()
+    fig.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax.transAxes)
+
+    dest_path = filename.split('/')
+
+    if len(y2_axis):
+        dest_path[-1] = "plot_{}x{}x{}.png".format(x_axis, y_axis[0],y2_axis[0])
+    else:
+        dest_path[-1] = "plot_{}x{}.png".format(x_axis, y_axis[0])
+
+    plt.savefig("/".join(dest_path))
+
+
+    
