@@ -18,6 +18,8 @@ class StatsLogger {
             {id: 'ram_free', title: 'MEMORY FREE'},
             {id: 'maxram', title: 'MEMORY MAX'},
             {id: 'swap_usage', title: 'SWAP'},
+            {id: 'cgroup_cache', title: 'CGROUP CACHE FILES'},
+            {id: 'cgroup_swappable', title: 'CGROUP SWAPPABLE'},
             {id: 'pressure_avg10', title: 'MEMORY PRESSURE AVG10'},
             {id: 'pressure_avg60', title: 'MEMORY PRESSURE AVG60'},
             {id: 'pressure_avg300', title: 'MEMORY PRESSURE AVG300'},

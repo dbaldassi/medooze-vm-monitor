@@ -28,8 +28,10 @@ class SystemManager {
         this.memory_event_path = Path.join(config.memory_stats_path, config.memory_event_file);
         this.memory_pressure_path = Path.join(config.memory_stats_path, config.memory_pressure_file);
         this.memory_reclaim_path = Path.join(config.memory_stats_path, config.memory_reclaim_file);
+        this.memory_stat_file = Path.join(config.memory_stats_path, config.memory_stat_file);
 
         this.swappiness = 0;
+        this.mem_stat = {};
         
         // inotify.addWatch({ path: this.swap_event_path, watch_for: Inotify.IN_MODIFY, callback: event => this.swapevent_callback(event) });
         // inotify.addWatch({ path: this.memory_event_path, watch_for: Inotify.IN_MODIFY, callback: event => this.memoryevents_callback(event) });
@@ -53,6 +55,34 @@ class SystemManager {
         const data = FS.readFileSync(this.swap_usage_path);
         // Log it into csv
         logger.info.swap_usage = parseInt(parseInt(data) / MEGA);
+    }
+
+    fetch_mem_stat() {
+        const data = FS.readFileSync(this.memory_stat_file);
+
+        for(let line of data.toString().split('\n')) {
+            const split = line.split(' ');
+            this.mem_stat[split[0]] = parseInt(split[1]);
+        }
+
+        // console.log(this.mem_stat);
+    }
+
+    get_reclaimable_bytes() {
+        this.fetch_mem_stat();
+
+        let active_file = this.mem_stat["active_file"];
+        let inactive_file = this.mem_stat["inactive_file"];
+        logger.info.cgroup_cache = active_file + inactive_file;
+
+        let active_anon = this.mem_stat["active_anon"];
+        let inactive_anon = this.mem_stat["inactive_anon"];
+        let anon = active_anon + inactive_anon;
+
+        logger.info.cgroup_swappable = anon; // facebok OOM algo actually take the min of anon and swap free
+        logger.info.cgroup_reclaimable = logger.info.cgroup_cache + logger.info.cgroup_swappable;
+
+        return logger.info.cgroup_reclaimable;
     }
 
     fetch_memory_pressure() {
@@ -116,6 +146,7 @@ class SystemManager {
         this.fetch_swap_usage();
         this.fetch_memory_pressure();
         this.fetch_virsh_info();
+        this.get_reclaimable_bytes();
     }
     
     // Max in MiB
@@ -163,12 +194,12 @@ class SystemManager {
 
     memory_reduction() {
         const increment = 100;
-        const threshold = increment / 2;
+        const threshold = increment * 2;
         const vm_mem = (logger.info.virsh_available - logger.info.virsh_usable) / 1024;
 
         console.log(logger.info.ram_usage, (vm_mem + 2 * increment));
         if(logger.info.swap_usage == 0 && logger.info.ram_free > threshold) {
-            this.set_max_ram(logger.info.ram_usage + increment); // remove all free memory at the beginning
+            this.set_max_ram(logger.info.ram_usage + threshold / 2); // remove all free memory at the beginning
         }
         else if(logger.info.ram_usage > vm_mem + threshold) {
             this.set_max_ram(logger.info.maxram - increment); // Progressively decrease max memory
@@ -180,7 +211,7 @@ class SystemManager {
 
     memory_reclaim() {
         const increment = 100; // 100 MiB
-        const threshold = increment / 2;
+        const threshold = 2 * increment;
         const vm_mem = (logger.info.virsh_available - logger.info.virsh_usable) / 1024;
     
         console.log(logger.info.ram_usage, vm_mem + threshold);
@@ -198,7 +229,7 @@ class SystemManager {
 
     memory_reduction_ballon() {
         const increment = 100 * 1024; // 100M MiB
-        const threshold = increment / 2;
+        const threshold = increment * 2;
 
         console.log(logger.info.virsh_usable / 1024, logger.info.virsh_available / 1024, logger.info.virsh_actual / 1024)
 

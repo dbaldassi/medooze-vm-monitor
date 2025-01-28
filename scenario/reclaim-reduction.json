@@ -1,5 +1,5 @@
 {
-    "name": "cgroups-reclaim-swappiness2-simulcast-vp8",
+    "name": "cgroups-reclaim-swappiness-simulcast-vp8",
     "steps": [
         {
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
@@ -21,7 +21,7 @@
         },
         {
             "actions": [],
-            "wait": 10000,
+            "wait": 60000,
             "repeat": 1
         },
         {
@@ -37,6 +37,11 @@
         {
             "actions": ["stop_reclaim_reduction"],
             "start_reclaim_reduction":{},
+            "repeat": 1
+        },
+        {
+            "actions": [],
+            "wait": 60000,
             "repeat": 1
         },
         {

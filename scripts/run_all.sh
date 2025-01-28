@@ -1,8 +1,8 @@
 #!/bin/bash
 
-REPET=10
-# SCENARIO=("reduction-viewers" "ballooning-viewers" "reclaim-reduction-viewers")
-SCENARIO=("reclaim-reduction")
+REPET=5
+SCENARIO=("reduction-viewers" "ballooning-viewers" "reclaim-reduction-viewers")
+# SCENARIO=("reclaim-reduction" "ballooning" "reduction")
 VIEWERS=(10 45 70)
 
 export LIBVIRT_DEFAULT_URI=qemu:///system
@@ -46,19 +46,19 @@ for scenar in ${SCENARIO[@]}
 do
     for i in $(seq 1 $REPET)
     do
-		# for viewer in ${VIEWERS[@]}
-		# do
+		for viewer in ${VIEWERS[@]}
+		do
 	    	restart_vm
 
 	    	echo "Run node"
-	    	# su tobias -c "source ~/.bashrc; node . $scenar num_viewers:$viewer"
-	    	su tobias -c "source ~/.bashrc; node . $scenar"
-		# done
+	    	su tobias -c "source ~/.bashrc; node . $scenar num_viewers:$viewer"
+	    	# su tobias -c "source ~/.bashrc; node . $scenar"
+		done
     done
     
-    cd results/$(jsoncli scenario/$scenar.json --get name | tr -d \")
-    su tobias -c "../../scripts/average_exp.py"
-    cd - 
+    # cd results/$(jsoncli scenario/$scenar.json --get name | tr -d \")
+    # su tobias -c "../../scripts/average_exp.py"
+    # cd - 
 done
 
 date

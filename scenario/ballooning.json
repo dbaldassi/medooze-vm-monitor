@@ -21,7 +21,7 @@
         },
         {
             "actions": [],
-            "wait": 10000,
+            "wait": 60000,
             "repeat": 1
         },
         {
@@ -37,6 +37,11 @@
         {
             "actions": ["stop_balloon_reduction"],
             "stop_balloon_reduction":{},
+            "repeat": 1
+        },
+        {
+            "actions": [],
+            "wait": 60000,
             "repeat": 1
         },
         {
