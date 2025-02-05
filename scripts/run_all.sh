@@ -1,9 +1,10 @@
 #!/bin/bash
 
-REPET=5
-SCENARIO=("reduction-viewers" "ballooning-viewers" "reclaim-reduction-viewers")
-# SCENARIO=("reclaim-reduction" "ballooning" "reduction")
+REPET=10
+SCENARIO=("normal-viewers")
+# SCENARIO=("spawn-cgroup-reclaim" "spawn-cgroup-max" "spawn-balloon")
 VIEWERS=(10 45 70)
+# VIEWERS=(10)
 
 export LIBVIRT_DEFAULT_URI=qemu:///system
 

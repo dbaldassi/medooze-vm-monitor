@@ -73,6 +73,9 @@ headers = { 'TIME': [0, None, lambda x : float(x) / 1000., "time (s)" ],
 'VIEWER_RID_L':[48, 'r', lambda x : float(x), "RID Count"],
 }
 
+indicators = ["avg", "1stq", "median", "3rdq", "min", "max"]
+indicators_color = ['b', 'y', 'r', 'c', 'g', 'k']
+
 def check_args(axis):
     for name in axis:
         if not name in headers:
@@ -88,29 +91,36 @@ def open_csv(filename):
         return lines
      
      return None
-     
+
+def get_index(idx, indicator):
+    indicator_idx = indicators.index(indicator)
+    return idx * len(indicators) + indicator_idx
 
 if __name__ == "__main__":
     x_axis = None
     y_axis = []
     y2_axis = []
 
-    if len(sys.argv) >= 4:
+    if len(sys.argv) >= 5:
         filename = sys.argv[1]
 
-        x_axis = sys.argv[2]
-        y_axis = sys.argv[3].split(',')
+        indicator = sys.argv[2].split(',')
+        x_axis = sys.argv[3]
+        y_axis = sys.argv[4].split(',')
     
-        if len(sys.argv) == 5:
-            y2_axis = sys.argv[4].split(',')
+        if len(sys.argv) == 6:
+            y2_axis = sys.argv[5].split(',')
     else:
-        print("Need at least 3 params to plot")
+        print("Usage : {} <file> <avg|1stq|median|3rdq|min|max> <key_x_axis> <key1_y_axis[,k2,...,kn]> [keys_y2_axis]".format(sys.arvg[0]))
         exit(1)
 
     print(x_axis, y_axis, y2_axis)
 
-    is_valid = check_args([x_axis, *y_axis, *y2_axis])
+    for i in indicator:
+        if not i in indicators:
+            print("You specifed an invalid indicator")
 
+    is_valid = check_args([x_axis, *y_axis, *y2_axis])
     if not is_valid:
         print("You specified a column not valid")
         exit(1)
@@ -124,33 +134,41 @@ if __name__ == "__main__":
     ax.set_xlabel(headers[x_axis][LABEL])
     ax.set_ylabel(headers[y_axis[0]][LABEL])
 
-    x_axis_values = [ headers[x_axis][PROCESS](line[headers[x_axis][INDEX]]) for line in lines ]
+    x_axis_idx = get_index(headers[x_axis][INDEX], indicator[0])
+    x_axis_values = [ headers[x_axis][PROCESS](line[x_axis_idx]) for line in lines ]
+
+    if len(indicator) == 1:
+        ax.set_title(y_axis[0])
 
     for y in y_axis:
-        y_axis_value = [ headers[y][PROCESS](line[headers[y][INDEX]]) for line in lines ]
-        ax.plot(x_axis_values, y_axis_value, color=headers[y][COLOR], label=y, linewidth=4)
+        if len(indicator) == 1:
+            y_idx = get_index(headers[y][INDEX], indicator[0])
+            y_axis_value = [ headers[y][PROCESS](line[y_idx]) if len(line) > y_idx else 0 for line in lines ]
+            ax.plot(x_axis_values, y_axis_value, color=headers[y][COLOR], label=y, linewidth=4)
+        else:
+            for ind in indicator:
+                y_idx = get_index(headers[y][INDEX], ind)
+                y_axis_value = [ headers[y][PROCESS](line[y_idx]) if len(line) > y_idx else 0 for line in lines ]
+                ax.plot(x_axis_values, y_axis_value, color=indicators_color[indicators.index(ind)], label=ind, linewidth=4)
 
     if len(y2_axis) > 0:
         bx = ax.twinx()
         bx.set_ylabel(headers[y2_axis[0]][LABEL])
 
         for y in y2_axis:
-            y_axis_value = [ headers[y][PROCESS](line[headers[y][INDEX]]) for line in lines ]
+            y_idx = get_index(headers[y][INDEX], indicator[0])
+            y_axis_value = [ headers[y][PROCESS](line[y_idx]) if len(line) > y_idx else 0 for line in lines ]
             bx.plot(x_axis_values, y_axis_value, color=headers[y][COLOR], label=y, linestyle='--', linewidth=4)
 
-        # bx.legend()
-
-
-    # ax.legend()
     ax.grid()
     fig.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax.transAxes)
 
     dest_path = filename.split('/')
 
     if len(y2_axis):
-        dest_path[-1] = "plot_{}x{}x{}.png".format(x_axis, y_axis[0],y2_axis[0])
+        dest_path[-1] = "plot_{}x{}x{}_{}.png".format(x_axis, y_axis[0],y2_axis[0], "-".join(indicator))
     else:
-        dest_path[-1] = "plot_{}x{}.png".format(x_axis, y_axis[0])
+        dest_path[-1] = "plot_{}x{}_{}.png".format(x_axis, y_axis[0], "-".join(indicator))
 
     plt.savefig("/".join(dest_path))
 

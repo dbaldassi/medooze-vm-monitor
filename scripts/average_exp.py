@@ -10,11 +10,23 @@ average_stats = []
 
 # load all stats
 for f in os.listdir():
+    if not '.csv' in f:
+        continue
+    
     with open(f, 'r') as csv_file:
         lines = [ line for line in csv.reader(csv_file, delimiter=',') ]
         all_stats.append(lines)
 
-average_stats.append(all_stats[0][0]) # add headers
+newheaders = []
+for header in all_stats[0][0]:
+    newheaders.append(header)
+    newheaders.append("1stQ")
+    newheaders.append("Median")
+    newheaders.append("3rdQ")
+    newheaders.append("Min")
+    newheaders.append("Max")
+
+average_stats.append(newheaders) # add headers
 
 # remove headers from all stats
 for stat in all_stats:
@@ -26,21 +38,45 @@ num_lines = min([len(stat) for stat in all_stats]) # number of rows in each file
 # compute average
 for i in range(num_lines):
     # create a line of zero, same size as number of headers
-    avg_line = [0] * len(average_stats[0])
+    # avg_line = [[]] * (len(average_stats[0]) // 6)
+    avg_line = []
+    for i in range(len(average_stats[0]) // 6):
+        avg_line.append([])
+
     for stat in all_stats:
         # get first file and remove it
         line = stat.pop(0)
 
+        # print(len(all_stats), line)
+        # print(avg_line[0])
         for j in range(len(line)):
+            # print(len(line), len(avg_line), len(average_stats[0]))
             try:
                 # sum value
-                avg_line[j] += float(line[j])
+                # avg_line[j] += float(line[j])
+                avg_line[j].append(float(line[j]))
             except:
-                # if can not convert int or float
-                continue
+                avg_line[j].append(-1)
+        # print(avg_line[0])
+        # exit(0)
     
-    # compute average and add line
-    average_stats.append([ value / repet for value in avg_line ])
+    # avg_line.sort()
+    # print(avg_line)
+
+    result = []
+    for col in avg_line:
+        if(len(col) == 0):
+            continue
+
+        col.sort()
+        result.append(sum(col) / len(col))
+        result.append(col[len(col) // 4])
+        result.append(col[len(col) // 2])
+        result.append(col[len(col) * 3 // 4])
+        result.append(min(col))
+        result.append(max(col))
+
+    average_stats.append(result)
 
 dir_name = os.getcwd().split('/')[-1] # get current directory name, strip absolute path and get only the dir name
 date_str = datetime.today().strftime('%Y-%m-%d-%H-%M-%S') # get current date with time

@@ -192,9 +192,7 @@ class SystemManager {
 	    clearInterval(this.fetch_memory_timeout[Symbol.toPrimitive]());
     }
 
-    memory_reduction() {
-        const increment = 100;
-        const threshold = increment * 2;
+    memory_reduction(increment, threshold, increase) {
         const vm_mem = (logger.info.virsh_available - logger.info.virsh_usable) / 1024;
 
         console.log(logger.info.ram_usage, (vm_mem + 2 * increment));
@@ -204,14 +202,12 @@ class SystemManager {
         else if(logger.info.ram_usage > vm_mem + threshold) {
             this.set_max_ram(logger.info.maxram - increment); // Progressively decrease max memory
         }
-        else if(logger.info.ram_usage <  (vm_mem + threshold / 10)) {
-            this.set_max_ram(logger.info.maxram + 2 * increment);
+        else if(!!increase && logger.info.ram_usage <  (vm_mem + threshold / 10)) {
+            this.set_max_ram(logger.info.maxram + increase);
         }
     }
 
-    memory_reclaim() {
-        const increment = 100; // 100 MiB
-        const threshold = 2 * increment;
+    memory_reclaim(increment, threshold, increase) {
         const vm_mem = (logger.info.virsh_available - logger.info.virsh_usable) / 1024;
     
         console.log(logger.info.ram_usage, vm_mem + threshold);
@@ -227,18 +223,15 @@ class SystemManager {
         }
     }
 
-    memory_reduction_ballon() {
-        const increment = 100 * 1024; // 100M MiB
-        const threshold = increment * 2;
-
+    memory_reduction_ballon(increment, threshold, increase) {
         console.log(logger.info.virsh_usable / 1024, logger.info.virsh_available / 1024, logger.info.virsh_actual / 1024)
 
         if(logger.info.virsh_usable > threshold) {
             let new_vm_size = logger.info.virsh_actual - increment;
             SystemManager.quick_exec(`virsh setmem --domain medooze --size ${new_vm_size}K --current`);
         }
-        else if(logger.info.virsh_usable < threshold / 10) {
-            let new_vm_size = logger.info.virsh_actual + 2 * increment; // deflate
+        else if(!!increase && logger.info.virsh_usable < threshold / 10) {
+            let new_vm_size = logger.info.virsh_actual + increase; // deflate
             SystemManager.quick_exec(`virsh setmem --domain medooze --size ${new_vm_size}K --current`);
         }
     }

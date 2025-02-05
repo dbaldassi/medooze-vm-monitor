@@ -66,9 +66,10 @@ class Monitor {
         return this.medooze_server;
     }
 
-    start_naive_memory_reduction(time) {
+    start_naive_memory_reduction(opts) {
         // Start algorithm to reduce memory
-        this.memory_timeout = setInterval(() => this.sys_manager.memory_reduction(), time * SECONDS);
+        this.memory_timeout = setInterval(() => this.sys_manager.memory_reduction(opts.increment, opts.threshold, opts.increase), 
+                                         opts.timeout * SECONDS);
     }
 
     stop_naive_memory_reduction() {
@@ -78,7 +79,8 @@ class Monitor {
 
     start_reclaim_reduction(time) {
         // Start algorithm to reduce memory
-        this.reclaim_timeout = setInterval(() => this.sys_manager.memory_reclaim(), time * SECONDS);
+        this.reclaim_timeout = setInterval(() => this.sys_manager.memory_reclaim(opts.increment, opts.threshold, opts.increase), 
+        opts.timeout * SECONDS);
     }
 
     stop_reclaim_reduction() {
@@ -86,8 +88,9 @@ class Monitor {
         clearInterval(this.reclaim_timeout[Symbol.toPrimitive]());
     }
     
-    start_balloon_reduction(time) {
-        this.balloon_timeout = setInterval(() => this.sys_manager.memory_reduction_ballon(), time * SECONDS);
+    start_balloon_reduction(opts) {
+        this.balloon_timeout = setInterval(() => this.sys_manager.memory_reduction_ballon(opts.increment, opts.threshold, opts.increase), 
+        opts.timeout * SECONDS);
     }
 
     stop_balloon_reduction() {
