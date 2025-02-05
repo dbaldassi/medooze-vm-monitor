@@ -26,7 +26,12 @@
         },
         {
             "actions": ["start_balloon_reduction"],
-            "start_balloon_reduction": 10,
+            "start_balloon_reduction": {
+                "timeout": 10,
+                "threshold": "{{threshold:200}}",
+                "increment": 100,
+                "increase": "{{increase:0}}"
+            },
             "repeat": 1
         },
         {

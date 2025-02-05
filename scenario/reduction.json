@@ -1,5 +1,5 @@
 {
-    "name": "cgroups-max-reduction-simulcast-vp8",
+    "name": "cgroups-max-reduction-simulcast-vp8-70",
     "steps": [
         {
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
@@ -16,7 +16,7 @@
         {
             "require": "publisher_connected",
             "actions": ["add_viewer"],
-            "add_viewer" : [ { "id": "baleze", "count": 10 } ],
+            "add_viewer" : [ { "id": "baleze", "count": 70 } ],
             "repeat": 1
         },
         {

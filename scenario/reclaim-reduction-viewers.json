@@ -1,5 +1,5 @@
 {
-    "name": "cgroups-reclaim -lowthresh-reduction-viewers{{num_viewers:10}}-after-simulcast-vp8",
+    "name": "cgroups-reclaim-viewersburst{{num_viewers:10}}-thresh{{threshold:200}}-increase{{increase:0}}",
     "steps": [
         {
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
@@ -26,7 +26,12 @@
         },
         {
             "actions": ["start_reclaim_reduction"],
-            "start_reclaim_reduction":10,
+            "start_reclaim_reduction": {
+                "timeout": 10,
+                "threshold": "{{threshold:200}}",
+                "increment": 100,
+                "increase": "{{increase:0}}"
+            },
             "repeat": 1
         },
         {

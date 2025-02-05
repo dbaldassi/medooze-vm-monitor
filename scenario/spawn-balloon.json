@@ -31,18 +31,33 @@
             "repeat": 1
         },
         {
+            "actions": [],
+            "wait": 60000,
+            "repeat": 1
+        },
+        {
             "actions": ["start_balloon_reduction"],
-            "start_naive_memory_reduction":{},
+            "start_naive_memory_reduction":{
+                "timeout": 10,
+                "threshold": 200,
+                "increment": 100,
+                "increase": 0
+            },
             "repeat": 1
         },
         {
             "actions": [],
-            "wait": 120000,
+            "wait": 300000,
             "repeat": 1
         },
         {
             "actions": ["stop_balloon_reduction"],
             "stop_naive_memory_reduction":{},
+            "repeat": 1
+        },
+        {
+            "actions": [],
+            "wait": 60000,
             "repeat": 1
         },
         {
@@ -53,7 +68,7 @@
         },
         {
             "actions" : [ "save" ],
-            "save": {}
+            "save": "average_viewer"
         },
         {
             "actions" : ["exit"],

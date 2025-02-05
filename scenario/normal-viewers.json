@@ -21,12 +21,12 @@
         },
         {
             "actions": [],
-            "wait": 10000,
+            "wait": 60000,
             "repeat": 1
         },
         {
             "actions": [],
-            "wait": 200000,
+            "wait": 300000,
             "repeat": 1
         },
         {
@@ -36,7 +36,7 @@
         },
         {
             "actions": [],
-            "wait": 200000,
+            "wait": 100000,
             "repeat": 1
         },
         {

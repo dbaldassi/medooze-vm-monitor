@@ -26,7 +26,12 @@
         },
         {
             "actions": ["start_naive_memory_reduction"],
-            "start_naive_memory_reduction":10,
+            "start_naive_memory_reduction": {
+                "timeout": 10,
+                "threshold": "{{threshold:200}}",
+                "increment": 100,
+                "increase": "{{increase:0}}"
+            },
             "repeat": 1
         },
         {
@@ -47,6 +52,11 @@
         {
             "actions": ["stop_naive_memory_reduction"],
             "stop_naive_memory_reduction":{},
+            "repeat": 1
+        },
+        {
+            "actions": [],
+            "wait": 60000,
             "repeat": 1
         },
         {
