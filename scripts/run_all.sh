@@ -1,12 +1,16 @@
 #!/bin/bash
 
 REPET=10
-SCENARIO=("normal-viewers")
+# SCENARIO=("normal-viewers")
 # SCENARIO=("spawn-cgroup-reclaim" "spawn-cgroup-max" "spawn-balloon")
+SCENARIO=("max2500")
 VIEWERS=(10 45 70)
 # VIEWERS=(10)
 
 export LIBVIRT_DEFAULT_URI=qemu:///system
+
+PROGRESS_HOST=134.59.133.57
+PROGRESS_PORT=9001
 
 restart_vm() {
 	echo "Stop running medooze"
@@ -43,23 +47,74 @@ restart_vm() {
 	sleep 10
 }
 
-for scenar in ${SCENARIO[@]}
-do
-    for i in $(seq 1 $REPET)
+run_with_viewers() {
+    for scenar in ${SCENARIO[@]}
     do
-		for viewer in ${VIEWERS[@]}
-		do
-	    	restart_vm
-
-	    	echo "Run node"
-	    	su tobias -c "source ~/.bashrc; node . $scenar num_viewers:$viewer"
-	    	# su tobias -c "source ~/.bashrc; node . $scenar"
-		done
+	for i in $(seq 1 $REPET)
+	do
+	    for viewer in ${VIEWERS[@]}
+	    do
+		curl -k -d "name=$scenar-$i" -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/new
+	    done
+	done
     done
-    
-    # cd results/$(jsoncli scenario/$scenar.json --get name | tr -d \")
-    # su tobias -c "../../scripts/average_exp.py"
-    # cd - 
-done
+
+    curl -k -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/start
+
+    for scenar in ${SCENARIO[@]}
+    do
+	for i in $(seq 1 $REPET)
+	do
+	    for viewer in ${VIEWERS[@]}
+	    do
+		restart_vm
+		echo "Run node"
+		su tobias -c "source ~/.bashrc; node . $scenar num_viewers:$viewer"
+		curl -k -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/next
+	    done
+	done
+    done
+}
+
+run() {
+    for scenar in ${SCENARIO[@]}
+    do
+	for i in $(seq 1 $REPET)
+	do
+	    curl -k -d "name=$scenar-$i" -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/new
+	done
+    done
+
+    curl -k -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/start
+
+    for scenar in ${SCENARIO[@]}
+    do
+	for i in $(seq 1 $REPET)
+	do
+	    restart_vm
+	    echo "Run node"
+	    su tobias -c "source ~/.bashrc; node . $scenar num_viewers:$viewer"
+	    curl -k -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/next
+	done
+	
+	cd results/$(jsoncli scenario/$scenar.json --get name | tr -d \")
+	su tobias -c "../../scripts/average_exp.py"
+	cd - 
+    done
+}
+
+trap_sigint() {
+    curl -k -d "code=1" -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/stop
+    exit 1
+}
+
+curl -k -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/reset
+
+trap 'trap_sigint' INT
+
+run
+# run_with_viewers
+
+curl -k -d "code=0" -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/stop
 
 date
