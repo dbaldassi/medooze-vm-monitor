@@ -10,7 +10,7 @@ average_stats = []
 
 # load all stats
 for f in os.listdir():
-    if not '.csv' in f:
+    if not f.endswith('_average.csv') or f.startswith('.'):
         continue
     
     with open(f, 'r') as csv_file:
