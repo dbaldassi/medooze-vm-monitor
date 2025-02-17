@@ -1,5 +1,5 @@
 {
-    "name": "ballooning-lowthresh-viewers{{num_viewers:10}}-thresh{{threshold:200}}-increase{{increase:0}}",
+    "name": "cgroups-max-viewersburst{{num_viewers:10}}-thresh{{threshold:200}}-pid",
     "steps": [
         {
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
@@ -20,13 +20,8 @@
             "repeat": 1
         },
         {
-            "actions": [],
-            "wait": 60000,
-            "repeat": 1
-        },
-        {
-            "actions": ["start_balloon_reduction"],
-            "start_balloon_reduction": {
+            "actions": ["start_cgroup_max_regul"],
+            "start_cgroup_max_regul": {
                 "timeout": 10,
                 "threshold": "{{threshold:200}}",
                 "increment": 100,
@@ -36,7 +31,7 @@
         },
         {
             "actions": [],
-            "wait": 300000,
+            "wait": 60000,
             "repeat": 1
         },
         {
@@ -46,12 +41,12 @@
         },
         {
             "actions": [],
-            "wait": 100000,
+            "wait": 60000,
             "repeat": 1
         },
         {
-            "actions": ["stop_balloon_reduction"],
-            "stop_balloon_reduction":{},
+            "actions": ["stop_cgroup_max_regul"],
+            "start_reclaim_reduction":{},
             "repeat": 1
         },
         {

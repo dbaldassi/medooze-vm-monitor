@@ -1,5 +1,5 @@
 {
-    "name": "ballooning-lowthresh-viewers{{num_viewers:10}}-thresh{{threshold:200}}-increase{{increase:0}}",
+    "name": "cgroups-max-step-{{increment:100}}",
     "steps": [
         {
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
@@ -21,37 +21,28 @@
         },
         {
             "actions": [],
-            "wait": 60000,
+            "wait": 45000,
             "repeat": 1
         },
         {
-            "actions": ["start_balloon_reduction"],
-            "start_balloon_reduction": {
-                "timeout": 10,
-                "threshold": "{{threshold:200}}",
-                "increment": 100,
-                "increase": "{{increase:0}}"
+            "actions": ["start_naive_memory_reduction"],
+            "start_naive_memory_reduction":{
+                "timeout": 1,
+                "threshold": 0,
+                "increment": "{{increment:100}}",
+                "increase": 0
             },
+            "repeat": 1,
+            "wait": 2000
+        },
+        {
+            "actions": ["stop_naive_memory_reduction"],
+            "stop_naive_memory_reduction":{},
             "repeat": 1
         },
         {
             "actions": [],
-            "wait": 300000,
-            "repeat": 1
-        },
-        {
-            "actions": ["add_viewer"],
-            "add_viewer" : [ { "id": "baleze", "count": "{{num_viewers:10}}" } ],
-            "repeat": 1
-        },
-        {
-            "actions": [],
-            "wait": 100000,
-            "repeat": 1
-        },
-        {
-            "actions": ["stop_balloon_reduction"],
-            "stop_balloon_reduction":{},
+            "wait": 90000,
             "repeat": 1
         },
         {

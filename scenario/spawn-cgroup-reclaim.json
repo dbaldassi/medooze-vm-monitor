@@ -37,7 +37,7 @@
         },
         {
             "actions": ["start_reclaim_reduction"],
-            "start_naive_memory_reduction":{
+            "start_reclaim_reduction":{
                 "timeout": 10,
                 "threshold": 200,
                 "increment": 100,
@@ -52,7 +52,7 @@
         },
         {
             "actions": ["stop_reclaim_reduction"],
-            "stop_naive_memory_reduction":{},
+            "stop_reclaim_reduction":{},
             "repeat": 1
         },
         {

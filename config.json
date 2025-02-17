@@ -8,7 +8,7 @@
     "memory_pressure_file": "memory.pressure",
     "memory_reclaim_file": "memory.reclaim",
     "memory_stat_file": "memory.stat",
-    "memory_stats_path": "/sys/fs/cgroup/machine.slice/machine-qemu\\x2d57\\x2dmedooze.scope",
+    "memory_stats_path": "/sys/fs/cgroup/machine.slice/machine-qemu\\x2d6\\x2dmedooze.scope",
     "initial_max_ram": 4096,
     "host": "134.59.133.57",
     "port": 9000,
@@ -38,15 +38,15 @@
     "publisher_launchers": [
         {
             "id": "mac",
-            "exec_start": "ssh david@134.59.129.227 \"run_publisher\"",
-            "exec_stop": "ssh david@134.59.129.227 \"run_publisher\""
+            "exec_start": "ssh run_publisher",
+            "exec_stop": "ssh stop_publisher"
         }
     ],
     "viewer_launchers": [
         {
             "id": "baleze",
             "exec_start": "ssh exp@134.59.129.175 \"screen -L -S viewer -dm /home/exp/run_viewers.sh\"",
-            "exec_stop": "ssh exp@134.59.129.175 \"screen -XS viewer quit; pkill run_viewer.sh\"",
+            "exec_stop": "ssh exp@134.59.129.175 \"/home/exp/stop_viewers.sh\"",
             "capabilities": {
                 "max": 200,
                 "capacities": ["normal"]

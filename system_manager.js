@@ -32,6 +32,17 @@ class SystemManager {
 
         this.swappiness = 0;
         this.mem_stat = {};
+
+        this.pid = {
+            kp : 1/10, // to be tuned
+            ki : 1/200, // to be tuned
+            kd : 1/10, // to be tuned
+            
+            prevError : 0,
+            integrator : 0,
+
+            dt : 10 // 10sec
+        }
         
         // inotify.addWatch({ path: this.swap_event_path, watch_for: Inotify.IN_MODIFY, callback: event => this.swapevent_callback(event) });
         // inotify.addWatch({ path: this.memory_event_path, watch_for: Inotify.IN_MODIFY, callback: event => this.memoryevents_callback(event) });
@@ -39,33 +50,47 @@ class SystemManager {
     }
 
     fetch_ram_usage() {
-        // Read current memory usage from cgroup file
-        const data = FS.readFileSync(this.ram_usage_path);
-        // Log it in csv file
-        logger.info.ram_usage = parseInt(parseInt(data) / MEGA);
+        try {
+            // Read current memory usage from cgroup file
+            const data = FS.readFileSync(this.ram_usage_path);
+            // Log it in csv file
+            logger.info.ram_usage = parseInt(parseInt(data) / MEGA);
+        } catch(e) {
+            logger.info.ram_usage = 0;
+        }
     }
     
     fetch_ram_free() {
-        const data = FS.readFileSync(this.ram_total_path);
-        // Log it into csv
-        logger.info.ram_free = parseInt(parseInt(data) / (MEGA)) - logger.info.ram_usage;
+        try {
+            const data = FS.readFileSync(this.ram_total_path);
+            // Log it into csv
+            logger.info.ram_free = parseInt(parseInt(data) / (MEGA)) - logger.info.ram_usage;
+        } catch(e) {
+            logger.info.ram_free = 0;
+        }
     }
     
     fetch_swap_usage() {
-        const data = FS.readFileSync(this.swap_usage_path);
-        // Log it into csv
-        logger.info.swap_usage = parseInt(parseInt(data) / MEGA);
+        try {
+            const data = FS.readFileSync(this.swap_usage_path);
+            // Log it into csv
+            logger.info.swap_usage = parseInt(parseInt(data) / MEGA);
+        } catch(e) {
+            logger.info.swap_usage = 0;
+        }
     }
 
     fetch_mem_stat() {
-        const data = FS.readFileSync(this.memory_stat_file);
+        try {
+            const data = FS.readFileSync(this.memory_stat_file);
 
-        for(let line of data.toString().split('\n')) {
-            const split = line.split(' ');
-            this.mem_stat[split[0]] = parseInt(split[1]);
+            for(let line of data.toString().split('\n')) {
+                const split = line.split(' ');
+                this.mem_stat[split[0]] = parseInt(split[1]);
+            }
+        } catch(e) {
+        
         }
-
-        // console.log(this.mem_stat);
     }
 
     get_reclaimable_bytes() {
@@ -86,22 +111,24 @@ class SystemManager {
     }
 
     fetch_memory_pressure() {
-        const data = FS.readFileSync(this.memory_pressure_path);
-        const some = data.toString().split('\n')[0];
-        const pressure = some.split(' ');
+        try {
+            const data = FS.readFileSync(this.memory_pressure_path);
+            const some = data.toString().split('\n')[0];
+            const pressure = some.split(' ');
 
-        for(let p of pressure) {
-            const fields = p.split('=');
-            if(fields.length === 2) {
-                logger.info[`pressure_${fields[0]}`] = parseFloat(fields[1]);
+            for(let p of pressure) {
+                const fields = p.split('=');
+                if(fields.length === 2) {
+                    logger.info[`pressure_${fields[0]}`] = parseFloat(fields[1]);
+                }
             }
-
-        }
+        } catch(e) {}
     }
     
     fetch_virsh_info() {
         exec("virsh dommemstat --domain medooze", (err, output) => {
             if(err) {
+                logger.info.virsh_actual = 0;
                 console.error(err);
                 return;
             }
@@ -110,7 +137,7 @@ class SystemManager {
             for(let line of lines) {
                 let splitted = line.split(' ');
                 if(splitted.length === 2) {
-                    logger.info[`virsh_${splitted[0]}`] = splitted[1];
+                    logger.info[`virsh_${splitted[0]}`] = parseInt(splitted[1]);
                     // console.log(logger.info);
                 }
             }
@@ -148,27 +175,69 @@ class SystemManager {
         this.fetch_virsh_info();
         this.get_reclaimable_bytes();
     }
+
+    pid_regul(target, measured) {
+        let error = target - measured;
+        console.log(target, measured);
+
+
+        this.pid.integrator += error * this.pid.dt;
+        
+        let p = this.pid.kp * error;
+        let i = this.pid.ki * this.pid.integrator;
+        let d = this.pid.kd * (this.pid.prevError - error) / this.pid.dt;
+
+        let out = p + i + d;
+
+        console.log("pid : ", p, i, d, out);
+
+        this.pid.prevError = error;
+
+        return out;
+    }
     
     // Max in MiB
     set_max_ram(max) {
         // todo write max to memory.max
         console.log(max);
+
+        max = Math.max(max, 0); // don't write negative value 
         // log in csv stats new max
         logger.info.maxram = max;
         // Write new max in the file
-        FS.writeFileSync(this.ram_total_path, String(max * MEGA));
+
+        try {
+            // let before = new Date();
+            FS.writeFile(this.ram_total_path, String(max * MEGA), (err) => {
+                if(err) console.error(err);
+                else console.log("Wrote ", max);
+            });
+            // let after = new Date();
+        } catch(error) {
+            console.error(error);
+        }
     }
 
     reclaim_memory(mem, swappiness) {
+
         try {
             let cmd = `${mem*1024*1024}`
             if(swappiness !== undefined) {
-                cmd = `${cmd} swappiness=${swappiness}`;
+                // cmd = `${cmd} swappiness=${swappiness}`;
             }
 
             console.log("Reclaiming", mem);
+            
+            logger.info.maxram += 100; // mark to find where we begin reclaim when boxing plot
 
-            FS.writeFileSync(this.memory_reclaim_path, cmd);
+            // let before = new Date();
+            FS.writeFile(this.memory_reclaim_path, cmd, (err) => {
+                if(err) console.error(err);
+                logger.info.maxram -= 100;
+            });
+            // let after = new Date();
+
+            // console.log(after-before);
         } catch(error) {
             console.error(error);
             return false
@@ -199,12 +268,46 @@ class SystemManager {
         if(logger.info.swap_usage == 0 && logger.info.ram_free > threshold) {
             this.set_max_ram(logger.info.ram_usage + threshold / 2); // remove all free memory at the beginning
         }
-        else if(logger.info.ram_usage > vm_mem + threshold) {
+        
+        if(logger.info.ram_usage > vm_mem + threshold) {
             this.set_max_ram(logger.info.maxram - increment); // Progressively decrease max memory
         }
         else if(!!increase && logger.info.ram_usage <  (vm_mem + threshold / 10)) {
             this.set_max_ram(logger.info.maxram + increase);
         }
+    }
+
+    cgroup_max_regul(increment, threshold, increase) {
+
+        if(logger.info.maxram > 150 + logger.info.ram_usage) {
+            this.set_max_ram(logger.info.ram_usage + 100);
+        }
+
+        const vm_mem = (logger.info.virsh_available - logger.info.virsh_usable) / 1024;
+
+        // let target = vm_mem + threshold + logger.info.swap_usage;
+        let target = vm_mem + threshold + logger.info.swap_usage;
+
+
+        let out = this.pid_regul(target, logger.info.ram_usage);
+
+        console.log(logger.info.maxram, out, Math.floor(out));
+        this.set_max_ram(logger.info.maxram + Math.floor(out));
+    }
+
+    ballon_regul(threshold) {
+        threshold *= 1024;
+
+        const target = threshold + (logger.info.virsh_swap_out - logger.info.virsh_swap_in);
+        let out = this.pid_regul(target, logger.info.virsh_usable);
+
+        out = ((logger.info.virsh_usable + out < 0) ? target - logger.info.virsh_usable : Math.floor(out));
+
+        let new_vm_size = logger.info.virsh_actual + out;
+
+        console.log("Out : ", out, new_vm_size);
+
+        SystemManager.quick_exec(`virsh setmem --domain medooze --size ${new_vm_size}K --current`);
     }
 
     memory_reclaim(increment, threshold, increase) {
@@ -224,6 +327,10 @@ class SystemManager {
     }
 
     memory_reduction_ballon(increment, threshold, increase) {
+        increment *= 1024; // MEGA !!
+        threshold *= 1024;
+        increase  *= 1024;
+
         console.log(logger.info.virsh_usable / 1024, logger.info.virsh_available / 1024, logger.info.virsh_actual / 1024)
 
         if(logger.info.virsh_usable > threshold) {

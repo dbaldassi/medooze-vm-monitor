@@ -72,6 +72,13 @@ if (process.argv.length >= 3) {
 	const obj = {};
 	console.log(args, template.parameters);
 
+	for(let param of template.parameters) {
+		if(param.defaultValue) {
+			let value = parseInt(param.defaultValue);
+			if(!Number.isNaN(value)) param.defaultValue = value;
+		}
+	}
+
 	for(let arg of args) {
 		let split = arg.split(":");
 

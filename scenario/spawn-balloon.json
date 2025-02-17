@@ -37,7 +37,7 @@
         },
         {
             "actions": ["start_balloon_reduction"],
-            "start_naive_memory_reduction":{
+            "start_balloon_reduction":{
                 "timeout": 10,
                 "threshold": 200,
                 "increment": 100,
@@ -52,7 +52,7 @@
         },
         {
             "actions": ["stop_balloon_reduction"],
-            "stop_naive_memory_reduction":{},
+            "stop_balloon_reduction":{},
             "repeat": 1
         },
         {

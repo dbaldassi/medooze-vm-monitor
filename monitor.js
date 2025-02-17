@@ -77,7 +77,25 @@ class Monitor {
         clearInterval(this.memory_timeout[Symbol.toPrimitive]());
     }
 
-    start_reclaim_reduction(time) {
+    start_cgroup_max_regul(opts) {
+        this.pid_max_timeout = setInterval(() => this.sys_manager.cgroup_max_regul(opts.increment, opts.threshold, opts.increase), 
+                                         opts.timeout * SECONDS);
+    }
+
+    stop_cgroup_max_regul() {
+        clearInterval(this.pid_max_timeout[Symbol.toPrimitive]());
+    }
+
+    start_balloon_regul(opts) {
+        this.pid_balloon_timeout = setInterval(() => this.sys_manager.ballon_regul(opts.increment, opts.threshold, opts.increase), 
+                                         opts.timeout * SECONDS);
+    }
+
+    stop_balloon_regul() {
+        clearInterval(this.pid_balloon_timeout[Symbol.toPrimitive]());
+    }
+
+    start_reclaim_reduction(opts) {
         // Start algorithm to reduce memory
         this.reclaim_timeout = setInterval(() => this.sys_manager.memory_reclaim(opts.increment, opts.threshold, opts.increase), 
         opts.timeout * SECONDS);
@@ -89,11 +107,13 @@ class Monitor {
     }
     
     start_balloon_reduction(opts) {
+        console.log(opts);
         this.balloon_timeout = setInterval(() => this.sys_manager.memory_reduction_ballon(opts.increment, opts.threshold, opts.increase), 
         opts.timeout * SECONDS);
     }
 
     stop_balloon_reduction() {
+        console.log("Le ballon éclate")
         clearInterval(this.balloon_timeout[Symbol.toPrimitive]());
     }
 
@@ -147,8 +167,16 @@ class Monitor {
             SystemManager.quick_exec(launcher[cmd]);
         }
     }
+
+    search_and_run_sync(ids, component, cmd) {
+        for(let id of ids) {
+            let launcher = config[component].find(elt => elt.id === id);
+            SystemManager.quick_exec_sync(launcher[cmd]);
+        }
+    }
     
     start_viewer_launchers(ids) {
+        this.stop_viewer_launchers(ids); // first stop any remaining viewers otherwise it breaks everything if previous exps crashed
         this.search_and_run(ids, "viewer_launchers", "exec_start");
     }
     
@@ -157,7 +185,7 @@ class Monitor {
     }
     
     stop_viewer_launchers(ids) {
-        this.search_and_run(ids, "viewer_launchers", "exec_stop");
+        this.search_and_run_sync(ids, "viewer_launchers", "exec_stop");
     }
     
     stop_publisher_launchers(ids) {
