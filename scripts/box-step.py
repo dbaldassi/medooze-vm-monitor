@@ -13,11 +13,19 @@ VIEWER_BITRATE_AVG=4
 PUBLISHER_FPS_AVG=5
 VIEWER_FPS_AVG=6
 PUBLISHER_RTT_AVG=7
+PRESSURE_DURATION=8
+PRESSURE_DURATION_AVG=9
+PRESSURE_DURATION_PEAK=10
+PUBLISHER_COLLAPSE_DURATION=11
+PUBLISHER_COLLAPSE_AVG=12
+PUBLISHER_COLLAPSE_PEAK=13
 
 LABELS = [ "Duration (s)", "CPU (%)", "Pressure_Stall_Information (PSI)", "Publisher_Bitrate (kbps)", "Viewers_bitrate (kbps)",
-           "Publisher_FPS (FPS)", "Viewer_FPS (FPS)", "Publisher_RTT (ms)" ]
+           "Publisher_FPS (FPS)", "Viewer_FPS (FPS)", "Publisher_RTT (ms)", 
+           "Pressure_duration (s)", "Pressure_average (PSI)", "Pressure_Peak (PSI)",
+           "Publisher_Collapse_Duration (s)", "Publisher_Collapse_Bitrate (kbps)", "Publisher_Collapse_peak (kbps)" ]
 
-NUM=PUBLISHER_RTT_AVG+1
+NUM=PUBLISHER_COLLAPSE_PEAK+1
 
 plt.rc('font', size=18)          # controls default text sizes
 plt.rc('axes', titlesize=22)     # fontsize of the axes title
