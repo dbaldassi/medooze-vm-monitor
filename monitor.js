@@ -87,12 +87,17 @@ class Monitor {
     }
 
     start_balloon_regul(opts) {
-        this.pid_balloon_timeout = setInterval(() => this.sys_manager.ballon_regul(opts.increment, opts.threshold, opts.increase), 
-                                         opts.timeout * SECONDS);
+        let time = opts.timeout;
+        let callback = () => {
+            time = this.sys_manager.ballon_regul(opts.threshold, time);
+            this.pid_balloon_timeout = setTimeout(callback, Math.floor(time * SECONDS));
+        };
+
+        this.pid_balloon_timeout = setTimeout(callback, time * SECONDS);
     }
 
     stop_balloon_regul() {
-        clearInterval(this.pid_balloon_timeout[Symbol.toPrimitive]());
+        clearTimeout(this.pid_balloon_timeout[Symbol.toPrimitive]());
     }
 
     start_reclaim_reduction(opts) {
@@ -142,8 +147,9 @@ class Monitor {
 
         this.spawn_timeout = setInterval(() => {
             console.log("ram free ", logger.info.ram_free, logger.info.vm_ram_free);
-            if(!logger.info.vm_ram_free) return;
-            if(Math.min(logger.info.ram_free, logger.info.vm_ram_free) > 300) {
+            // if(!logger.info.vm_ram_free) return;
+            // if(Math.min(logger.info.ram_free, logger.info.vm_ram_free) > 300) {
+            if(Math.min(logger.info.ram_free) > 300) {
                 this.medooze_ws.sendUTF(JSON.stringify({"cmd" : "spawn"}));
                 this.num_process += 1;
             } else this.stop_spawning_process();

@@ -116,6 +116,12 @@ if __name__ == "__main__":
             stats = all_stats[m]
             # get current stat for all steps
             to_plot = [ sum(line[i]) / len(line[i]) for line in stats.stats ]
+            # if(m == "ballooning" and i == DURATION):
+            #     dy = to_plot[-1] - to_plot[0]
+            #     dx = stats.increment[-1] - stats.increment[0]
+            #     a = dy / dx
+            #     b = to_plot[-1] - a * stats.increment[-1]
+            #     print("{}x + {}".format(a, b))
             # print(to_plot, stats.increment)
             # plot
             ax.plot(stats.increment, to_plot, "o-", color=stats.color, label=m, linewidth=3)

@@ -303,6 +303,7 @@ if __name__ == "__main__":
     for i in range(NUM_RESULT):
         average_stats.append([])
 
+    i = 0
     for stat in all_stats:
         stat.pop(0)
 

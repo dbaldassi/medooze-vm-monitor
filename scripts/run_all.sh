@@ -1,16 +1,17 @@
 #!/bin/bash
 
-REPET=5
-SCENARIO=("reduction-viewers" "reclaim-reduction-viewers")
-# SCENARIO=("pid-balloon")
+REPET=1
+# SCENARIO=("reduction-viewers" "reclaim-reduction-viewers")
+SCENARIO=("pid-balloon-process")
 # SCENARIO=("spawn-cgroup-reclaim" "spawn-cgroup-max" "spawn-balloon")
 # SCENARIO=("max2500")
-VIEWERS=(10 45 70)
-# VIEWERS=(70)
-THRESHOLD=(400 200 50)
-# THRESHOLD=(200)
-INCREMENT=(1 50 100 300 500 1000 1500)
-# INCREMENT=(500)
+# VIEWERS=(10 45 70)
+VIEWERS=(20)
+# THRESHOLD=(400 200 50)
+# THRESHOLD=(200 100 50)
+THRESHOLD=(200)
+# INCREMENT=(1 50 100 300 500 1000 1500)
+INCREMENT=(0)
 
 export LIBVIRT_DEFAULT_URI=qemu:///system
 
@@ -192,23 +193,22 @@ curl -k -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/reset
 
 trap 'trap_sigint' INT
 
+# REPET=20
+# SCENARIO=("reduction" "reclaim-reduction")
+# run
 
-REPET=10
-SCENARIO=("spawn-cgroup-reclaim" "spawn-cgroup-max")
-run
-
-REPET=5
-SCENARIO=("reduction-viewers" "reclaim-reduction-viewers")
-VIEWERS=(10 45 70)
-THRESHOLD=(400 200 50)
+# REPET=5
+# SCENARIO=("reduction-viewers" "reclaim-reduction-viewers")
+# VIEWERS=(10 45 70)
+# THRESHOLD=(400 200 50)
 
 # run_with_viewers
-run_with_viewers_threshold
+# run_with_viewers_threshold
 
-SCENARIO=("cgroup-reclaim-step")
+# SCENARIO=("ballooning-step")
 # SCENARIO=("cgroup-max-step")
-REPET=10
-run_with_increment
+# REPET=20
+# run_with_increment
 
 curl -k -d "code=0" -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/stop
 

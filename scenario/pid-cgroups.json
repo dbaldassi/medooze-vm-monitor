@@ -1,5 +1,5 @@
 {
-    "name": "cgroups-reclaim",
+    "name": "cgroups-regul-viewersburst{{num_viewers:10}}-thresh{{threshold:200}}",
     "steps": [
         {
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
@@ -20,33 +20,33 @@
             "repeat": 1
         },
         {
-            "actions": [],
-            "wait": 60000,
-            "repeat": 1
-        },
-        {
-            "actions": ["start_reclaim_reduction"],
-            "start_reclaim_reduction":{
+            "actions": ["start_cgroup_max_regul"],
+            "start_cgroup_max_regul": {
                 "timeout": 10,
-                "threshold": 200,
+                "threshold": "{{threshold:200}}",
                 "increment": 100,
-                "increase": 0
+                "increase": "{{increase:0}}"
             },
             "repeat": 1
         },
         {
             "actions": [],
-            "wait": 300000,
+            "wait": 60000,
             "repeat": 1
         },
         {
-            "actions": ["stop_reclaim_reduction"],
-            "start_reclaim_reduction":{},
+            "actions": ["add_viewer"],
+            "add_viewer" : [ { "id": "baleze", "count": "{{num_viewers:10}}" } ],
             "repeat": 1
         },
         {
             "actions": [],
             "wait": 60000,
+            "repeat": 1
+        },
+        {
+            "actions": ["stop_cgroup_max_regul"],
+            "start_reclaim_reduction":{},
             "repeat": 1
         },
         {

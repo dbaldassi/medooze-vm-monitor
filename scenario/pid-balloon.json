@@ -28,15 +28,13 @@
             "actions": ["start_balloon_regul"],
             "start_balloon_regul": {
                 "timeout": 1,
-                "threshold": "{{threshold:200}}",
-                "increment": 100,
-                "increase": "{{increase:0}}"
+                "threshold": "{{threshold:200}}"
             },
             "repeat": 1
         },
         {
             "actions": [],
-            "wait": 90000,
+            "wait": 120000,
             "repeat": 1
         },
         {

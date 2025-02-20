@@ -19,6 +19,10 @@ const SECONDS = 1000;
 // Inotify
 var inotify = new Inotify();
 
+function clamp(value, lower, upper) {
+    return Math.min(Math.max(value, lower), upper);
+}
+
 class SystemManager {
     constructor() {
         this.ram_usage_path  = Path.join(config.memory_stats_path, config.ram_usage_file);
@@ -34,9 +38,9 @@ class SystemManager {
         this.mem_stat = {};
 
         this.pid = {
-            kp : 1/10, // to be tuned
-            ki : 1/200, // to be tuned
-            kd : 1/10, // to be tuned
+            kp : 3/10, // to be tuned
+            ki : 1/10, // to be tuned
+            kd : 2/11, // to be tuned
             
             prevError : 0,
             integrator : 0,
@@ -180,7 +184,6 @@ class SystemManager {
         let error = target - measured;
         console.log(target, measured);
 
-
         this.pid.integrator += error * this.pid.dt;
         
         let p = this.pid.kp * error;
@@ -295,19 +298,33 @@ class SystemManager {
         this.set_max_ram(logger.info.maxram + Math.floor(out));
     }
 
-    ballon_regul(threshold) {
+    ballon_regul(threshold, dt) {
         threshold *= 1024;
 
-        const target = threshold + (logger.info.virsh_swap_out - logger.info.virsh_swap_in);
+        const max = 4 * 1024 * 1024; // max ram is 4GB
+        const min = (logger.info.virsh_unused < threshold) ? logger.info.virsh_unused : threshold;
+        this.pid.dt = dt;
+
+        const target = clamp(threshold + (logger.info.virsh_swap_out - logger.info.virsh_swap_in), min, max);
+
+        console.log({target, min , max});
+
         let out = this.pid_regul(target, logger.info.virsh_usable);
 
         out = ((logger.info.virsh_usable + out < 0) ? target - logger.info.virsh_usable : Math.floor(out));
 
         let new_vm_size = logger.info.virsh_actual + out;
+        console.log({ out, new_vm_size, actual: logger.info.virsh_actual });
 
-        console.log("Out : ", out, new_vm_size);
+        let time = 3;
+        if(out < 0) {
+            time = (1 / 250) * (out / -1024) + 1/2; // found by interpolation
+            console.log("Time until next : ", time)
+        }
 
         SystemManager.quick_exec(`virsh setmem --domain medooze --size ${new_vm_size}K --current`);
+
+        return time;
     }
 
     memory_reclaim(increment, threshold, increase) {
