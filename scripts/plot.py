@@ -166,8 +166,7 @@ def save(filenames, x_axis, y_axis, y2_axis, indicator, show, res):
 
         plt.savefig("/".join(dest_path), format='pdf')
 
-
-def plot(filenames, x_axis, y_axis, y2_axis, indicator, show, res):
+def plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, res):
     # create figure with specified ratio
     fig,ax = plt.subplots(figsize=(res[0]*px, res[1]*px))
     # set label for figure
@@ -202,6 +201,12 @@ def plot(filenames, x_axis, y_axis, y2_axis, indicator, show, res):
         for y in y2_axis:
             plot_y(bx, lines, headers[y], indicator, x_axis_values, 'dotted', filename if len(filenames) > 1 else None)
 
+    # view window
+    if window:
+        ax.set_xlim(window[0], window[1])
+        if bx:
+            bx.set_xlim(window[0], window[1])
+
     # add legend to the figure
     fig.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax.transAxes)
 
@@ -217,26 +222,36 @@ if __name__ == "__main__":
     y2_axis = []
     show = False
 
+    window = None
+
     if len(sys.argv) >= 5:
         filenames = sys.argv[1].split(',')
-
         indicator = sys.argv[2].split(',')
         x_axis = sys.argv[3]
         y_axis = sys.argv[4].split(',')
     
-        if len(sys.argv) >= 6:
-            if sys.argv[5] == "show":
+        for i in range(5, len(sys.argv)):
+            if sys.argv[i] == "show":
                 show = True
+            elif sys.argv[i][0] == "[":
+                window = sys.argv[i][1:len(sys.argv[i])-1].split(',')
+                window = [int(i) for i in window] # convert to int
             else:
-                y2_axis = sys.argv[5].split(',')
+                y2_axis = sys.argv[i].split(',')
 
-        if len(sys.argv) == 7:
-            show = True
+        # if len(sys.argv) >= 6:
+            # if sys.argv[5] == "show":
+            #     show = True
+            # else:
+            #     y2_axis = sys.argv[5].split(',')
+
+        # if len(sys.argv) == 7:
+        #    show = True
     else:
         print("Usage : {} <file> <avg|1stq|median|3rdq|min|max> <key_x_axis> <key1_y_axis[,k2,...,kn]> [keys_y2_axis]".format(sys.arvg[0]))
         exit(1)
 
-    print(x_axis, y_axis, y2_axis)
+    print(x_axis, y_axis, y2_axis, window)
 
     for i in indicator:
         if not i in indicators:
@@ -249,5 +264,5 @@ if __name__ == "__main__":
         print("You specified a column not valid")
         exit(1)
 
-    plot(filenames, x_axis, y_axis, y2_axis, indicator, show, (1920,960)) # ratio 2:1
-    plot(filenames, x_axis, y_axis, y2_axis, indicator, show, (1024,1024)) # ratio 1:1
+    plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, (1920,960)) # ratio 2:1
+    plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, (1024,1024)) # ratio 1:1
