@@ -7,12 +7,12 @@ from matplotlib import pyplot as plt
 import seaborn as sns
 import pandas as pd
 
-plt.rc('font', size=18)          # controls default text sizes
-plt.rc('axes', titlesize=22)     # fontsize of the axes title
-plt.rc('axes', labelsize=22)    # fontsize of the x and y labels
+plt.rc('font', size=22)          # controls default text sizes
+plt.rc('axes', titlesize=26)     # fontsize of the axes title
+plt.rc('axes', labelsize=26)    # fontsize of the x and y labels
 # plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
 # plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-plt.rc('legend', fontsize=20)    # legend fontsize
+plt.rc('legend', fontsize=24)    # legend fontsize
 # plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
 
@@ -124,60 +124,58 @@ if __name__ == "__main__":
     # pixel in inches
     px = 1 / plt.rcParams['figure.dpi']
 
+    res = [(1920,960), (1024,1024)]
 
     # now generates a figure for each stats
     for i in range(NUM):
-        fig,ax = plt.subplots(figsize=(1920*px, 960*px)) # 2:1 ratio
+        for r in res:
+            fig,ax = plt.subplots(figsize=(r[0]*px, r[1]*px))
+            # curve for each method
+            dfs = []
+            for incr in increment_xticks:
+                values = {}
 
-        # curve for each method
-        dfs = []
-        for incr in increment_xticks:
-            values = {}
+                for m in methods:
+                    stats = all_stats[m]
 
-            for m in methods:
-                stats = all_stats[m]
+                    if int(incr) in stats.increment:
+                        index = stats.increment.index(int(incr))
+                        values[m] = stats.stats[index][i].copy()
 
-                if int(incr) in stats.increment:
-                    index = stats.increment.index(int(incr))
-                    values[m] = stats.stats[index][i].copy()
-
-            # print(values)
-            dfs.append(pd.DataFrame(data=values).assign(Size=incr))
+                # print(values)
+                dfs.append(pd.DataFrame(data=values).assign(Size=incr))
 
 
-        # for m in methods:
-            # stats = all_stats[m]
-            # get current stat for all steps
-            # to_plot = [ sum(line[i]) / len(line[i]) for line in stats.stats ]
-            # values.append( pd.DataFrame([line[i] for line in stats.stats ]).assign(Size=m))
-            # print(i, m, len(to_plot))
+            # for m in methods:
+                # stats = all_stats[m]
+                # get current stat for all steps
+                # to_plot = [ sum(line[i]) / len(line[i]) for line in stats.stats ]
+                # if(m == "ballooning" and i == DURATION):
+                #     dy = to_plot[-1] - to_plot[0]
+                #     dx = stats.increment[-1] - stats.increment[0]
+                #     a = dy / dx
+                #     b = to_plot[-1] - a * stats.increment[-1]
+                #     print("{}x + {}".format(a, b))
+                # plot
+                # ax.plot(stats.increment, to_plot, "o-", color=stats.color, label=m, linewidth=3)
+
+            concat = pd.concat(dfs)
+            to_plot = pd.melt(concat, id_vars=['Size'], var_name=['Method'])  
+            # print(to_plot)
+            ax = sns.boxplot(x="Size", y="value", hue="Method", data=to_plot, palette=['r', 'g', 'b'])
+
+            # Set label name
+            ax.set_xlabel("Size (MiB)")
+            ax.set_ylabel(LABELS[i].replace("_", " "))
+            # ax.set_xticklabels(increment_xticks)
+            # ax.grid()
+            # ax.legend()
             
-            # if(m == "ballooning" and i == DURATION):
-            #     dy = to_plot[-1] - to_plot[0]
-            #     dx = stats.increment[-1] - stats.increment[0]
-            #     a = dy / dx
-            #     b = to_plot[-1] - a * stats.increment[-1]
-            #     print("{}x + {}".format(a, b))
-            # print(to_plot, stats.increment)
-            # plot
-            # ax.plot(stats.increment, to_plot, "o-", color=stats.color, label=m, linewidth=3)
 
-        concat = pd.concat(dfs)
-        to_plot = pd.melt(concat, id_vars=['Size'], var_name=['Method'])  
-        # print(to_plot)
-        ax = sns.boxplot(x="Size", y="value", hue="Method", data=to_plot, palette=['r', 'g', 'b'])
-
-        # Set label name
-        ax.set_xlabel("Size (MiB)")
-        ax.set_ylabel(LABELS[i].replace("_", " "))
-        # ax.set_xticklabels(increment_xticks)
-        # ax.grid()
-        # ax.legend()
-        
-
-        # Image destination path
-        dest_path = "allbox_{}.png".format(LABELS[i].split(' ')[0])
-        # save fig !
-        plt.savefig(dest_path)
+            # Image destination path
+            dest_path = "allbox_{}_{}_{}.pdf".format(LABELS[i].split(' ')[0], r[0]//r[1], 1)
+            # save fig !
+            plt.savefig(dest_path, format='pdf')
+            plt.close()
 
 
