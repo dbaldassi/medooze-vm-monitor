@@ -226,7 +226,7 @@ class SystemManager {
         try {
             let cmd = `${mem*1024*1024}`
             if(swappiness !== undefined) {
-                // cmd = `${cmd} swappiness=${swappiness}`;
+                cmd = `${cmd} swappiness=${swappiness}`;
             }
 
             console.log("Reclaiming", mem);
@@ -236,7 +236,7 @@ class SystemManager {
             // let before = new Date();
             FS.writeFile(this.memory_reclaim_path, cmd, (err) => {
                 if(err) console.error(err);
-                logger.info.maxram -= 100;
+                // else logger.info.maxram -= 100;
             });
             // let after = new Date();
 
@@ -280,34 +280,49 @@ class SystemManager {
         }
     }
 
-    cgroup_max_regul(increment, threshold, increase) {
+    cgroups_regul(threshold, dt) {
+        this.set_max_ram(logger.info.ram_usage + threshold);
+        
+        const step = 100;
+        const wait_time = 3;
 
-        if(logger.info.maxram > 150 + logger.info.ram_usage) {
-            this.set_max_ram(logger.info.ram_usage + 100);
+        if(logger.info.pressure_avg10 >= 1) {
+            console.log("waiting ", logger.info.pressure_avg10);
+            return logger.info.pressure_avg10; // wait for that amount of time, let it recover
         }
 
-        const vm_mem = (logger.info.virsh_available - logger.info.virsh_usable) / 1024;
+        // if still above threshold
+        if(logger.info.ram_usage > logger.info.vm_ram_usage + threshold) {
+            this.reclaim_memory(step);
+        }
 
-        // let target = vm_mem + threshold + logger.info.swap_usage;
-        let target = vm_mem + threshold + logger.info.swap_usage;
+        console.log("waiting ", wait_time);
+        return wait_time;
+    }
 
+    create_balloon_pid() {
+        this.pid = {
+            kp : 3/10, // to be tuned
+            ki : 1/10, // to be tuned
+            kd : 2/11, // to be tuned
+            
+            prevError : 0,
+            integrator : 0,
 
-        let out = this.pid_regul(target, logger.info.ram_usage);
-
-        console.log(logger.info.maxram, out, Math.floor(out));
-        this.set_max_ram(logger.info.maxram + Math.floor(out));
+            dt : 10 // 10sec
+        }
     }
 
     ballon_regul(threshold, dt) {
         threshold *= 1024;
 
-        const max = 4 * 1024 * 1024; // max ram is 4GB
-        const min = (logger.info.virsh_unused < threshold) ? logger.info.virsh_unused : threshold;
+        const max = 4 * 1024 * 1024 - (logger.info.virsh_available - logger.info.virsh_usable); // max ram is 4GB
+        const min = 0;
         this.pid.dt = dt;
 
         const target = clamp(threshold + (logger.info.virsh_swap_out - logger.info.virsh_swap_in), min, max);
 
-        console.log({target, min , max});
+        console.log({target : target / 1024, min : min / 1024 , max : max / 1024});
 
         let out = this.pid_regul(target, logger.info.virsh_usable);
 
@@ -327,19 +342,21 @@ class SystemManager {
         return time;
     }
 
-    memory_reclaim(increment, threshold, increase) {
+    memory_reclaim(increment, threshold, swappiness) {
         const vm_mem = (logger.info.virsh_available - logger.info.virsh_usable) / 1024;
     
         console.log(logger.info.ram_usage, vm_mem + threshold);
         if(logger.info.ram_usage > vm_mem + threshold) {
-            let ret = false;
+            this.reclaim_memory(increment, swappiness);
+
+            /*let ret = false;
             while(!ret && this.swappiness < 100) {
                 ret = this.reclaim_memory(increment, this.swappiness);
                 if(!ret) {
                     this.swappiness += 10;
                     console.log(`Swappiness = ${this.swappiness}`);
                 }
-            }
+            }*/
         }
     }
 

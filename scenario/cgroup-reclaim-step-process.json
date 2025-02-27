@@ -1,5 +1,5 @@
 {
-    "name": "cgroups-regul-viewersburst{{num_viewers:10}}-thresh{{threshold:200}}",
+    "name": "cgroups-reclaim-step-process-{{increment:100}}-{{swappiness:60}}",
     "steps": [
         {
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
@@ -9,6 +9,17 @@
         },
         {
             "require": "medooze_connected",
+            "actions": ["start_spawning_process"],
+            "start_spawning_process":{},
+            "repeat": 1
+        },
+        {
+            "require": "memory_filled",
+            "actions": ["kill_process"],
+            "kill_process": 50,
+            "repeat" : 1
+        },
+        {
             "actions": ["add_publisher"],
             "add_publisher" : [{ "id": "mac",  "codec": "vp8", "scenar": "simulcast" }],
             "repeat" : 1
@@ -21,35 +32,28 @@
         },
         {
             "actions": [],
-            "wait": 60000,
+            "wait": 45000,
             "repeat": 1
         },
         {
-            "actions": ["start_cgroups_regul"],
-            "start_cgroups_regul": {
+            "actions": ["start_reclaim_reduction"],
+            "start_reclaim_reduction":{
                 "timeout": 1,
-                "threshold": "{{threshold:200}}"
+                "threshold": 200,
+                "increment": "{{increment:100}}",
+                "swappiness": "{{swappiness:60}}"
             },
-            "repeat": 1
+            "repeat": 1,
+            "wait": 2000
         },
         {
-            "actions": [],
-            "wait": 120000,
-            "repeat": 1
-        },
-        {
-            "actions": ["add_viewer"],
-            "add_viewer" : [ { "id": "baleze", "count": "{{num_viewers:10}}" } ],
-            "repeat": 1
-        },
-        {
-            "actions": [],
-            "wait": 60000,
-            "repeat": 1
-        },
-        {
-            "actions": ["stop_cgroups_regul"],
+            "actions": ["stop_reclaim_reduction"],
             "start_reclaim_reduction":{},
+            "repeat": 1
+        },
+        {
+            "actions": [],
+            "wait": 90000,
             "repeat": 1
         },
         {

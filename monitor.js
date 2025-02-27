@@ -77,13 +77,19 @@ class Monitor {
         clearInterval(this.memory_timeout[Symbol.toPrimitive]());
     }
 
-    start_cgroup_max_regul(opts) {
-        this.pid_max_timeout = setInterval(() => this.sys_manager.cgroup_max_regul(opts.increment, opts.threshold, opts.increase), 
-                                         opts.timeout * SECONDS);
+    start_cgroups_regul(opts) {
+        let time = opts.timeout;
+
+        let callback = () => {
+            time = this.sys_manager.cgroups_regul(opts.threshold, time);
+            this.pid_cgroups_timeout = setTimeout(callback, Math.floor(time * SECONDS));
+        };
+
+        this.pid_max_timeout = setTimeout(callback, time * SECONDS);
     }
 
-    stop_cgroup_max_regul() {
-        clearInterval(this.pid_max_timeout[Symbol.toPrimitive]());
+    stop_cgroups_regul() {
+        clearTimeout(this.pid_max_timeout[Symbol.toPrimitive]());
     }
 
     start_balloon_regul(opts) {
@@ -102,7 +108,7 @@ class Monitor {
 
     start_reclaim_reduction(opts) {
         // Start algorithm to reduce memory
-        this.reclaim_timeout = setInterval(() => this.sys_manager.memory_reclaim(opts.increment, opts.threshold, opts.increase), 
+        this.reclaim_timeout = setInterval(() => this.sys_manager.memory_reclaim(opts.increment, opts.threshold, opts.swappiness), 
         opts.timeout * SECONDS);
     }
 
