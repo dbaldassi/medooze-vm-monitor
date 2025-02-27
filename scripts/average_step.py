@@ -313,7 +313,7 @@ if __name__ == "__main__":
         elif(sys.argv[1] == 'cgroups-max'):
             duration = find_duration_cgroups_max(stat, 45)
         elif(sys.argv[1] == 'cgroups-reclaim'):
-            duration = find_duration_cgroups_max(stat, 45)
+            duration = find_duration_cgroups_max(stat, 40)
         else:
             print("NOPE")
             exit(1)

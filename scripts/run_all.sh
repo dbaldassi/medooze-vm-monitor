@@ -2,7 +2,7 @@
 
 REPET=1
 # SCENARIO=("reduction-viewers" "reclaim-reduction-viewers")
-SCENARIO=("pid-balloon-process")
+SCENARIO=("pid-balloon" "pid-balloon-process")
 # SCENARIO=("spawn-cgroup-reclaim" "spawn-cgroup-max" "spawn-balloon")
 # SCENARIO=("max2500")
 # VIEWERS=(10 45 70)
@@ -10,8 +10,10 @@ VIEWERS=(20)
 # THRESHOLD=(400 200 50)
 # THRESHOLD=(200 100 50)
 THRESHOLD=(200)
-# INCREMENT=(1 50 100 300 500 1000 1500)
-INCREMENT=(0)
+INCREMENT=(1 50 100 300 500 1000)
+# SWAPPINESS=(0 10 30 60 100)
+# INCREMENT=(1)
+SWAPPINESS=(60)
 
 export LIBVIRT_DEFAULT_URI=qemu:///system
 
@@ -99,7 +101,10 @@ run_with_increment() {
 	do
 	    for incr in ${INCREMENT[@]}
 	    do
-		curl -k -d "name=$scenar-$i" -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/new
+		for swap in ${SWAPPINESS[@]}
+					do
+		curl -k -d "name=$scenar-$i-$incr-$swap" -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/new
+		done
 	    done
 	done
     done
@@ -112,10 +117,13 @@ run_with_increment() {
 	do
 	    for incr in ${INCREMENT[@]}
 	    do
+		for swap in ${SWAPPINESS[@]}
+					do
 		restart_vm
 		echo "Run node"
-		su tobias -c "source ~/.bashrc; node . $scenar increment:$incr"
+		su tobias -c "source ~/.bashrc; node . $scenar increment:$incr swappiness:$swap"
 		curl -k -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/next
+		done
 	    done
 	done
     done
@@ -130,7 +138,10 @@ run_with_viewers_threshold() {
 			do
 				for thresh in ${THRESHOLD[@]}
 				do
-					curl -k -d "name=$scenar-$i-$viewer-$thresh" -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/new
+				for swap in ${SWAPPINESS[@]}
+					do
+						curl -k -d "name=$scenar-$i-$viewer-$thresh-$swap" -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/new
+					done
 				done
 			done
 		done
@@ -146,10 +157,13 @@ run_with_viewers_threshold() {
 			do
 				for thresh in ${THRESHOLD[@]}
 				do
-					restart_vm
-					echo "Run node"
-					su tobias -c "source ~/.bashrc; node . $scenar num_viewers:$viewer threshold:$thresh"
-					curl -k -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/next
+					for swap in ${SWAPPINESS[@]}
+					do
+						restart_vm
+						echo "Run node"
+						su tobias -c "source ~/.bashrc; node . $scenar num_viewers:$viewer threshold:$thresh swappiness:$swap"
+						curl -k -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/next
+					done
 				done
 			done
 		done
@@ -206,9 +220,14 @@ trap 'trap_sigint' INT
 # run_with_viewers_threshold
 
 # SCENARIO=("ballooning-step")
-# SCENARIO=("cgroup-max-step")
-# REPET=20
-# run_with_increment
+SCENARIO=("cgroup-max-step-process" "cgroup-reclaim-step-process" "ballooning-step-process")
+REPET=20
+run_with_increment
+
+SCENARIO=("cgroup-reclaim-step-process")
+REPET=20
+SWAPPINESS=(0 10 30 60 100)
+run_with_increment
 
 curl -k -d "code=0" -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/stop
 

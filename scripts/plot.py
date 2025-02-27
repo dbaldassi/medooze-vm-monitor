@@ -48,7 +48,7 @@ headers = { 'TIME': [0, None, lambda x : float(x) / 1000., "time (s)" ],
 'VIEWER_COUNT':[24, 'y', lambda x : float(x), "Viewer Count"],
 'VM_MEMORY_USAGE':[25, 'midnightBlue', lambda x : float(x), "Memory (MiB)"],
 'VM_MEMORY_FREE':[26, 'tomato', lambda x : float(x), "Memory (MiB)" ],
-'VM_CPU_USAGE':[27, 'b', lambda x : float(x) * 100, "CPU (%)"],
+'VM_CPU_USAGE':[27, 'b', lambda x : max(0, float(x) * 100), "CPU (%)"],
 'MEDOOZE_INCOMING_LOST':[28],
 'MEDOOZE_INCOMING_DROP':[29],
 'MEDOOZE_INCOMING_BITRATE':[30],
@@ -100,6 +100,7 @@ if __name__ == "__main__":
     x_axis = None
     y_axis = []
     y2_axis = []
+    show = False
 
     if len(sys.argv) >= 5:
         filename = sys.argv[1]
@@ -108,8 +109,14 @@ if __name__ == "__main__":
         x_axis = sys.argv[3]
         y_axis = sys.argv[4].split(',')
     
-        if len(sys.argv) == 6:
-            y2_axis = sys.argv[5].split(',')
+        if len(sys.argv) >= 6:
+            if sys.argv[5] == "show":
+                show = True
+            else:
+                y2_axis = sys.argv[5].split(',')
+
+        if len(sys.argv) == 7:
+            show = True
     else:
         print("Usage : {} <file> <avg|1stq|median|3rdq|min|max> <key_x_axis> <key1_y_axis[,k2,...,kn]> [keys_y2_axis]".format(sys.arvg[0]))
         exit(1)
@@ -163,14 +170,18 @@ if __name__ == "__main__":
     ax.grid()
     fig.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax.transAxes)
 
-    dest_path = filename.split('/')
 
-    if len(y2_axis):
-        dest_path[-1] = "plot_{}x{}x{}_{}.png".format(x_axis, y_axis[0],y2_axis[0], "-".join(indicator))
+    if show:
+        plt.show()
     else:
-        dest_path[-1] = "plot_{}x{}_{}.png".format(x_axis, y_axis[0], "-".join(indicator))
+        dest_path = filename.split('/')
 
-    plt.savefig("/".join(dest_path))
+        if len(y2_axis):
+            dest_path[-1] = "plot_{}x{}x{}_{}.png".format(x_axis, y_axis[0],y2_axis[0], "-".join(indicator))
+        else:
+            dest_path[-1] = "plot_{}x{}_{}.png".format(x_axis, y_axis[0], "-".join(indicator))
+
+        plt.savefig("/".join(dest_path))
 
 
     
