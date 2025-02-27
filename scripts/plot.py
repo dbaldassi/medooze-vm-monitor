@@ -29,6 +29,12 @@ method_color = {
     "cgroup-reclaim" : 'g'
 }
 
+method_style = {
+    "ballooning" : '--',
+    "cgroup-max" : '-',
+    "cgroup-reclaim" : 'dotted'
+}
+
 # plt.rcParams["figure.figsize"] = (20,3)
 
 headers = { 'TIME': [0, None, lambda x : float(x) / 1000., "time", "(s)", "Time" ],
@@ -121,20 +127,12 @@ def get_method(filename):
     
     return None
 
-def plot_y(ax, lines, header, indicator, x_axis_values, style, filename):
+def plot_yy(ax, lines, header, indicator, x_axis_values, style, color, label):
     if len(indicator) == 1: # only one indicator asked, for instance only the average
         # get the correct index in the csv array
         y_idx = get_index(header[INDEX], indicator[0])
         # get corresponding values
         y_axis_value = [ header[PROCESS](line[y_idx]) if len(line) > y_idx else 0 for line in lines ]
-        # get method
-        if filename:
-            method = get_method(filename)
-            color = method_color[method]
-            label = method
-        else:
-            color = header[color]
-            label  = header[NAME]
         # plot y values in function of x values on the plot
         ax.plot(x_axis_values, y_axis_value, color=color, label=label, linewidth=LINEWIDTH, linestyle=style)
     else:
@@ -142,6 +140,23 @@ def plot_y(ax, lines, header, indicator, x_axis_values, style, filename):
             y_idx = get_index(header[INDEX], ind)
             y_axis_value = [ header[PROCESS](line[y_idx]) if len(line) > y_idx else 0 for line in lines ]
             ax.plot(x_axis_values, y_axis_value, color=indicators_color[indicators.index(ind)], label=ind, linewidth=LINEWIDTH)
+
+def plot_y(ax, lines, header, indicator, x_axis_values, style, filename, multiple_on_y):
+    color = header[COLOR]
+    label = header[NAME]
+
+    if filename:
+        method = get_method(filename)
+
+        if multiple_on_y:
+            style = method_style[method]
+            label = "{} ({})".format(label, method)
+        else:
+            color = method_color[method]
+            label = method
+        
+
+    plot_yy(ax, lines, header, indicator, x_axis_values, style, color, label)
 
 def save(filenames, x_axis, y_axis, y2_axis, indicator, show, res):
     if show:
@@ -171,7 +186,7 @@ def plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, res):
     fig,ax = plt.subplots(figsize=(res[0]*px, res[1]*px))
     # set label for figure
     ax.set_xlabel("{} {}".format(headers[x_axis][LABEL], headers[x_axis][UNIT]))
-    label_ind = LABEL if len(filenames) == 1 else NAME
+    label_ind = LABEL if len(filenames) == 1 or len(y_axis) > 1 else NAME
     ax.set_ylabel("{} {}".format(headers[y_axis[0]][label_ind], headers[y_axis[0]][UNIT]))
     bx = None # no secondary axis by default
 
@@ -184,6 +199,8 @@ def plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, res):
     if len(indicator) > 1:
             ax.set_title(y_axis[0])
 
+    multiple_on_y = len(y_axis) > 1 or len(y2_axis) > 1
+
     # iterate through all specified file ot combine them on one fig
     for filename in filenames:
         # open the csv average file
@@ -195,11 +212,11 @@ def plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, res):
 
         # plot on primary vertical axis
         for y in y_axis:
-            plot_y(ax, lines, headers[y], indicator, x_axis_values, '-', filename if len(filenames) > 1 else None)
+            plot_y(ax, lines, headers[y], indicator, x_axis_values, '-', filename if len(filenames) > 1 else None, multiple_on_y)
 
         # plot on secondary vertical axis
         for y in y2_axis:
-            plot_y(bx, lines, headers[y], indicator, x_axis_values, 'dotted', filename if len(filenames) > 1 else None)
+            plot_y(bx, lines, headers[y], indicator, x_axis_values, 'dotted', filename if len(filenames) > 1 else None, multiple_on_y)
 
     # view window
     if window:
@@ -238,21 +255,13 @@ if __name__ == "__main__":
                 window = [int(i) for i in window] # convert to int
             else:
                 y2_axis = sys.argv[i].split(',')
-
-        # if len(sys.argv) >= 6:
-            # if sys.argv[5] == "show":
-            #     show = True
-            # else:
-            #     y2_axis = sys.argv[5].split(',')
-
-        # if len(sys.argv) == 7:
-        #    show = True
     else:
         print("Usage : {} <file> <avg|1stq|median|3rdq|min|max> <key_x_axis> <key1_y_axis[,k2,...,kn]> [keys_y2_axis]".format(sys.arvg[0]))
         exit(1)
 
     print(x_axis, y_axis, y2_axis, window)
 
+    # check if specified indicators are valid
     for i in indicator:
         if not i in indicators:
             print("You specifed an invalid indicator")
