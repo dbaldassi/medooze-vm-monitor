@@ -53,7 +53,7 @@ headers = { 'TIME': [0, None, lambda x : float(x) / 1000., "time", "(s)", "Time"
 'VIRSH_USABLE':[13, 'm', lambda x : float(x) / 1024., "Memory", "(MiB)", "VM free memory" ],
 'VIRSH_AVAILABLE':[14, 'r', lambda x : float(x) / 1024., "Memory", "(MiB)", "VM available memory" ],
 'VIRSH_SWAP_IN':[15, '', lambda x : float(x) / 1024., "Memory", "(MiB)", "VM swap in" ],
-'VIRSH_SWAP_OUT':[16, 'g', lambda x : float(x) / 1024., "Memory", "(MiB)", "Vm swap out" ],
+'VIRSH_SWAP_OUT':[16, 'g', lambda x : float(x) / 1024., "Memory", "(MiB)", "VM swap out" ],
 'VIRSH_MINOR_FAULT':[17],
 'VIRSH_MAJOR_FAULT':[18],
 'PUBLISHER_BITRATE':[19, 'b', lambda x : float(x), "Bitrate", "(kbps)", "publisher bitrate"],
@@ -127,21 +127,21 @@ def get_method(filename):
     
     return None
 
-def plot_yy(ax, lines, header, indicator, x_axis_values, style, color, label):
+def plot_yy(ax, lines, header, indicator, x_axis_values, w, style, color, label):
     if len(indicator) == 1: # only one indicator asked, for instance only the average
         # get the correct index in the csv array
         y_idx = get_index(header[INDEX], indicator[0])
         # get corresponding values
         y_axis_value = [ header[PROCESS](line[y_idx]) if len(line) > y_idx else 0 for line in lines ]
         # plot y values in function of x values on the plot
-        ax.plot(x_axis_values, y_axis_value, color=color, label=label, linewidth=LINEWIDTH, linestyle=style)
+        ax.plot(x_axis_values[w[0]:w[1]], y_axis_value[w[0]:w[1]], color=color, label=label, linewidth=LINEWIDTH, linestyle=style)
     else:
         for ind in indicator:
             y_idx = get_index(header[INDEX], ind)
             y_axis_value = [ header[PROCESS](line[y_idx]) if len(line) > y_idx else 0 for line in lines ]
-            ax.plot(x_axis_values, y_axis_value, color=indicators_color[indicators.index(ind)], label=ind, linewidth=LINEWIDTH)
+            ax.plot(x_axis_values[w[0]:w[1]], y_axis_value[w[0]:w[1]], color=indicators_color[indicators.index(ind)], label=ind, linewidth=LINEWIDTH)
 
-def plot_y(ax, lines, header, indicator, x_axis_values, style, filename, multiple_on_y):
+def plot_y(ax, lines, header, indicator, x_axis_values, window, style, filename, multiple_on_y):
     color = header[COLOR]
     label = header[NAME]
 
@@ -156,7 +156,7 @@ def plot_y(ax, lines, header, indicator, x_axis_values, style, filename, multipl
             label = method
         
 
-    plot_yy(ax, lines, header, indicator, x_axis_values, style, color, label)
+    plot_yy(ax, lines, header, indicator, x_axis_values, window, style, color, label)
 
 def save(filenames, x_axis, y_axis, y2_axis, indicator, show, res):
     if show:
@@ -181,6 +181,24 @@ def save(filenames, x_axis, y_axis, y2_axis, indicator, show, res):
 
         plt.savefig("/".join(dest_path), format='pdf')
 
+def find_window_index(values, window):
+    window_index = [0, len(values)]
+    if not window:
+        return window_index
+
+    ind = 0
+    while ind < len(values) and values[ind] < window[0]:
+        ind += 1
+
+    window_index[0] = ind if ind < len(values) else 0
+
+    while ind < len(values) and values[ind] < window[1]:
+        ind += 1
+    
+    window_index[1] = ind
+
+    return window_index
+
 def plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, res):
     # create figure with specified ratio
     fig,ax = plt.subplots(figsize=(res[0]*px, res[1]*px))
@@ -201,7 +219,7 @@ def plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, res):
 
     multiple_on_y = len(y_axis) > 1 or len(y2_axis) > 1
 
-    # iterate through all specified file ot combine them on one fig
+        # iterate through all specified file ot combine them on one fig
     for filename in filenames:
         # open the csv average file
         lines = open_csv(filename) 
@@ -210,19 +228,21 @@ def plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, res):
         x_axis_idx = get_index(headers[x_axis][INDEX], indicator[0])
         x_axis_values = [ headers[x_axis][PROCESS](line[x_axis_idx]) for line in lines ]
 
+        window_index = find_window_index(x_axis_values, window)
+ 
         # plot on primary vertical axis
         for y in y_axis:
-            plot_y(ax, lines, headers[y], indicator, x_axis_values, '-', filename if len(filenames) > 1 else None, multiple_on_y)
+            plot_y(ax, lines, headers[y], indicator, x_axis_values, window_index, '-', filename if len(filenames) > 1 else None, multiple_on_y)
 
         # plot on secondary vertical axis
         for y in y2_axis:
-            plot_y(bx, lines, headers[y], indicator, x_axis_values, 'dotted', filename if len(filenames) > 1 else None, multiple_on_y)
+            plot_y(bx, lines, headers[y], indicator, x_axis_values, window_index, 'dotted', filename if len(filenames) > 1 else None, multiple_on_y)
 
     # view window
-    if window:
-        ax.set_xlim(window[0], window[1])
-        if bx:
-            bx.set_xlim(window[0], window[1])
+    # if window:
+    #     ax.set_xlim(window[0], window[1])
+    #     if bx:
+    #         bx.set_xlim(window[0], window[1])
 
     # add legend to the figure
     fig.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax.transAxes)
