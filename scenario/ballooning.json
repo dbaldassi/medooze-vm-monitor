@@ -21,27 +21,27 @@
         },
         {
             "actions": [],
-            "wait": 60000,
+            "wait": 10000,
             "repeat": 1
         },
         {
             "actions": ["start_balloon_reduction"],
-            "start_balloon_reduction": 10,
+            "start_balloon_reduction": {
+                "timeout": 10,
+                "threshold": 50,
+                "increment": 100,
+                "increase": 0
+            },
             "repeat": 1
         },
         {
             "actions": [],
-            "wait": 300000,
+            "wait": 360000,
             "repeat": 1
         },
         {
             "actions": ["stop_balloon_reduction"],
             "stop_balloon_reduction":{},
-            "repeat": 1
-        },
-        {
-            "actions": [],
-            "wait": 60000,
             "repeat": 1
         },
         {
@@ -52,7 +52,7 @@
         },
         {
             "actions" : [ "save" ],
-            "save": "average_viewer"
+            "save": {}
         },
         {
             "actions" : ["exit"],

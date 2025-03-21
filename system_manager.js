@@ -9,6 +9,7 @@ const logger = require('./stats.js');
 // Get config
 const config = require('./config.json');
 const { readFileSync } = require("node:fs");
+const { log } = require("node:console");
 
 // Units
 const KILO = 1024;
@@ -47,6 +48,9 @@ class SystemManager {
 
             dt : 10 // 10sec
         }
+
+        this.window_size = 200;
+        this.threshold_percentage = 1;
         
         // inotify.addWatch({ path: this.swap_event_path, watch_for: Inotify.IN_MODIFY, callback: event => this.swapevent_callback(event) });
         // inotify.addWatch({ path: this.memory_event_path, watch_for: Inotify.IN_MODIFY, callback: event => this.memoryevents_callback(event) });
@@ -91,6 +95,7 @@ class SystemManager {
             for(let line of data.toString().split('\n')) {
                 const split = line.split(' ');
                 this.mem_stat[split[0]] = parseInt(split[1]);
+                logger.info[split[0]] = parseInt(split[1]);
             }
         } catch(e) {
         
@@ -280,7 +285,7 @@ class SystemManager {
         }
     }
 
-    cgroups_regul(threshold, dt) {
+    /*cgroups_regul(threshold, dt) {
         this.set_max_ram(logger.info.ram_usage + threshold);
         
         const step = 100;
@@ -298,6 +303,115 @@ class SystemManager {
 
         console.log("waiting ", wait_time);
         return wait_time;
+    }*/
+
+    cgroups_regul_pid(threshold, dt) {
+        if(logger.info.pressure_avg10 > 1) {
+            return logger.info.pressure_avg10;
+        }
+
+
+        const default_wait_time = 3;
+        let target = logger.info.vm_ram_usage + threshold;
+
+        // if the memory is under the target, we can't increase
+        // so we change the target to the current memory value to make the pid error converge to 0
+        // since we can't increase
+        if(logger.info.ram_usage - target < 0) {
+            target = logger.info.ram_usage;
+        }
+
+        this.pid.dt = dt;
+        this.pid.kd = 0;
+        this.pid.ki = 0;
+
+        this.set_max_ram(logger.info.ram_usage + threshold);
+
+        let out = this.pid_regul(logger.info.ram_usage, target); // invert to invert the sign
+
+        console.log({out, target, usage:logger.info.ram_usage, vm:logger.info.vm_ram_usage})
+
+        out = Math.min(Math.floor(out), logger.info.ram_usage - target);
+
+        console.log({out, target, usage:logger.info.ram_usage})
+
+        if(out <= 0) {
+            return default_wait_time; // wait 10sec
+        }
+
+        out = Math.min(out, 150);
+        this.reclaim_memory(out);
+
+        let time = (7/499) * out + 492/499;
+        time = Math.max(time * 2, 1);
+
+        // console.log({out, target, usage:logger.info.ram_usage, time})
+
+        return time;        
+    }
+
+    update_anon_window() {
+        if(this.inactive_anon_values === undefined) {
+            console.log("create anon array");
+            this.inactive_anon_values = [];
+        }
+
+        if(logger.info.inactive_anon === undefined) {
+            return; // no data
+        }
+
+        this.inactive_anon_values.push(inactive_anon);
+
+        if(this.inactive_anon_values.length < this.window_size) {
+            console.log("not enough values");
+            return; // window not filled yet, considered not stabilized
+        }
+        else if(this.inactive_anon_values.length > this.window_size) {
+            this.inactive_anon_values.shift(); // we want only the last minute not one second more
+        }
+    }
+
+    calculate_standard_seviation(values) {
+        const mean = values.reduce((a, b) => a + b, 0) / values.length;
+        const variance = values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length;
+        return Math.sqrt(variance);
+    }
+
+    cgroups_regul(threshold, dt) {
+        this.update_anon_window();
+
+        const unused = logger.info.ram_usage - (logger.info.vm_free_used + logger.info.vm_free_bufcache);
+
+        console.log("estimated unused : ", unused);
+
+        if(unused === undefined || Number.isNaN(unused) || unused < threshold) {
+            console.log("unused is NaN or greater than threshold");
+            return;
+        }
+
+        const inactive_anon = logger.info.inactive_anon / (1024 * 1024);
+        console.log("inactive anon : ", inactive_anon);
+
+        if(inactive_anon === 0) {
+            console.log("anon is 0, reclaiming 100");
+            this.reclaim_memory(100); // to be adjusted in function of reclaimable bytes
+            return;
+        }
+        
+        console.log("Checking stabilization");
+        const std_dev = this.calculate_standard_seviation(this.inactive_anon_values);
+
+        // Vérifier si l'écart type est inférieur à un seuil
+        if (std_dev >= 1) {
+            console.log("Not stabilized (stdDev too high):", std_dev);
+            return; // Pas encore stabilisé
+        }
+
+        console.log("Stabilized");
+        this.inactive_anon_values = [];
+
+        console.log("reclaiming : ", unused - threshold);
+        this.reclaim_memory(Math.min(100,unused - threshold));
     }
 
     create_balloon_pid() {
@@ -334,6 +448,7 @@ class SystemManager {
         let time = 3;
         if(out < 0) {
             time = (1 / 250) * (out / -1024) + 1/2; // found by interpolation
+            time = Math.max(time, 1); // min 1 sec because virsh report stats every second
             console.log("Time until next : ", time)
         }
 

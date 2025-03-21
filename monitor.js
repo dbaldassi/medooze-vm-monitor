@@ -81,7 +81,8 @@ class Monitor {
         let time = opts.timeout;
 
         let callback = () => {
-            time = this.sys_manager.cgroups_regul(opts.threshold, time);
+            // time = this.sys_manager.cgroups_regul(opts.threshold, time);
+            this.sys_manager.cgroups_regul(opts.threshold, time);
             this.pid_cgroups_timeout = setTimeout(callback, Math.floor(time * SECONDS));
         };
 
@@ -248,6 +249,8 @@ class Monitor {
         // Get dest dir
         const dest_dir = Path.join('results', this.exp_name);
 
+        console.log("save ", dest_dir);
+
         // Check if folder exists
         if(!FS.existsSync(dest_dir)) {
             // If not create it
@@ -260,9 +263,11 @@ class Monitor {
 
         // Get dest path
         const dest_path = Path.join(dest_dir, name);
+        const cgroups_dest_path = Path.join(dest_dir, `cgroups_${name}`);
 
         // Copy stats.csv to dest path
         FS.cpSync(logger.csv_name, dest_path);
+        FS.cpSync("cgroups_stats.csv", cgroups_dest_path);
 
         // Add viewers csv headers
         logger.sync_headers_sync(dest_path);

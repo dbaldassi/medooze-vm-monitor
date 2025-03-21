@@ -10,21 +10,24 @@ average_stats = []
 
 # load all stats
 for f in os.listdir():
-    if not f.endswith('_average.csv') or f.startswith('.'):
-        continue
+    # if not f.endswith('_average.csv') or f.startswith('.'):
+    #     continue
     
     with open(f, 'r') as csv_file:
         lines = [ line for line in csv.reader(csv_file, delimiter=',') ]
         all_stats.append(lines)
 
 newheaders = []
+# num_indicators = 6
+num_indicators = 1
+
 for header in all_stats[0][0]:
     newheaders.append(header)
-    newheaders.append("1stQ")
-    newheaders.append("Median")
-    newheaders.append("3rdQ")
-    newheaders.append("Min")
-    newheaders.append("Max")
+    # newheaders.append("1stQ")
+    # newheaders.append("Median")
+    # newheaders.append("3rdQ")
+    # newheaders.append("Min")
+    # newheaders.append("Max")
 
 average_stats.append(newheaders) # add headers
 
@@ -40,7 +43,7 @@ for i in range(num_lines):
     # create a line of zero, same size as number of headers
     # avg_line = [[]] * (len(average_stats[0]) // 6)
     avg_line = []
-    for i in range(len(average_stats[0]) // 6):
+    for i in range(len(average_stats[0]) // num_indicators):
         avg_line.append([])
 
     for stat in all_stats:
@@ -70,11 +73,11 @@ for i in range(num_lines):
 
         col.sort()
         result.append(sum(col) / len(col))
-        result.append(col[len(col) // 4])
-        result.append(col[len(col) // 2])
-        result.append(col[len(col) * 3 // 4])
-        result.append(min(col))
-        result.append(max(col))
+        # result.append(col[len(col) // 4])
+        # result.append(col[len(col) // 2])
+        # result.append(col[len(col) * 3 // 4])
+        # result.append(min(col))
+        # result.append(max(col))
 
     average_stats.append(result)
 

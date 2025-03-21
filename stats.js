@@ -41,6 +41,9 @@ class StatsLogger {
             {id: 'vm_ram_usage', title: 'VM MEMORY USAGE'},
             {id: 'vm_ram_free', title: 'VM MEMORY FREE'},
             {id: 'vm_cpu_usage', title: 'VM CPU USAGE'},
+            {id: 'vm_free_total', title: 'VM FREE TOTAL'},
+            {id: 'vm_free_used', title: 'VM FREE USED'},
+            {id: 'vm_free_bufcache', title: 'VM FREE BUFCACHE'},
             {id: 'medooze_incoming_lost', title: 'MEDOOZE INCOMING LOST'},
             {id: 'medooze_incoming_drop', title: 'MEDOOZE INCOMING DROP'},
             {id: 'medooze_incoming_bitrate', title: 'MEDOOZE INCOMING BITRATE'},
@@ -54,6 +57,83 @@ class StatsLogger {
             {id: 'tx_dropped', title: 'TX DROPPED'},
             {id: 'tx_errors', title: 'TX ERRORS'},
             {id: 'tx_missed', title: 'TX MISSED'},
+        ];
+
+        // Headers spécifiques pour les stats cgroup
+        this.cgroup_headers = [
+            { id: 'time', title: 'TIME' },
+            { id: 'anon', title: 'ANON' },
+            { id: 'file', title: 'FILE' },
+            { id: 'kernel', title: 'KERNEL' },
+            { id: 'kernel_stack', title: 'KERNEL STACK' },
+            { id: 'pagetables', title: 'PAGETABLES' },
+            { id: 'sec_pagetables', title: 'SEC PAGETABLES' },
+            { id: 'percpu', title: 'PERCPU' },
+            { id: 'sock', title: 'SOCK' },
+            { id: 'vmalloc', title: 'VMALLOC' },
+            { id: 'shmem', title: 'SHMEM' },
+            { id: 'zswap', title: 'ZSWAP' },
+            { id: 'zswapped', title: 'ZSWAPPED' },
+            { id: 'file_mapped', title: 'FILE MAPPED' },
+            { id: 'file_dirty', title: 'FILE DIRTY' },
+            { id: 'file_writeback', title: 'FILE WRITEBACK' },
+            { id: 'swapcached', title: 'SWAPCACHED' },
+            { id: 'anon_thp', title: 'ANON THP' },
+            { id: 'file_thp', title: 'FILE THP' },
+            { id: 'shmem_thp', title: 'SHMEM THP' },
+            { id: 'inactive_anon', title: 'INACTIVE ANON' },
+            { id: 'active_anon', title: 'ACTIVE ANON' },
+            { id: 'inactive_file', title: 'INACTIVE FILE' },
+            { id: 'active_file', title: 'ACTIVE FILE' },
+            { id: 'unevictable', title: 'UNEVICTABLE' },
+            { id: 'slab_reclaimable', title: 'SLAB RECLAIMABLE' },
+            { id: 'slab_unreclaimable', title: 'SLAB UNRECLAIMABLE' },
+            { id: 'slab', title: 'SLAB' },
+            { id: 'workingset_refault_anon', title: 'WORKINGSET REFAULT ANON' },
+            { id: 'workingset_refault_file', title: 'WORKINGSET REFAULT FILE' },
+            { id: 'workingset_activate_anon', title: 'WORKINGSET ACTIVATE ANON' },
+            { id: 'workingset_activate_file', title: 'WORKINGSET ACTIVATE FILE' },
+            { id: 'workingset_restore_anon', title: 'WORKINGSET RESTORE ANON' },
+            { id: 'workingset_restore_file', title: 'WORKINGSET RESTORE FILE' },
+            { id: 'workingset_nodereclaim', title: 'WORKINGSET NODERECLAIM' },
+            { id: 'pgdemote_kswapd', title: 'PGDEMOTE KSWAPD' },
+            { id: 'pgdemote_direct', title: 'PGDEMOTE DIRECT' },
+            { id: 'pgdemote_khugepaged', title: 'PGDEMOTE KHUGEPAGED' },
+            { id: 'pgpromote_success', title: 'PGPROMOTE SUCCESS' },
+            { id: 'pgscan', title: 'PGSCAN' },
+            { id: 'pgsteal', title: 'PGSTEAL' },
+            { id: 'pgscan_kswapd', title: 'PGSCAN KSWAPD' },
+            { id: 'pgscan_direct', title: 'PGSCAN DIRECT' },
+            { id: 'pgscan_khugepaged', title: 'PGSCAN KHUGEPAGED' },
+            { id: 'pgsteal_kswapd', title: 'PGSTEAL KSWAPD' },
+            { id: 'pgsteal_direct', title: 'PGSTEAL DIRECT' },
+            { id: 'pgsteal_khugepaged', title: 'PGSTEAL KHUGEPAGED' },
+            { id: 'pgfault', title: 'PGFAULT' },
+            { id: 'pgmajfault', title: 'PGMAJFAULT' },
+            { id: 'pgrefill', title: 'PGREFILL' },
+            { id: 'pgactivate', title: 'PGACTIVATE' },
+            { id: 'pgdeactivate', title: 'PGDEACTIVATE' },
+            { id: 'pglazyfree', title: 'PGLAZYFREE' },
+            { id: 'pglazyfreed', title: 'PGLAZYFREED' },
+            { id: 'swpin_zero', title: 'SWPIN ZERO' },
+            { id: 'swpout_zero', title: 'SWPOUT ZERO' },
+            { id: 'zswpin', title: 'ZSWPIN' },
+            { id: 'zswpout', title: 'ZSWPOUT' },
+            { id: 'zswpwb', title: 'ZSWPWB' },
+            { id: 'thp_fault_alloc', title: 'THP FAULT ALLOC' },
+            { id: 'thp_collapse_alloc', title: 'THP COLLAPSE ALLOC' },
+            { id: 'thp_swpout', title: 'THP SWPOUT' },
+            { id: 'thp_swpout_fallback', title: 'THP SWPOUT FALLBACK' },
+            { id: 'numa_pages_migrated', title: 'NUMA PAGES MIGRATED' },
+            { id: 'numa_pte_updates', title: 'NUMA PTE UPDATES' },
+            { id: 'numa_hint_faults', title: 'NUMA HINT FAULTS' },
+            { id: 'ram_usage', title: 'MEMORY CURRENT' },
+            { id: 'swap_usage', title: 'SWAP CURRENT' },
+            { id: 'maxram', title: 'MEMORY MAX' },
+            { id: 'pressure_avg10', title: 'PRESSURE AVG10' },
+            { id: 'summed_memory', title: 'SUMMED MEMORY' },
+            { id: 'vm_free_used', title: 'VM FREE USED'},
+            { id: 'vm_free_bufcache', title: 'VM FREE BUFCACHE'},
         ];
 
         this.headers_init_len = this.headers.length;
@@ -86,6 +166,30 @@ class StatsLogger {
             pressure_avg60: 0,
             pressure_avg300: 0,
             pressure_total: 0,
+            anon: 0,
+            file: 0,
+            kernel_stack: 0,
+            slab: 0,
+            slab_reclaimable: 0,
+            slab_unreclaimable: 0,
+            sock: 0,
+            shmem: 0,
+            file_mapped: 0,
+            file_dirty: 0,
+            file_writeback: 0,
+            anon_thp: 0,
+            inactive_anon: 0,
+            active_anon: 0,
+            inactive_file: 0,
+            active_file: 0,
+            unevictable: 0,
+            workingset_refault: 0,
+            workingset_activate: 0,
+            workingset_nodereclaim: 0,
+            pgfault: 0,
+            pgmajfault: 0,
+            pglazyfree: 0,
+            pglazyfreed: 0,
             
             // vm system stats
             vm_ram_usage: undefined,
@@ -121,6 +225,12 @@ class StatsLogger {
         };
 
         this.create_writer(false);
+
+        this.cgroupCsvWriter = createCsvWriter({
+            path: "cgroups_stats.csv",
+            header: this.cgroup_headers,
+            append: false
+        });
     }
 
     add_header(id, title) {
@@ -151,6 +261,35 @@ class StatsLogger {
         // write a new line into the csv file
         const records = [this.info];
         await this.csvWriter.writeRecords(records);
+
+        const memoryComponents = [
+            'anon',
+            'file',
+            'kernel_stack',
+            'pagetables',
+            'sec_pagetables',
+            'shmem',
+            'slab_reclaimable',
+            'slab_unreclaimable',
+            'sock',
+            'zswap',
+            'zswapped',
+            'percpu'
+        ];
+
+        // Calcul de la somme des composantes de la mémoire
+        let summedMemory = 0;
+        memoryComponents.forEach(component => {
+            if (this.info[component] !== undefined) {
+                summedMemory += this.info[component];
+            }
+        });
+
+        // Ajout de la valeur calculée à l'objet info
+        this.info.summed_memory = summedMemory;
+
+        const cgroup_records = [this.info];
+        await this.cgroupCsvWriter.writeRecords(cgroup_records);
     }
 }
 

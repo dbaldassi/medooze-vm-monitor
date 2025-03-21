@@ -35,58 +35,63 @@ method_style = {
     "cgroup-reclaim" : 'dotted'
 }
 
+ANCHOR=[(0,0), (1,1), (0,1), (0,0), (1,0), (1,0.5), (0,0.5), (1,0.5), (0,0), (0,0), (0,0)]
+
 # plt.rcParams["figure.figsize"] = (20,3)
 
-headers = { 'TIME': [0, None, lambda x : float(x) / 1000., "time", "(s)", "Time" ],
-'MEMORY_USED':[1, 'b', lambda x : float(x), "Memory", "(MiB)", "cgroup current memory" ],
-'MEMORY_FREE':[2, 'm', lambda x : float(x), "Memory", "(MiB)", "cgroup current free memory" ],
-'MEMORY_MAX':[3, 'k', lambda x : float(x), "Memory", "(MiB)", "cgroup max memory" ],
-'SWAP':[4, 'g', lambda x : float(x), "Memory", "(MiB)", "cgroup current swap usage" ],
-'CGROUP_CACHE':[5, 'y', lambda x : float(x) / 1024 / 1024, "Memory", "(MiB)", "cgroup cache" ],
-'CGROUP_SWAPPABLE':[6, 'c', lambda x : float(x) / 1024 / 1024, "Memory", "(MiB)", "cgroupe swappable" ],
-'MEMORY_PRESSURE_AVG10':[7, 'darkRed', lambda x : float(x), "Pressure Stall Information", "(PSI)", "Memory pressure"],
-'MEMORY_PRESSURE_AVG60':[8],
-'MEMORY_PRESSURE_AVG300':[9],
-'MEMORY_PRESSURE_TOTAL':[10],
-'VIRSH_ACTUAL':[11, 'k', lambda x : float(x) / 1024., "Memory", "(MiB)", "VM allocated memory" ],
-'VIRSH_UNUSED':[12, 'tomato', lambda x : float(x) / 1024., "Memory", "(MiB)", "VM unused memory" ],
-'VIRSH_USABLE':[13, 'm', lambda x : float(x) / 1024., "Memory", "(MiB)", "VM free memory" ],
-'VIRSH_AVAILABLE':[14, 'r', lambda x : float(x) / 1024., "Memory", "(MiB)", "VM available memory" ],
-'VIRSH_SWAP_IN':[15, '', lambda x : float(x) / 1024., "Memory", "(MiB)", "VM swap in" ],
-'VIRSH_SWAP_OUT':[16, 'g', lambda x : float(x) / 1024., "Memory", "(MiB)", "VM swap out" ],
-'VIRSH_MINOR_FAULT':[17],
-'VIRSH_MAJOR_FAULT':[18],
-'PUBLISHER_BITRATE':[19, 'b', lambda x : float(x), "Bitrate", "(kbps)", "publisher bitrate"],
-'PUBLISHER_FPS':[20, 'r', lambda x : float(x), "FPS", "publisher fps" ],
-'PUBLISHER_RES':[21],
-'PUBLISHER_RTT':[22, 'r', lambda x : float(x), "Delay", "(ms)", "publisher rtt"],
-'CONNECTION_STATE':[23],
-'VIEWER_COUNT':[24, 'y', lambda x : float(x), "Viewer Count", "Viewer count"],
-'VM_MEMORY_USAGE':[25, 'midnightBlue', lambda x : float(x), "Memory", "(MiB)", "VM current used memory"],
-'VM_MEMORY_FREE':[26, 'tomato', lambda x : float(x), "Memory", "(MiB)", "VM current free memory" ],
-'VM_CPU_USAGE':[27, 'b', lambda x : max(0, float(x) * 100), "CPU", "(%)", "VM cpu usage"],
-'MEDOOZE_INCOMING_LOST':[28],
-'MEDOOZE_INCOMING_DROP':[29],
-'MEDOOZE_INCOMING_BITRATE':[30],
-'MEDOOZE_INCOMING_NACK':[31],
-'MEDOOZE_INCOMING_PLI':[32],
-'RX_PACKET':[33],
-'RX_DROPPED':[34],
-'RX_ERRORS':[35],
-'RX_MISSED':[36],
-'TX_PACKET':[37],
-'TX_DROPPED':[38],
-'TX_ERRORS':[39],
-'TX_MISSED':[40],
-'VIEWER_TARGET':[41, 'k', lambda x : float(x), "Bitrate", "(kbps)", "viewer encoder target"],
-'VIEWER_BITRATE':[42, 'g', lambda x : float(x), "Bitrate", "(kbps)", "viewer received bitrate"],
-'VIEWER_RTT':[43],
-'VIEWER_DELAY':[44, 'm', lambda x : float(x), "Delay", "(ms)", "viewer end to end delay"],
-'VIEWER_FPS':[45, 'm', lambda x : float(x), "FPS", "viewer received FPS"],
-# 'VIEWER_RES':[44],
-'VIEWER_RID_H':[46, 'g', lambda x : float(x), "RID Count", "simulcast high layer"],
-'VIEWER_RID_M':[47, 'b', lambda x : float(x), "RID Count", "simulcast medium layer"],
-'VIEWER_RID_L':[48, 'r', lambda x : float(x), "RID Count", "simulcast low layer"],
+headers = {
+    'TIME': [0, None, lambda x: float(x) / 1000., "time", "(s)", "Time"],
+    'MEMORY_USED': [1, 'b', lambda x: float(x), "Memory", "(MiB)", "cgroup current memory"],
+    'MEMORY_FREE': [2, 'm', lambda x: float(x), "Memory", "(MiB)", "cgroup current free memory"],
+    'MEMORY_MAX': [3, 'k', lambda x: float(x), "Memory", "(MiB)", "cgroup max memory"],
+    'SWAP': [4, 'g', lambda x: float(x), "Memory", "(MiB)", "cgroup current swap usage"],
+    'CGROUP_CACHE': [5, 'y', lambda x: float(x) / 1024 / 1024, "Memory", "(MiB)", "cgroup cache"],
+    'CGROUP_SWAPPABLE': [6, 'c', lambda x: float(x) / 1024 / 1024, "Memory", "(MiB)", "cgroupe swappable"],
+    'MEMORY_PRESSURE_AVG10': [7, 'darkRed', lambda x: float(x), "Pressure Stall Information", "(PSI)", "Memory pressure"],
+    'MEMORY_PRESSURE_AVG60': [8],
+    'MEMORY_PRESSURE_AVG300': [9],
+    'MEMORY_PRESSURE_TOTAL': [10],
+    'VIRSH_ACTUAL': [11, 'k', lambda x: float(x) / 1024., "Memory", "(MiB)", "VM allocated memory"],
+    'VIRSH_UNUSED': [12, 'tomato', lambda x: float(x) / 1024., "Memory", "(MiB)", "VM unused memory"],
+    'VIRSH_USABLE': [13, 'm', lambda x: float(x) / 1024., "Memory", "(MiB)", "VM free memory"],
+    'VIRSH_AVAILABLE': [14, 'r', lambda x: float(x) / 1024., "Memory", "(MiB)", "VM available memory"],
+    'VIRSH_SWAP_IN': [15, '', lambda x: float(x) / 1024., "Memory", "(MiB)", "VM swap in"],
+    'VIRSH_SWAP_OUT': [16, 'g', lambda x: float(x) / 1024., "Memory", "(MiB)", "VM swap out"],
+    'VIRSH_MINOR_FAULT': [17],
+    'VIRSH_MAJOR_FAULT': [18],
+    'PUBLISHER_BITRATE': [19, 'b', lambda x: float(x), "Bitrate", "(kbps)", "publisher bitrate"],
+    'PUBLISHER_FPS': [20, 'r', lambda x: float(x), "FPS", "", "publisher fps"],
+    'PUBLISHER_RES': [21],
+    'PUBLISHER_RTT': [22, 'r', lambda x: float(x), "Delay", "(ms)", "publisher rtt"],
+    'CONNECTION_STATE': [23],
+    'VIEWER_COUNT': [24, 'y', lambda x: float(x), "Viewer Count", "", "Viewer count"],
+    'VM_MEMORY_USAGE': [25, 'midnightBlue', lambda x: float(x), "Memory", "(MiB)", "VM current used memory"],
+    'VM_MEMORY_FREE': [26, 'tomato', lambda x: float(x), "Memory", "(MiB)", "VM current free memory"],
+    'VM_CPU_USAGE': [27, 'b', lambda x: max(0, float(x) * 100), "CPU", "(%)", "VM cpu usage"],
+    'VM_FREE_TOTAL': [28, 'purple', lambda x: float(x), "Memory", "(MiB)", "VM free total"], 
+    'VM_FREE_USED': [29, 'orange', lambda x: float(x), "Memory", "(MiB)", "VM free used"], 
+    'VM_FREE_BUFCACHE': [30, 'cyan', lambda x: float(x), "Memory", "(MiB)", "VM free buff/cache"],
+    'MEDOOZE_INCOMING_LOST': [31],
+    'MEDOOZE_INCOMING_DROP': [32],
+    'MEDOOZE_INCOMING_BITRATE': [33],
+    'MEDOOZE_INCOMING_NACK': [34],
+    'MEDOOZE_INCOMING_PLI': [35],
+    'RX_PACKET': [36],
+    'RX_DROPPED': [37],
+    'RX_ERRORS': [38],
+    'RX_MISSED': [39],
+    'TX_PACKET': [40],
+    'TX_DROPPED': [41],
+    'TX_ERRORS': [42],
+    'TX_MISSED': [43],
+    'VIEWER_TARGET': [44, 'k', lambda x: float(x), "Bitrate", "(kbps)", "viewer encoder target"],
+    'VIEWER_BITRATE': [45, 'g', lambda x: float(x), "Bitrate", "(kbps)", "viewer received bitrate"],
+    'VIEWER_RTT': [46],
+    'VIEWER_DELAY': [47, 'm', lambda x: float(x), "Delay", "(ms)", "viewer end to end delay"],
+    'VIEWER_FPS': [48, 'm', lambda x: float(x), "FPS", "", "viewer received FPS"],
+    'VIEWER_RID_H': [49, 'g', lambda x: float(x), "RID Count", "", "simulcast high layer"],
+    'VIEWER_RID_M': [50, 'b', lambda x: float(x), "RID Count", "", "simulcast medium layer"],
+    'VIEWER_RID_L': [51, 'r', lambda x: float(x), "RID Count", "", "simulcast low layer"],
 }
 
 indicators = ["avg", "1stq", "median", "3rdq", "min", "max"]
@@ -141,7 +146,7 @@ def plot_yy(ax, lines, header, indicator, x_axis_values, w, style, color, label)
             y_axis_value = [ header[PROCESS](line[y_idx]) if len(line) > y_idx else 0 for line in lines ]
             ax.plot(x_axis_values[w[0]:w[1]], y_axis_value[w[0]:w[1]], color=indicators_color[indicators.index(ind)], label=ind, linewidth=LINEWIDTH)
 
-def plot_y(ax, lines, header, indicator, x_axis_values, window, style, filename, multiple_on_y):
+def plot_y(ax, lines, header, indicator, x_axis_values, window, style, filename, multiple_on_y, twin):
     color = header[COLOR]
     label = header[NAME]
 
@@ -153,12 +158,19 @@ def plot_y(ax, lines, header, indicator, x_axis_values, window, style, filename,
             label = "{} ({})".format(label, method)
         else:
             color = method_color[method]
-            label = method
+
+            if twin:
+                label = "{} ({})".format(label, method)
+            else:
+                label = method
         
 
     plot_yy(ax, lines, header, indicator, x_axis_values, window, style, color, label)
 
 def save(filenames, x_axis, y_axis, y2_axis, indicator, show, res):
+    # ext = "png"
+    ext = "pdf"
+
     if show:
         # show the figure in a window a asked
         plt.show()
@@ -175,11 +187,11 @@ def save(filenames, x_axis, y_axis, y2_axis, indicator, show, res):
 
         if len(y2_axis):
             # Add the metrics shown in the secondary axis to the fig filename if there was any
-            dest_path[-1] = "plot_{}x{}x{}_{}_{}_{}.pdf".format(x_axis, y_axis[0],y2_axis[0], "-".join(indicator), res[0]//res[1], 1)
+            dest_path[-1] = "plot_{}x{}x{}_{}_{}_{}.{}".format(x_axis, y_axis[0],y2_axis[0], "-".join(indicator), res[0]//res[1], 1, ext)
         else:
-            dest_path[-1] = "plot_{}x{}_{}_{}_{}.pdf".format(x_axis, y_axis[0], "-".join(indicator), res[0]//res[1], 1)
+            dest_path[-1] = "plot_{}x{}_{}_{}_{}.{}".format(x_axis, y_axis[0], "-".join(indicator), res[0]//res[1], 1, ext)
 
-        plt.savefig("/".join(dest_path), format='pdf')
+        plt.savefig("/".join(dest_path), format=ext)
 
 def find_window_index(values, window):
     window_index = [0, len(values)]
@@ -196,10 +208,11 @@ def find_window_index(values, window):
         ind += 1
     
     window_index[1] = ind
+    print(window_index)
 
     return window_index
 
-def plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, res):
+def plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, res, location):
     # create figure with specified ratio
     fig,ax = plt.subplots(figsize=(res[0]*px, res[1]*px))
     # set label for figure
@@ -207,11 +220,13 @@ def plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, res):
     label_ind = LABEL if len(filenames) == 1 or len(y_axis) > 1 else NAME
     ax.set_ylabel("{} {}".format(headers[y_axis[0]][label_ind], headers[y_axis[0]][UNIT]))
     bx = None # no secondary axis by default
+    twin = False
 
     # create a secondary axis if smothing is asked to be plot on it
     if len(y2_axis) > 0:
         bx = ax.twinx()
         bx.set_ylabel("{} {}".format(headers[y2_axis[0]][label_ind], headers[y2_axis[0]][UNIT]))
+        twin = True
 
     # Set a title in case we are comparing indicators    
     if len(indicator) > 1:
@@ -228,15 +243,18 @@ def plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, res):
         x_axis_idx = get_index(headers[x_axis][INDEX], indicator[0])
         x_axis_values = [ headers[x_axis][PROCESS](line[x_axis_idx]) for line in lines ]
 
+        # find start and end index of the specified window
         window_index = find_window_index(x_axis_values, window)
+        # Substract the start window value to all values to start at 0
+        x_axis_values = [ x - x_axis_values[window_index[0]] for x in x_axis_values ]
  
         # plot on primary vertical axis
         for y in y_axis:
-            plot_y(ax, lines, headers[y], indicator, x_axis_values, window_index, '-', filename if len(filenames) > 1 else None, multiple_on_y)
+            plot_y(ax, lines, headers[y], indicator, x_axis_values, window_index, '-', filename if len(filenames) > 1 else None, multiple_on_y, twin)
 
         # plot on secondary vertical axis
         for y in y2_axis:
-            plot_y(bx, lines, headers[y], indicator, x_axis_values, window_index, 'dotted', filename if len(filenames) > 1 else None, multiple_on_y)
+            plot_y(bx, lines, headers[y], indicator, x_axis_values, window_index, 'dotted', filename if len(filenames) > 1 else None, multiple_on_y, twin)
 
     # view window
     # if window:
@@ -245,7 +263,7 @@ def plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, res):
     #         bx.set_xlim(window[0], window[1])
 
     # add legend to the figure
-    fig.legend(loc="upper right", bbox_to_anchor=(1,1), bbox_transform=ax.transAxes)
+    fig.legend(loc=location, bbox_to_anchor=ANCHOR[location], bbox_transform=ax.transAxes)
 
     # save fig
     save(filenames, x_axis, y_axis, y2_axis, indicator, show, res)
@@ -260,19 +278,26 @@ if __name__ == "__main__":
     show = False
 
     window = None
+    location = 1 # legend at upper right by default
 
-    if len(sys.argv) >= 5:
+    num_required_args = 5
+
+    if len(sys.argv) >= num_required_args:
         filenames = sys.argv[1].split(',')
         indicator = sys.argv[2].split(',')
         x_axis = sys.argv[3]
         y_axis = sys.argv[4].split(',')
     
-        for i in range(5, len(sys.argv)):
+        for i in range(num_required_args, len(sys.argv)):
             if sys.argv[i] == "show":
                 show = True
             elif sys.argv[i][0] == "[":
                 window = sys.argv[i][1:len(sys.argv[i])-1].split(',')
                 window = [int(i) for i in window] # convert to int
+            elif sys.argv[i].startswith("loc="):
+                split = sys.argv[i].split('=')
+                print(split[1], type(split[1]))
+                location = int(split[1])
             else:
                 y2_axis = sys.argv[i].split(',')
     else:
@@ -293,5 +318,5 @@ if __name__ == "__main__":
         print("You specified a column not valid")
         exit(1)
 
-    plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, (1920,960)) # ratio 2:1
-    plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, (1024,1024)) # ratio 1:1
+    plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, (1920,960), location) # ratio 2:1
+    plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, (1024,1024), location) # ratio 1:1

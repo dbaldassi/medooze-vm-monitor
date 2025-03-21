@@ -48,7 +48,7 @@ if __name__ == "__main__":
             with open(avg_file, 'r') as csv_file:
                 # find the increment step value
                 split = f.split("-")
-                incr = split[split.index('step')+1]
+                incr = split[-1]
                 increment.append(int(incr))
 
                 # load csv file into array

@@ -21,7 +21,7 @@
         },
         {
             "actions": [],
-            "wait": 60000,
+            "wait": 10000,
             "repeat": 1
         },
         {
@@ -36,17 +36,12 @@
         },
         {
             "actions": [],
-            "wait": 300000,
+            "wait": 240000,
             "repeat": 1
         },
         {
             "actions": ["stop_naive_memory_reduction"],
             "stop_naive_memory_reduction":{},
-            "repeat": 1
-        },
-        {
-            "actions": [],
-            "wait": 60000,
             "repeat": 1
         },
         {

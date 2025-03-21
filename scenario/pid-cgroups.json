@@ -1,5 +1,5 @@
 {
-    "name": "cgroups-regul-viewersburst{{num_viewers:10}}-thresh{{threshold:200}}",
+    "name": "cgroups-regul-stddev",
     "steps": [
         {
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
@@ -28,23 +28,13 @@
             "actions": ["start_cgroups_regul"],
             "start_cgroups_regul": {
                 "timeout": 1,
-                "threshold": "{{threshold:200}}"
+                "threshold": "{{threshold:0}}"
             },
             "repeat": 1
         },
         {
             "actions": [],
-            "wait": 120000,
-            "repeat": 1
-        },
-        {
-            "actions": ["add_viewer"],
-            "add_viewer" : [ { "id": "baleze", "count": "{{num_viewers:10}}" } ],
-            "repeat": 1
-        },
-        {
-            "actions": [],
-            "wait": 60000,
+            "wait": 1200000,
             "repeat": 1
         },
         {
