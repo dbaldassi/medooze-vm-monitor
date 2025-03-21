@@ -1,0 +1,22 @@
+#!/bin/busybox sh
+# filepath: initramfs-monitor/init
+
+# Monter les systèmes de fichiers nécessaires
+mount -t proc none /proc
+mount -t sysfs none /sys
+
+echo "#####################"
+echo "HEY YOU! I'm the init script from the initramfs!"
+echo "#####################"
+# Lancer le script de surveillance de la mémoire
+# /memory_monitor.sh &
+
+# Clean up.
+umount /proc
+umount /sys
+
+# Boot the real thing.
+# exec switch_root /mnt/root /sbin/init
+exec /bin/sh
+# Garder le système actif (remplacez par votre processus principal si nécessaire)
+# exec /bin/sh
