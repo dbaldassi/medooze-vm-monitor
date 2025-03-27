@@ -128,7 +128,7 @@ def plot_y(ax, lines, header, x_axis_values, window, style, filename, multiple_o
 
 def save(filenames, x_axis, y_axis, y2_axis, show, res):
     # ext = "png"
-    ext = "png"
+    ext = "pdf"
 
     if show:
         # show the figure in a window a asked
@@ -263,4 +263,4 @@ if __name__ == "__main__":
         exit(1)
 
     plot(filenames, x_axis, y_axis, y2_axis, window, show, (1920,960), location) # ratio 2:1
-    # plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, (1024,1024), location) # ratio 1:1
+    plot(filenames, x_axis, y_axis, y2_axis, window, show, (1024,1024), location) # ratio 1:1

@@ -31,7 +31,17 @@ PUBLISHER_COLLAPSE_DURATION=11
 PUBLISHER_COLLAPSE_AVG=12
 PUBLISHER_COLLAPSE_PEAK=13
 
-NUM=PUBLISHER_COLLAPSE_PEAK+1
+# NUM=PUBLISHER_COLLAPSE_PEAK+1
+
+FIRST_INACTIVE=0
+FIRST_SWAP=1
+# ALL_ACTIVE=3
+ALL_INACTIVE_TO_ACTIVE=2
+ALL_INACTIVE_TO_SWAP=3
+ALL_MEMORY_TO_SWAP=4
+ALL_FREE=5
+
+NUM = ALL_FREE + 1
 
 COLOR={
     "cgroups-max": 'r',
@@ -39,10 +49,13 @@ COLOR={
     "cgroups-reclaim": 'g'
 }
 
-LABELS = [ "Duration (s)", "CPU (%)", "Pressure_Stall_Information (PSI)", "Publisher_Bitrate (kbps)", "Viewers_bitrate (kbps)",
-           "Publisher_FPS (FPS)", "Viewer_FPS (FPS)", "Publisher_RTT (ms)", 
-           "Pressure_duration (s)", "Pressure_average (PSI)", "Pressure_Peak (PSI)",
-           "Publisher_Collapse_Duration (s)", "Publisher_Collapse_Bitrate (kbps)", "Publisher_Collapse_peak (kbps)" ]
+# LABELS = [ "Duration (s)", "CPU (%)", "Pressure_Stall_Information (PSI)", "Publisher_Bitrate (kbps)",       
+#           "Viewers_bitrate (kbps)",
+#            "Publisher_FPS (FPS)", "Viewer_FPS (FPS)", "Publisher_RTT (ms)", 
+#            "Pressure_duration (s)", "Pressure_average (PSI)", "Pressure_Peak (PSI)",
+#            "Publisher_Collapse_Duration (s)", "Publisher_Collapse_Bitrate (kbps)", "Publisher_Collapse_peak (kbps)" ]
+
+LABELS = [ "Active_to_inactive (%)", "First_Swap (%)", "Inactive_to_active (%)", "Inactive_to_swap (%)", "Memory_to_swap (%)", "Free_memory_?? (MiB)"]
 
 class StatsMethod:
     def __init__(self):
@@ -76,7 +89,7 @@ if __name__ == "__main__":
         exit(1)
 
     increment_xticks = []
-    no = [ "1500", "3000", "2000", "0"]
+    no = [ "1500", "3000", "2000", "0", "1"]
     # no = []
     for m in methods:
         tmp_stats = {}
@@ -84,7 +97,7 @@ if __name__ == "__main__":
         for f in os.listdir(m):
             if(os.path.isdir("{}/{}".format(m,f)) and "-step-" in f and check_no(f, no)):
                 # format csv file name
-                avg_file = "{}/{}/average_step.csv".format(m,f)
+                avg_file = "{}/{}/percent_cgroups_step.csv".format(m,f)
 
                 with open(avg_file, 'r') as csv_file:
                     # find the increment step value
@@ -97,8 +110,8 @@ if __name__ == "__main__":
                     # print(line)
 
                     # temp, waiting to have 20exp for this one
-                    if(m == "cgroups-reclaim"):
-                        lines = [[l for l in line for _ in range(2 if len(line) == 10 else 1)] for line in lines]
+                    # if(m == "cgroups-reclaim"):
+                    #     lines = [[l for l in line for _ in range(2 if len(line) == 10 else 1)] for line in lines]
 
                     # put it in dict
                     tmp_stats[incr] = lines
@@ -125,6 +138,35 @@ if __name__ == "__main__":
     px = 1 / plt.rcParams['figure.dpi']
 
     res = [(1920,960), (1024,1024)]
+
+    fig,ax = plt.subplots(figsize=(res[0][0]*px, res[0][1]*px))
+
+
+    for m in methods:
+        stats = all_stats[m]
+        # get current stat for all steps
+        to_plot = [ sum(line[FIRST_INACTIVE]) / len(line[FIRST_INACTIVE]) for line in stats.stats ]
+        ax.plot(stats.increment, to_plot, "o-", color=stats.color, label="{} active to inactive".format(m), linewidth=4, markersize=12)
+
+    for m in methods:
+        stats = all_stats[m]
+        # get current stat for all steps
+        to_plot = [ sum(line[ALL_INACTIVE_TO_ACTIVE]) / len(line[ALL_INACTIVE_TO_ACTIVE]) for line in stats.stats ]
+        ax.plot(stats.increment, to_plot, marker="s",linestyle='dotted', color=stats.color, label="{} inactive to active".format(m), linewidth=4, markersize=18)
+
+    for m in methods:
+        stats = all_stats[m]
+        # get current stat for all steps
+        to_plot = [ sum(line[ALL_INACTIVE_TO_SWAP]) / len(line[ALL_INACTIVE_TO_SWAP]) for line in stats.stats ]
+        ax.plot(stats.increment, to_plot, "v--", color=stats.color, label="{} inactive to swap".format(m), linewidth=4, markersize=12)
+
+    ax.legend()
+    ax.set_xlabel("Size (MiB)")
+    ax.set_ylabel("(%)")
+    dest_path = "inactive_usage.pdf"
+    # save fig !
+    plt.savefig(dest_path, format='pdf')
+    plt.close()
 
     # now generates a figure for each stats
     for i in range(NUM):
@@ -162,7 +204,7 @@ if __name__ == "__main__":
             concat = pd.concat(dfs)
             to_plot = pd.melt(concat, id_vars=['Size'], var_name=['Method'])  
             # print(to_plot)
-            ax = sns.boxplot(x="Size", y="value", hue="Method", data=to_plot, palette=['r', 'g', 'b'])
+            ax = sns.boxplot(x="Size", y="value", hue="Method", data=to_plot, palette=['r', 'g'])
 
             # Set label name
             ax.set_xlabel("Size (MiB)")
@@ -173,7 +215,7 @@ if __name__ == "__main__":
             
 
             # Image destination path
-            dest_path = "allbox_{}_{}_{}.pdf".format(LABELS[i].split(' ')[0], r[0]//r[1], 1)
+            dest_path = "allbox_{}_{}_{}.pdf".format(LABELS[i].split(" ")[0], r[0]//r[1], 1)
             # save fig !
             plt.savefig(dest_path, format='pdf')
             plt.close()

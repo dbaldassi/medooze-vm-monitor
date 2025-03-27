@@ -49,7 +49,7 @@ class SystemManager {
             dt : 10 // 10sec
         }
 
-        this.window_size = 200;
+        this.window_size = 60;
         this.threshold_percentage = 1;
         
         // inotify.addWatch({ path: this.swap_event_path, watch_for: Inotify.IN_MODIFY, callback: event => this.swapevent_callback(event) });
@@ -94,7 +94,6 @@ class SystemManager {
 
             for(let line of data.toString().split('\n')) {
                 const split = line.split(' ');
-                this.mem_stat[split[0]] = parseInt(split[1]);
                 logger.info[split[0]] = parseInt(split[1]);
             }
         } catch(e) {
@@ -103,18 +102,7 @@ class SystemManager {
     }
 
     get_reclaimable_bytes() {
-        this.fetch_mem_stat();
-
-        let active_file = this.mem_stat["active_file"];
-        let inactive_file = this.mem_stat["inactive_file"];
-        logger.info.cgroup_cache = active_file + inactive_file;
-
-        let active_anon = this.mem_stat["active_anon"];
-        let inactive_anon = this.mem_stat["inactive_anon"];
-        let anon = active_anon + inactive_anon;
-
-        logger.info.cgroup_swappable = anon; // facebok OOM algo actually take the min of anon and swap free
-        logger.info.cgroup_reclaimable = logger.info.cgroup_cache + logger.info.cgroup_swappable;
+        logger.info.cgroup_reclaimable = (logger.info.slab_reclaimable + logger.info.inactive_file) / (1024 * 1024);
 
         return logger.info.cgroup_reclaimable;
     }
@@ -182,7 +170,7 @@ class SystemManager {
         this.fetch_swap_usage();
         this.fetch_memory_pressure();
         this.fetch_virsh_info();
-        this.get_reclaimable_bytes();
+        this.fetch_mem_stat();
     }
 
     pid_regul(target, measured) {
@@ -360,7 +348,7 @@ class SystemManager {
             return; // no data
         }
 
-        this.inactive_anon_values.push(inactive_anon);
+        this.inactive_anon_values.push(logger.info.inactive_anon);
 
         if(this.inactive_anon_values.length < this.window_size) {
             console.log("not enough values");
@@ -398,6 +386,11 @@ class SystemManager {
             return;
         }
         
+        if(this.inactive_anon_values.length < this.window_size) {   
+            console.log("Not enough values yet");
+            return; // not enough values yet
+        }
+
         console.log("Checking stabilization");
         const std_dev = this.calculate_standard_seviation(this.inactive_anon_values);
 
@@ -459,19 +452,13 @@ class SystemManager {
 
     memory_reclaim(increment, threshold, swappiness) {
         const vm_mem = (logger.info.virsh_available - logger.info.virsh_usable) / 1024;
-    
+        
+        // const bytes = this.get_reclaimable_bytes();
+        // console.log("Reclaimable bytes : ", bytes, increment, increment + bytes);
+
         console.log(logger.info.ram_usage, vm_mem + threshold);
         if(logger.info.ram_usage > vm_mem + threshold) {
             this.reclaim_memory(increment, swappiness);
-
-            /*let ret = false;
-            while(!ret && this.swappiness < 100) {
-                ret = this.reclaim_memory(increment, this.swappiness);
-                if(!ret) {
-                    this.swappiness += 10;
-                    console.log(`Swappiness = ${this.swappiness}`);
-                }
-            }*/
         }
     }
 
@@ -480,7 +467,7 @@ class SystemManager {
         threshold *= 1024;
         increase  *= 1024;
 
-        console.log(logger.info.virsh_usable / 1024, logger.info.virsh_available / 1024, logger.info.virsh_actual / 1024)
+        console.log(logger.info.virsh_usable / 1024, logger.info.virsh_available / 1024, logger.info.virsh_actual / 1024);
 
         if(logger.info.virsh_usable > threshold) {
             let new_vm_size = logger.info.virsh_actual - increment;

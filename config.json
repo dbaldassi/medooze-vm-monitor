@@ -8,8 +8,8 @@
     "memory_pressure_file": "memory.pressure",
     "memory_reclaim_file": "memory.reclaim",
     "memory_stat_file": "memory.stat",
-    "memory_stats_path": "/sys/fs/cgroup/machine.slice/machine-qemu\\x2d36\\x2dmedooze.scope",
-    "initial_max_ram": 2048,
+    "memory_stats_path": "/sys/fs/cgroup/machine.slice/machine-qemu\\x2d25\\x2dmedooze.scope",
+    "initial_max_ram": 4096,
     "host": "134.59.133.57",
     "port": 9000,
     "medooze_server": [

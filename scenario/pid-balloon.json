@@ -49,7 +49,7 @@
         },
         {
             "actions": ["stop_balloon_regul"],
-            "start_reclaim_reduction":{},
+            "stop_balloon_regul":{},
             "repeat": 1
         },
         {

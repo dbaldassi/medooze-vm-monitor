@@ -2,17 +2,20 @@
 
 REPET=1
 # SCENARIO=("reduction-viewers" "reclaim-reduction-viewers")
-SCENARIO=("pid-cgroups")
+# SCENARIO=("traffic")
+SCENARIO=("cgroup-reclaim-step")
 # SCENARIO=("spawn-cgroup-reclaim" "spawn-cgroup-max" "spawn-balloon")
 # SCENARIO=("max2500")
+# SCENARIO=("cgroup-max-step" "cgroup-reclaim-step")
 # VIEWERS=(10 45 70)
 VIEWERS=(0 10 20 30 40 50 60 70 80 90)
 # THRESHOLD=(400 200 50)
 # THRESHOLD=(200 100 50)
 THRESHOLD=(200)
-# INCREMENT=(1 50 100 300 500 1000)
+# INCREMENT=(1 15 50 100 300 500 1000)
+INCREMENT=(100)
 # SWAPPINESS=(0 10 30 60 100)
-INCREMENT=(200)
+# INCREMENT=(200)
 SWAPPINESS=(60)
 
 export LIBVIRT_DEFAULT_URI=qemu:///system

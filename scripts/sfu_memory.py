@@ -43,8 +43,8 @@ x_values = sorted(data.keys())
 y_values = [ data[x] for x in x_values]
 # y2_values = [data[x][0] for x in x_values]
 
-print(x_values)
-print(y_values)
+# print(x_values)
+# print(y_values)
 
 res = [(1920,960), (1024,1024)]
 
@@ -53,6 +53,7 @@ for r in res:
 
     ax.set_xlabel("Viewers")
     ax.set_ylabel("Memory (MiB)")
+    print(x_values, y_values)
     ax.plot(x_values, y_values, linestyle="-", marker='s', linewidth=LINEWIDTH, label=['guest memory', 'cgroup memory'], markersize=15)
     ax.legend()
 

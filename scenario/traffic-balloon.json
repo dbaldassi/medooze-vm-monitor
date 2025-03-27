@@ -1,5 +1,5 @@
 {
-    "name": "cgroups-reclaim-step-1h-{{increment:100}}",
+    "name": "traffic-ballooning-1h-2",
     "steps": [
         {
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
@@ -15,34 +15,40 @@
         },
         {
             "require": "publisher_connected",
-            "actions": ["add_viewer"],
-            "add_viewer" : [ { "id": "baleze", "count": 10 } ],
+            "actions": ["start_viewer_traffic"],
+            "start_viewer_traffic" :
+		{
+		    "id": "baleze",
+		    "max": 70,
+		    "viewers_min" : 1,
+		    "viewers_max" : 20,
+		    "time_min" : 5,
+		    "time_max" : 20
+		}
+	    ,
             "repeat": 1
         },
-        {
-            "actions": [],
-            "wait": 10000,
-            "repeat": 1
-        },
-        {
-            "actions": ["start_reclaim_reduction"],
-            "start_reclaim_reduction":{
+	{
+            "actions": ["start_balloon_regul"],
+            "start_balloon_regul": {
                 "timeout": 1,
-                "threshold": 200,
-                "increment": "{{increment:100}}",
-                "swappiness": "{{swappiness:60}}"
+                "threshold": "{{threshold:200}}"
             },
-            "repeat": 1,
-            "wait": 2000
-        },
-        {
-            "actions": ["stop_reclaim_reduction"],
-            "start_reclaim_reduction":{},
             "repeat": 1
         },
         {
             "actions": [],
             "wait": 3600000,
+            "repeat": 1
+        },
+        {
+            "actions": ["stop_viewer_traffic"],
+            "stop_viewer_traffic":{},
+            "repeat": 1
+        },
+	{
+            "actions": ["stop_balloon_regul"],
+            "stop_balloon_regul":{},
             "repeat": 1
         },
         {
@@ -53,7 +59,7 @@
         },
         {
             "actions" : [ "save" ],
-            "save": "average_viewer"
+            "save": ""
         },
         {
             "actions" : ["exit"],

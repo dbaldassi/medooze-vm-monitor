@@ -22,6 +22,8 @@ class Monitor {
         this.viewer_launchers = require('./lib/viewer_launcher.js').launchers;
         // default medooze
         this.medooze_server = config.medooze_server.find(elt => elt.id === "vm");
+
+	this.current_viewer_count = 0;
     }
 
     set_max_ram(max) {
@@ -230,6 +232,7 @@ class Monitor {
 
     add_viewer(opts) {
         for(let opt of opts) {
+	    console.log(`Adding ${opt.count} viewers`);
             // get launcher by id
             let launcher = this.viewer_launchers.find(e => e.id === opt.id);
             // Run  the specified amount of viewer
@@ -242,7 +245,72 @@ class Monitor {
             if(opt.viewerid) obj.viewerid = opt.viewerid;
             
             launcher.ws.sendUTF(JSON.stringify(obj));
+
+	    this.current_viewer_count += opt.count;
         };
+    }
+
+    remove_viewer(opts) {
+	for(let opt of opts) {
+	    console.log(`Removing ${opt.count} viewers`);
+	    
+	    let launcher = this.viewer_launchers.find(e => e.id === opt.id);
+
+	    let obj = {
+		"cmd": "kill",
+		"count": opt.count
+	    };
+
+	    launcher.ws.sendUTF(JSON.stringify(obj));
+
+	    this.current_viewer_count -= opt.count;
+	}
+    }
+    
+    random(min, max) {
+	return Math.floor(Math.random() * (max + 1 - min)) + min;
+    }
+
+    start_viewer_traffic(opts) {
+	const ADD = 0;
+	const REMOVE = 1;
+	
+	const time = this.random(opts.time_min, opts.time_max);
+	console.log("traffic wait time : ", time);
+	
+	this.viewers_timeout = setTimeout(() => {
+	    const count = this.random(opts.viewers_min, opts.viewers_max);
+	    const op = this.random(0,1);
+
+	    console.log({count});
+	    
+	    if(op === ADD) {		
+		let obj = {
+		    id: opts.id,
+		    count: Math.min(count, opts.max - this.current_viewer_count)
+		};
+
+		console.log(obj);
+		
+		this.add_viewer([obj]);
+	    }
+	    else if(op === REMOVE) {
+		let obj = {
+		    id: opts.id,
+		    count: Math.min(count, this.current_viewer_count)
+		};
+
+		console.log(obj);
+		
+		this.remove_viewer([obj]);
+	    }
+	    
+	    this.start_viewer_traffic(opts);
+	}, time * SECONDS);
+    }
+
+    stop_viewer_traffic(opts) {
+	clearInterval(this.viewers_timeout[Symbol.toPrimitive]());
     }
 
     save(opt) {
