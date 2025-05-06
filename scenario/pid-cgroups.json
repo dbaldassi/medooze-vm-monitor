@@ -1,5 +1,5 @@
 {
-    "name": "cgroups-regul-stddev",
+    "name": "cgroups-regul-stddev-30-viewer-double-increase-par20",
     "steps": [
         {
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
@@ -13,18 +13,7 @@
             "add_publisher" : [{ "id": "mac",  "codec": "vp8", "scenar": "simulcast" }],
             "repeat" : 1
         },
-        {
-            "require": "publisher_connected",
-            "actions": ["add_viewer"],
-            "add_viewer" : [ { "id": "baleze", "count": 10 } ],
-            "repeat": 1
-        },
-        {
-            "actions": [],
-            "wait": 60000,
-            "repeat": 1
-        },
-        {
+	{
             "actions": ["start_cgroups_regul"],
             "start_cgroups_regul": {
                 "timeout": 1,
@@ -32,10 +21,39 @@
             },
             "repeat": 1
         },
+	{
+	    "actions": [],
+	    "wait": 60000,
+	    "repeat": 1
+	},
+	{
+	    "require": "publisher_connected",
+            "actions": ["add_viewer"],
+            "add_viewer" : [ { "id": "baleze", "count": 20 } ],
+            "repeat": 4,
+	    "wait": 60000
+	},
+	{
+	    "actions": [],
+            "wait": 420000,
+            "repeat": 1
+	},
+	{
+	    "actions": ["remove_viewer"],
+            "remove_viewer" : [ { "id": "baleze", "count": 80 } ],
+            "repeat": 1,
+	    "wait": 60000
+	},
         {
             "actions": [],
-            "wait": 1200000,
+            "wait": 120000,
             "repeat": 1
+        },
+        {
+            "actions": ["add_viewer"],
+            "add_viewer" : [ { "id": "baleze", "count": 40 } ],
+            "repeat": 2,
+            "wait": 60000
         },
         {
             "actions": ["stop_cgroups_regul"],
@@ -50,7 +68,7 @@
         },
         {
             "actions" : [ "save" ],
-            "save": "average_viewer"
+            "save": ""
         },
         {
             "actions" : ["exit"],

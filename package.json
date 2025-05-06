@@ -6,6 +6,7 @@
     "json-template": "^0.1.0",
     "json-templates": "^5.1.0",
     "node-inotify": "^1.0.0",
+    "os-utils": "^0.0.14",
     "websocket": "^1.0.35",
     "ws": "^8.18.0"
   }

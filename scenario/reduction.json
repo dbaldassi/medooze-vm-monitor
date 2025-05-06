@@ -1,5 +1,5 @@
 {
-    "name": "cgroups-max-reduction",
+    "name": "cgroups-high-reduction",
     "steps": [
         {
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
@@ -21,7 +21,7 @@
         },
         {
             "actions": [],
-            "wait": 10000,
+            "wait": 60000,
             "repeat": 1
         },
         {
@@ -36,7 +36,7 @@
         },
         {
             "actions": [],
-            "wait": 240000,
+            "wait": 300000,
             "repeat": 1
         },
         {

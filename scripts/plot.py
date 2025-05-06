@@ -4,15 +4,23 @@ import csv
 import sys
 from matplotlib import pyplot as plt
 
-plt.rc('font', size=22)          # controls default text sizes
-plt.rc('axes', titlesize=26)     # fontsize of the axes title
-plt.rc('axes', labelsize=26)    # fontsize of the x and y labels
-# plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-# plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-plt.rc('legend', fontsize=24)    # legend fontsize
-# plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+import scienceplots
 
-px = 1 / plt.rcParams['figure.dpi']  # pixel in inches
+plt.style.use(['science','ieee'])
+
+plt.rcParams.update({
+    "font.size": 10
+})
+
+# plt.rc('font', size=40)          # controls default text sizes
+# plt.rc('axes', titlesize=44)     # fontsize of the axes title
+# plt.rc('axes', labelsize=44)    # fontsize of the x and y labels
+# # plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+# # plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+# plt.rc('legend', fontsize=42)    # legend fontsize
+# # plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+
+# px = 1 / plt.rcParams['figure.dpi']  # pixel in inches
 LINEWIDTH=4
 
 INDEX=0
@@ -35,9 +43,26 @@ method_style = {
     "cgroup-reclaim" : 'dotted'
 }
 
-ANCHOR=[(0,0), (1,1), (0,1), (0,0), (1,0), (1,0.5), (0,0.5), (1,0.5), (0,0), (0,0), (0,0)]
+ANCHOR=[(0,0), (1,1), (0,1), (0,0), (1,0), (1,0.5), (0,0.5), (1,0.5), (0.5,1), (0,0), (0.5,1), (0,2)]
 
 # plt.rcParams["figure.figsize"] = (20,3)
+
+s_windows = {
+    "publisher_bitrate": [],
+    "viewer_bitrate": [],
+    "publisher_fps": [],
+    "viewer_fps": [],
+}
+
+def sliding_window(x, w):
+    window_len = 10
+
+    w.append(float(x))
+
+    if len(w) >= window_len:
+        w.pop(0)
+
+    return sum(w) / len(w)
 
 headers = {
     'TIME': [0, None, lambda x: float(x) / 1000., "time", "(s)", "Time"],
@@ -53,19 +78,19 @@ headers = {
     'MEMORY_PRESSURE_TOTAL': [10],
     'VIRSH_ACTUAL': [11, 'k', lambda x: float(x) / 1024., "Memory", "(MiB)", "VM allocated memory"],
     'VIRSH_UNUSED': [12, 'tomato', lambda x: float(x) / 1024., "Memory", "(MiB)", "VM unused memory"],
-    'VIRSH_USABLE': [13, 'm', lambda x: float(x) / 1024., "Memory", "(MiB)", "VM free memory"],
-    'VIRSH_AVAILABLE': [14, 'r', lambda x: float(x) / 1024., "Memory", "(MiB)", "VM available memory"],
+    'VIRSH_USABLE': [13, 'm', lambda x: float(x) / 1024., "Memory", "(MiB)", "Guest free memory"],
+    'VIRSH_AVAILABLE': [14, 'g', lambda x: float(x) / 1024., "Memory", "(MiB)", "Guest vRAM"],
     'VIRSH_SWAP_IN': [15, '', lambda x: float(x) / 1024., "Memory", "(MiB)", "VM swap in"],
-    'VIRSH_SWAP_OUT': [16, 'g', lambda x: float(x) / 1024., "Memory", "(MiB)", "VM swap out"],
+    'VIRSH_SWAP_OUT': [16, 'r', lambda x: float(x) / 1024., "Memory", "(MiB)", "Guest swap"],
     'VIRSH_MINOR_FAULT': [17],
     'VIRSH_MAJOR_FAULT': [18],
-    'PUBLISHER_BITRATE': [19, 'b', lambda x: float(x), "Bitrate", "(kbps)", "publisher bitrate"],
-    'PUBLISHER_FPS': [20, 'r', lambda x: float(x), "FPS", "", "publisher fps"],
+    'PUBLISHER_BITRATE': [19, 'b', lambda x: sliding_window(x, s_windows["publisher_bitrate"]), "Bitrate", "(kbps)", "publisher bitrate"],
+    'PUBLISHER_FPS': [20, 'r', lambda x: sliding_window(x, s_windows["publisher_fps"]), "FPS", "", "publisher fps"],
     'PUBLISHER_RES': [21],
     'PUBLISHER_RTT': [22, 'r', lambda x: float(x), "Delay", "(ms)", "publisher rtt"],
     'CONNECTION_STATE': [23],
     'VIEWER_COUNT': [24, 'y', lambda x: float(x), "Viewer Count", "", "Viewer count"],
-    'VM_MEMORY_USAGE': [25, 'midnightBlue', lambda x: float(x), "Memory", "(MiB)", "VM current used memory"],
+    'VM_MEMORY_USAGE': [25, 'midnightBlue', lambda x: float(x), "Memory", "(MiB)", "Guest used memory"],
     'VM_MEMORY_FREE': [26, 'tomato', lambda x: float(x), "Memory", "(MiB)", "VM current free memory"],
     'VM_CPU_USAGE': [27, 'b', lambda x: max(0, float(x) * 100), "CPU", "(%)", "VM cpu usage"],
     'VM_FREE_TOTAL': [28, 'purple', lambda x: float(x), "Memory", "(MiB)", "VM free total"], 
@@ -85,10 +110,10 @@ headers = {
     'TX_ERRORS': [42],
     'TX_MISSED': [43],
     'VIEWER_TARGET': [44, 'k', lambda x: float(x), "Bitrate", "(kbps)", "viewer encoder target"],
-    'VIEWER_BITRATE': [45, 'g', lambda x: float(x), "Bitrate", "(kbps)", "viewer received bitrate"],
+    'VIEWER_BITRATE': [45, 'g', lambda x: sliding_window(x, s_windows["viewer_bitrate"]), "Bitrate", "(kbps)", "viewer received bitrate"],
     'VIEWER_RTT': [46],
-    'VIEWER_DELAY': [47, 'm', lambda x: float(x), "Delay", "(ms)", "viewer end to end delay"],
-    'VIEWER_FPS': [48, 'm', lambda x: float(x), "FPS", "", "viewer received FPS"],
+    'VIEWER_DELAY': [47, 'm', lambda x: float(x), "Delay", "(ms)", "End to end delay"],
+    'VIEWER_FPS': [48, 'm', lambda x: sliding_window(x, s_windows["viewer_fps"]), "FPS", "", "viewer received FPS"],
     'VIEWER_RID_H': [49, 'g', lambda x: float(x), "RID Count", "", "simulcast high layer"],
     'VIEWER_RID_M': [50, 'b', lambda x: float(x), "RID Count", "", "simulcast medium layer"],
     'VIEWER_RID_L': [51, 'r', lambda x: float(x), "RID Count", "", "simulcast low layer"],
@@ -132,6 +157,30 @@ def get_method(filename):
     
     return None
 
+
+def go_annotate(ax):
+    # Annotate the figure with background colors for different phases
+    phases = [
+        {"start": 0, "end": 60, "color": "lightgray", "label": "No viewer"},
+        {"start": 60, "end": 120, "color": "lightblue", "label": "20 viewers"},
+        {"start": 120, "end": 180, "color": "lightgreen", "label": "40 viewers"},
+        {"start": 180, "end": 240, "color": "yellow", "label": "60 viewers"},
+        {"start": 240, "end": 720, "color": "orange", "label": "80 viewers"},
+        {"start": 720, "end": 920, "color": "lightgray", "label": None },
+        {"start": 920, "end": 980, "color": "lightgreen", "label": None },
+        {"start": 980, "end": None, "color": "orange", "label": None },
+    ]
+
+    for phase in phases:
+        ax.axvspan(
+            phase["start"],
+            phase["end"] if phase["end"] is not None else ax.get_xlim()[1],
+            color=phase["color"],
+            alpha=0.3,
+            label=phase["label"]
+        )
+    
+
 def plot_yy(ax, lines, header, indicator, x_axis_values, w, style, color, label):
     if len(indicator) == 1: # only one indicator asked, for instance only the average
         # get the correct index in the csv array
@@ -139,12 +188,14 @@ def plot_yy(ax, lines, header, indicator, x_axis_values, w, style, color, label)
         # get corresponding values
         y_axis_value = [ header[PROCESS](line[y_idx]) if len(line) > y_idx else 0 for line in lines ]
         # plot y values in function of x values on the plot
-        ax.plot(x_axis_values[w[0]:w[1]], y_axis_value[w[0]:w[1]], color=color, label=label, linewidth=LINEWIDTH, linestyle=style)
+        ax.plot(x_axis_values[w[0]:w[1]], y_axis_value[w[0]:w[1]], color=color, label=label, linestyle=style)
+        # ax.plot(x_axis_values[w[0]:w[1]], y_axis_value[w[0]:w[1]], label=label)
     else:
         for ind in indicator:
             y_idx = get_index(header[INDEX], ind)
             y_axis_value = [ header[PROCESS](line[y_idx]) if len(line) > y_idx else 0 for line in lines ]
-            ax.plot(x_axis_values[w[0]:w[1]], y_axis_value[w[0]:w[1]], color=indicators_color[indicators.index(ind)], label=ind, linewidth=LINEWIDTH)
+            # ax.plot(x_axis_values[w[0]:w[1]], y_axis_value[w[0]:w[1]], color=indicators_color[indicators.index(ind)], label=ind, linewidth=LINEWIDTH)
+            ax.plot(x_axis_values[w[0]:w[1]], y_axis_value[w[0]:w[1]], label=ind)
 
 def plot_y(ax, lines, header, indicator, x_axis_values, window, style, filename, multiple_on_y, twin):
     color = header[COLOR]
@@ -212,9 +263,10 @@ def find_window_index(values, window):
 
     return window_index
 
-def plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, res, location):
+def plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, res, location, legend_col, annotate = False):
     # create figure with specified ratio
-    fig,ax = plt.subplots(figsize=(res[0]*px, res[1]*px))
+    # fig,ax = plt.subplots(figsize=(res[0], res[1]))
+    fig,ax = plt.subplots()
     # set label for figure
     ax.set_xlabel("{} {}".format(headers[x_axis][LABEL], headers[x_axis][UNIT]))
     label_ind = LABEL if len(filenames) == 1 or len(y_axis) > 1 else NAME
@@ -262,8 +314,13 @@ def plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, res, locat
     #     if bx:
     #         bx.set_xlim(window[0], window[1])
 
+    if annotate:
+        go_annotate(ax)
+        # ax.legend()
+
     # add legend to the figure
-    fig.legend(loc=location, bbox_to_anchor=ANCHOR[location], bbox_transform=ax.transAxes)
+    fig.legend(loc=location, bbox_to_anchor=ANCHOR[location], bbox_transform=ax.transAxes, ncol=legend_col)
+    # fig.legend(ncol=2)
 
     # save fig
     save(filenames, x_axis, y_axis, y2_axis, indicator, show, res)
@@ -281,6 +338,9 @@ if __name__ == "__main__":
     location = 1 # legend at upper right by default
 
     num_required_args = 5
+    legend_col = 1 # default number of columns in the legend
+
+    annotate = False
 
     if len(sys.argv) >= num_required_args:
         filenames = sys.argv[1].split(',')
@@ -298,6 +358,12 @@ if __name__ == "__main__":
                 split = sys.argv[i].split('=')
                 print(split[1], type(split[1]))
                 location = int(split[1])
+            elif  sys.argv[i].startswith("leg_col="):
+                split = sys.argv[i].split('=')
+                print(split[1], type(split[1]))
+                legend_col = int(split[1])
+            elif sys.argv[i] == "annotate":
+                annotate = True
             else:
                 y2_axis = sys.argv[i].split(',')
     else:
@@ -318,5 +384,5 @@ if __name__ == "__main__":
         print("You specified a column not valid")
         exit(1)
 
-    plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, (1920,960), location) # ratio 2:1
-    plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, (1024,1024), location) # ratio 1:1
+    # plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, (1920,960), location, legend_col) # ratio 2:1
+    plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, (1024,1024), location, legend_col, annotate) # ratio 1:1

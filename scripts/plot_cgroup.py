@@ -4,10 +4,22 @@ import csv
 import sys
 from matplotlib import pyplot as plt
 
-plt.rc('font', size=22)          # controls default text sizes
-plt.rc('axes', titlesize=26)     # fontsize of the axes title
-plt.rc('axes', labelsize=26)    # fontsize of the x and y labels
-plt.rc('legend', fontsize=24)    # legend fontsize
+import scienceplots
+
+plt.style.use(['science','ieee'])
+
+plt.rcParams.update({
+    "font.size": 10
+})
+
+# plt.rc('font', size=40)          # controls default text sizes
+# plt.rc('axes', titlesize=44)     # fontsize of the axes title
+# plt.rc('axes', labelsize=44)    # fontsize of the x and y labels
+# # plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+# # plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+# plt.rc('legend', fontsize=42)    # legend fontsize
+# # plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+
 
 px = 1 / plt.rcParams['figure.dpi']  # pixel in inches
 LINEWIDTH = 4
@@ -19,7 +31,19 @@ LABEL = 3
 UNIT = 4
 NAME = 5
 
-ANCHOR=[(0,0), (1,1), (0,1), (0,0), (1,0), (1,0.5), (0,0.5), (1,0.5), (0,0), (0,0), (0,0)]
+method_color = {
+    "ballooning" : 'b',
+    "cgroup-max" : 'r',
+    "cgroup-reclaim" : 'g'
+}
+
+method_style = {
+    "ballooning" : '--',
+    "cgroup-max" : '-',
+    "cgroup-reclaim" : 'dotted'
+}
+
+ANCHOR=[(0,0), (1,1), (0,1), (0,0), (1,0), (1,0.5), (0,0.5), (1,0.5), (0.5,1), (0,0), (0.5,1), (0,2)]
 
 # Headers basés sur cgroup_headers
 headers = {
@@ -90,9 +114,9 @@ headers = {
     'NUMA_PTE_UPDATES': [64, 'maroon', lambda x: float(x), "Count", "", "NUMA PTE Updates"],
     'NUMA_HINT_FAULTS': [65, 'darkGreen', lambda x: float(x), "Count", "", "NUMA Hint Faults"],
     'RAM_USAGE': [66, 'blue', lambda x: float(x), "Memory", "(MiB)", "Memory Current"],
-    'SWAP_USAGE': [67, 'red', lambda x: float(x), "Memory", "(MiB)", "Swap Current"],
+    'SWAP_USAGE': [67, 'red', lambda x: float(x), "Memory", "(MiB)", "Swap (cgroups)"],
     'MAXRAM': [68, 'green', lambda x: float(x), "Memory", "(MiB)", "Memory Max"],
-    'PRESSURE_AVG10': [69, 'purple', lambda x: float(x), "Pressure", "(PSI)", "Pressure Avg10"],
+    'PRESSURE_AVG10': [69, 'purple', lambda x: float(x), "Pressure", "(PSI)", "Memory Pressure"],
     'SUMMED_MEMORY': [70, 'purple', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Summed Memory"],
 }
 
@@ -112,17 +136,45 @@ def open_csv(filename):
      
      return None
 
+def get_method(filename):
+    name = filename.split('/')[-1]
+
+    print(name)
+    if "ballooning" in name:
+        return "ballooning"
+    elif "cgroups-max" in name or "cgroup-max" in name:
+        return "cgroup-max"
+    elif "cgroup-reclaim" in name or "cgroups-reclaim" in name:
+        return "cgroup-reclaim"
+    
+    return None
+
+
 def plot_yy(ax, lines, header, x_axis_values, w, style, color, label):
     # get the correct index in the csv array
     y_idx = header[INDEX]
     # get corresponding values
     y_axis_value = [ header[PROCESS](line[y_idx]) if len(line) > y_idx else 0 for line in lines ]
     # plot y values in function of x values on the plot
-    ax.plot(x_axis_values[w[0]:w[1]], y_axis_value[w[0]:w[1]], color=color, label=label, linewidth=LINEWIDTH, linestyle=style)
+    ax.plot(x_axis_values[w[0]:w[1]], y_axis_value[w[0]:w[1]], color=color, label=label, linestyle=style)
 
 def plot_y(ax, lines, header, x_axis_values, window, style, filename, multiple_on_y, twin):
     color = header[COLOR]
     label = header[NAME]
+
+    if filename:
+        method = get_method(filename)
+
+        if multiple_on_y:
+            style = method_style[method]
+            label = "{} ({})".format(label, method)
+        else:
+            color = method_color[method]
+
+            if twin:
+                label = "{} ({})".format(label, method)
+            else:
+                label = method
 
     plot_yy(ax, lines, header, x_axis_values, window, style, color, label)
 
@@ -171,9 +223,10 @@ def find_window_index(values, window):
 
     return window_index
 
-def plot(filenames, x_axis, y_axis, y2_axis, window, show, res, location):
+def plot(filenames, x_axis, y_axis, y2_axis, window, show, res, location, legend_col, ylim = None):
     # create figure with specified ratio
-    fig,ax = plt.subplots(figsize=(res[0]*px, res[1]*px))
+    # fig,ax = plt.subplots(figsize=(res[0], res[1]))
+    fig,ax = plt.subplots()
     # set label for figure
     ax.set_xlabel("{} {}".format(headers[x_axis][LABEL], headers[x_axis][UNIT]))
     label_ind = LABEL if len(filenames) == 1 or len(y_axis) > 1 else NAME
@@ -211,8 +264,14 @@ def plot(filenames, x_axis, y_axis, y2_axis, window, show, res, location):
         for y in y2_axis:
             plot_y(bx, lines, headers[y], x_axis_values, window_index, 'dotted', filename if len(filenames) > 1 else None, multiple_on_y, twin)
 
+
+    if(ylim):
+        ax.set_ylim(0, ylim)
+        if bx:
+            bx.set_ylim(bottom=0)
+
     # add legend to the figure
-    fig.legend(loc=location, bbox_to_anchor=ANCHOR[location], bbox_transform=ax.transAxes)
+    fig.legend(loc=location, bbox_to_anchor=ANCHOR[location], bbox_transform=ax.transAxes, ncol=legend_col)
 
     # save fig
     save(filenames, x_axis, y_axis, y2_axis, show, res)
@@ -228,8 +287,11 @@ if __name__ == "__main__":
 
     window = None
     location = 1 # legend at upper right by default
+    legend_col = 1 # legend column by default
 
     num_required_args = 4
+
+    ylim = None
 
     if len(sys.argv) >= num_required_args:
         filenames = sys.argv[1].split(',')
@@ -245,8 +307,13 @@ if __name__ == "__main__":
                 window = [int(i) for i in window] # convert to int
             elif sys.argv[i].startswith("loc="):
                 split = sys.argv[i].split('=')
-                print(split[1], type(split[1]))
                 location = int(split[1])
+            elif sys.argv[i].startswith("leg_col="):
+                split = sys.argv[i].split('=')
+                legend_col = int(split[1])
+            elif sys.argv[i].startswith("ylim="):
+                split = sys.argv[i].split('=')
+                ylim = int(split[1])
             else:
                 y2_axis = sys.argv[i].split(',')
     else:
@@ -262,5 +329,5 @@ if __name__ == "__main__":
         print("You specified a column not valid")
         exit(1)
 
-    plot(filenames, x_axis, y_axis, y2_axis, window, show, (1920,960), location) # ratio 2:1
-    plot(filenames, x_axis, y_axis, y2_axis, window, show, (1024,1024), location) # ratio 1:1
+    plot(filenames, x_axis, y_axis, y2_axis, window, show, (1980,960), location, legend_col, ylim) # ratio 2:1
+    # plot(filenames, x_axis, y_axis, y2_axis, window, show, (2,2), location) # ratio 1:1

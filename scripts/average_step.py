@@ -11,7 +11,7 @@ MEMORY_USED=1
 MEMORY_FREE=2
 MEMORY_MAX=3
 SWAP=4
-CGROUP_CACHE=5
+CGROUP_CACHE_FILES=5
 CGROUP_SWAPPABLE=6
 MEMORY_PRESSURE_AVG10=7
 MEMORY_PRESSURE_AVG60=8
@@ -27,29 +27,35 @@ VIRSH_MINOR_FAULT=17
 VIRSH_MAJOR_FAULT=18
 PUBLISHER_BITRATE=19
 PUBLISHER_FPS=20
-PUBLISHER_RES=21
+PUBLISHER_RESOLUTION=21
 PUBLISHER_RTT=22
 CONNECTION_STATE=23
 VIEWER_COUNT=24
 VM_MEMORY_USAGE=25
 VM_MEMORY_FREE=26
 VM_CPU_USAGE=27
-VM_FREE_TOTAL=28 
-VM_FREE_USED=29
-VM_FREE_BUFCACHE=30
-MEDOOZE_INCOMING_LOST=31
-MEDOOZE_INCOMING_DROP=32
-MEDOOZE_INCOMING_BITRATE=33
-MEDOOZE_INCOMING_NACK=34
-MEDOOZE_INCOMING_PLI=35
-RX_PACKET=36
-RX_DROPPED=37
-RX_ERRORS=38
-RX_MISSED=39
-TX_PACKET=40
-TX_DROPPED=41
-TX_ERRORS=42
-TX_MISSED=43
+MEDOOZE_INCOMING_LOST=28
+MEDOOZE_INCOMING_DROP=29
+MEDOOZE_INCOMING_BITRATE=30
+MEDOOZE_INCOMING_NACK=31
+MEDOOZE_INCOMING_PLI=32
+RX_PACKET=33
+RX_DROPPED=34
+RX_ERRORS=35
+RX_MISSED=36
+TX_PACKET=37
+TX_DROPPED=38
+TX_ERRORS=39
+TX_MISSED=40
+VIEWER_TARGET_AVERAGE=41
+VIEWER_BITRATE=42
+VIEWERS_RTT_AVG=43
+VIEWERS_E2E_AVG=44
+VIEWER_FPS=45
+VIEWER_RID_H=46
+VIEWER_RID_M=47
+VIEWER_RID_L=48
+
 
 # line index in new csv
 DURATION=0
@@ -66,8 +72,11 @@ PRESSURE_DURATION_PEAK=10
 PUBLISHER_COLLAPSE_DURATION=11
 PUBLISHER_COLLAPSE_AVG=12
 PUBLISHER_COLLAPSE_PEAK=13
+VIEWER_RID_H_PEAK=14
+VIEWER_RID_M_PEAK=15
+VIEWER_RID_L_PEAK=16
 
-NUM_RESULT = PUBLISHER_COLLAPSE_PEAK + 1
+NUM_RESULT = VIEWER_RID_L_PEAK + 1
 
 def find_duration_ballooning(stats_tab, start_hint):
     duration = [0,0]
@@ -139,7 +148,7 @@ def find_duration_cgroups_reclaim(stats_tab, start_hint):
     return duration
 
 def get_pressure(stats_tab, start, end):
-    result = [0,0,0] # duration, average, peak
+    result = [0,0,0] # duration, average, peak, rids
 
     start_value = stats_tab[start][MEMORY_PRESSURE_AVG10]
 
@@ -173,7 +182,7 @@ def get_pressure(stats_tab, start, end):
     return result
 
 def get_collapse(stats_tab, start, end, column):
-    result = [0,0,0]
+    result = [0,0,0,0,0,0] # duration, average, peak, rid_h, rid_m, rid_l
     window = 5
     values_in_window = []
     decrease = []
@@ -211,6 +220,9 @@ def get_collapse(stats_tab, start, end, column):
     if(start >= end):
         result[1] = last_avg
         result[2] = last_avg
+        result[3] = int(stats_tab[end][VIEWER_RID_H])
+        result[4] = int(stats_tab[end][VIEWER_RID_M])
+        result[5] = int(stats_tab[end][VIEWER_RID_L])
         return result
 
     start = decrease[0]
@@ -233,11 +245,16 @@ def get_collapse(stats_tab, start, end, column):
 
         # add valeu to compute the duration average
         result[1] += current_avg
-        current += 1
-        
+    
         # if minimal value found save it
         if(current_avg < result[2]):
-            result[2] = current_avg 
+            result[2] = current_avg
+            result[3] = int(stats_tab[current][VIEWER_RID_H])
+            result[4] = int(stats_tab[current][VIEWER_RID_M])
+            result[5] = int(stats_tab[current][VIEWER_RID_L])
+
+
+        current += 1
 
         # if we got back to original average or above, break, the end
         if(current_avg >= start_value):
@@ -280,7 +297,7 @@ if __name__ == "__main__":
     average_stats = []
     columns = [(CPU_AVG, VM_CPU_USAGE), (PRESSURE_AVG, MEMORY_PRESSURE_AVG10), (PUBLISHER_BITRATE_AVG, PUBLISHER_BITRATE),
                (PUBLISHER_FPS_AVG, PUBLISHER_FPS), (PUBLISHER_RTT_AVG, PUBLISHER_RTT),
-               (VIEWER_BITRATE_AVG, VIEWER_BITRATE), (VIEWER_FPS_AVG, VIEWER_FPS)               
+               (VIEWER_BITRATE_AVG, VIEWER_BITRATE), (VIEWER_FPS_AVG, VIEWER_FPS)
                ]
     
     if len(sys.argv) == 1:
@@ -289,7 +306,7 @@ if __name__ == "__main__":
 
     # load all stats
     for f in os.listdir():
-        if not f.endswith('_average.csv') or f.startswith('.'):
+        if not f.endswith('_average.csv') or f.startswith('.') or f.endswith('.pdf') or f.endswith('.png'):
             continue
         
         with open(f, 'r') as csv_file:
@@ -314,7 +331,7 @@ if __name__ == "__main__":
             print("NOPE")
             exit(1)
 
-        average_stats[DURATION].append((int(stat[duration[1]][0]) - int(stat[duration[0]][0])) / 1000)
+        average_stats[DURATION].append((float(stat[duration[1]][0]) - float(stat[duration[0]][0])) / 1000)
 
         get_stats(stat, average_stats, columns, duration)
 
@@ -327,8 +344,11 @@ if __name__ == "__main__":
         average_stats[PUBLISHER_COLLAPSE_DURATION].append(publisher_collapse[0])
         average_stats[PUBLISHER_COLLAPSE_AVG].append(publisher_collapse[1])
         average_stats[PUBLISHER_COLLAPSE_PEAK].append(publisher_collapse[2])
+        average_stats[VIEWER_RID_H_PEAK].append(publisher_collapse[3])
+        average_stats[VIEWER_RID_M_PEAK].append(publisher_collapse[4])
+        average_stats[VIEWER_RID_L_PEAK].append(publisher_collapse[5])
 
-    out_filename = "average_step.csv"
+    out_filename = "average_step_with_rid.csv"
 
     # open and write csv file
     with open(out_filename, 'w') as csv_file:

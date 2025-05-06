@@ -1,6 +1,7 @@
 const Path     = require("path");
 const FS       = require("fs");
 const Inotify  = require("node-inotify").Inotify;
+const os = require('os-utils');
 
 const { exec, execSync } = require('node:child_process')
 
@@ -49,12 +50,35 @@ class SystemManager {
             dt : 10 // 10sec
         }
 
-        this.window_size = 60;
+        this.window_size = 30;
         this.threshold_percentage = 1;
         
         // inotify.addWatch({ path: this.swap_event_path, watch_for: Inotify.IN_MODIFY, callback: event => this.swapevent_callback(event) });
         // inotify.addWatch({ path: this.memory_event_path, watch_for: Inotify.IN_MODIFY, callback: event => this.memoryevents_callback(event) });
         // inotify.addWatch({ path: this.memory_pressure_path, watch_for: Inotify.IN_MODIFY, callback: event => this.pressure_callback(event) });
+    }
+
+    fetch_swap_stats() {
+        try {
+            const data = FS.readFileSync('/proc/vmstat', 'utf8');
+            const lines = data.split('\n');
+            for (const line of lines) {
+                const [key, value] = line.split(/\s+/);
+                if (key === 'pswpin') {
+                    logger.info.swapin = parseInt(value);
+                } else if (key === 'pswpout') {
+                    logger.info.swapout = parseInt(value);
+                } else if (key === 'pgpgin') {
+                    logger.info.pgpgin = parseInt(value);
+                } else if (key === 'pgpgout') {
+                    logger.info.pgpgout = parseInt(value);
+                }
+            }
+        } catch (e) {
+            console.error("Error reading /proc/vmstat:", e);
+            logger.info.swapin = 0;
+            logger.info.swapout = 0;
+        }
     }
 
     fetch_ram_usage() {
@@ -98,6 +122,24 @@ class SystemManager {
             }
         } catch(e) {
         
+        }
+    }
+
+    fetch_cpu_and_load() {
+        try {
+            // Récupérer le load average
+            const loadAverage = os.loadavg(1); // Load average sur 1 minute
+            logger.info.load_average = loadAverage;
+
+            // Récupérer l'utilisation du CPU
+            os.cpuUsage((cpuUsage) => {
+                logger.info.host_cpu = cpuUsage * 100; // Convertir en pourcentage
+                console.log(`Load Average: ${loadAverage}, CPU Usage: ${cpuUsage * 100}%`);
+            });
+        } catch (e) {
+            console.error("Error fetching CPU and Load Average:", e);
+            logger.info.load_average = 0;
+            logger.info.host_cpu = 0;
         }
     }
 
@@ -171,6 +213,8 @@ class SystemManager {
         this.fetch_memory_pressure();
         this.fetch_virsh_info();
         this.fetch_mem_stat();
+        this.fetch_swap_stats();
+        // this.fetch_cpu_and_load();
     }
 
     pid_regul(target, measured) {
@@ -222,7 +266,7 @@ class SystemManager {
                 cmd = `${cmd} swappiness=${swappiness}`;
             }
 
-            console.log("Reclaiming", mem);
+            console.log("Reclaiming", cmd);
             
             logger.info.maxram += 100; // mark to find where we begin reclaim when boxing plot
 
@@ -382,7 +426,7 @@ class SystemManager {
 
         if(inactive_anon === 0) {
             console.log("anon is 0, reclaiming 100");
-            this.reclaim_memory(100); // to be adjusted in function of reclaimable bytes
+            this.reclaim_memory(15); // to be adjusted in function of reclaimable bytes
             return;
         }
         

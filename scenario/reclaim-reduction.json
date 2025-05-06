@@ -1,5 +1,5 @@
 {
-    "name": "cgroups-reclaim",
+    "name": "cgroups-reclaim-hoststats",
     "steps": [
         {
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
@@ -36,7 +36,7 @@
         },
         {
             "actions": [],
-            "wait": 240000,
+            "wait": 300000,
             "repeat": 1
         },
         {

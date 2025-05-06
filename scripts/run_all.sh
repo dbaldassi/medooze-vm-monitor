@@ -1,9 +1,9 @@
 #!/bin/bash
 
-REPET=1
+REPET=10
 # SCENARIO=("reduction-viewers" "reclaim-reduction-viewers")
-# SCENARIO=("traffic")
-SCENARIO=("cgroup-reclaim-step")
+SCENARIO=("pid-cgroups" "pid-balloon" "pid-baseline")
+# SCENARIO=("cgroup-reclaim-step")
 # SCENARIO=("spawn-cgroup-reclaim" "spawn-cgroup-max" "spawn-balloon")
 # SCENARIO=("max2500")
 # SCENARIO=("cgroup-max-step" "cgroup-reclaim-step")

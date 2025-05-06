@@ -86,7 +86,8 @@ FIRST_SWAP=1
 ALL_INACTIVE_TO_ACTIVE=2
 ALL_INACTIVE_TO_SWAP=3
 ALL_MEMORY_TO_SWAP=4
-ALL_FREE=5
+ACTIVE_SUM=5
+ALL_FREE=6
 
 NUM_RESULT = ALL_FREE + 1
 
@@ -110,16 +111,21 @@ if __name__ == "__main__":
     for stat in all_stats:
         stat.pop(0)
 
-        index = 1
+        index = 0
         
         # print(initial_current_memory)
 
+        while stat[index][ACTIVE_ANON] <= stat[index+1][ACTIVE_ANON]:
+            index += 1
+
+        initial_current_memory = int(stat[index][RAM_USAGE])
+        initial_active_memory = int(stat[index][ANON]) / 1024 / 1024
+
+        index = 1
         while stat[index][INACTIVE_ANON] == stat[index-1][INACTIVE_ANON]:
             index += 1
         
-        initial_current_memory = int(stat[index - 1][RAM_USAGE])
-        initial_active_memory = int(stat[index - 1][ANON]) / 1024 / 1024
-        # first reclaim
+                # first reclaim
         first_index = index
         first_inactive_value = int(stat[index][INACTIVE_ANON]) / 1024 / 1024
         first_active_value = int(stat[index][ACTIVE_ANON]) / 1024 / 1024
@@ -148,6 +154,8 @@ if __name__ == "__main__":
 
         inactive_to_active_all_tab = []
         inactive_to_swap_all_tab = []
+
+        active_cumulated_sum = 0
         
         index = first_index
         while index < len(stat):
@@ -169,6 +177,9 @@ if __name__ == "__main__":
             active_delta = int(stat[index - 1][ACTIVE_ANON]) - int(stat[index][ACTIVE_ANON])
             swap_delta = int(stat[index - 1][SWAP_USAGE]) - int(stat[index][SWAP_USAGE])
 
+            if active_delta < 0:
+                active_cumulated_sum += abs(active_delta) / 1024 / 1024
+            
             if inactive_delta > 0 and active_delta < 0:
                 inactive_to_active += min(inactive_delta, abs(active_delta)) / 1024 / 1024
                 inactive_to_active_counter += min(inactive_delta, abs(active_delta)) / 1024 / 1024
@@ -188,12 +199,13 @@ if __name__ == "__main__":
         inactive_to_active_all_tab.append(inactive_to_active * 100 / first_inactive_value)
         inactive_to_swap_all_tab.append(inactive_to_swap * 100 / first_inactive_value)
 
-        print(inactive_to_active_tab, inactive_to_swap_tab)
-        print(inactive_to_active_all_tab, inactive_to_swap_all_tab)
+        # print(inactive_to_active_tab, inactive_to_swap_tab)
+        # print(inactive_to_active_all_tab, inactive_to_swap_all_tab)
             
         # print(inactive_to_swap, first_inactive_value, inactive_to_swap * 100 / first_inactive_value)
         average_stats[ALL_INACTIVE_TO_ACTIVE].append(inactive_to_active * 100 / first_inactive_value)
         average_stats[ALL_INACTIVE_TO_SWAP].append(inactive_to_swap * 100 / first_inactive_value)
+        average_stats[ACTIVE_SUM].append(active_cumulated_sum)
 
         index -= 1
         memory_delta = initial_current_memory - int(stat[index][RAM_USAGE])
@@ -209,7 +221,7 @@ if __name__ == "__main__":
         # print(current_anon, first_inactive_value, (first_inactive_value - current_anon) * 100 / first_inactive_value)
 
     out_filename = "percent_cgroups_step.csv"
-
+    print(average_stats)
     # open and write csv file
     with open(out_filename, 'w') as csv_file:
         writer = csv.writer(csv_file)

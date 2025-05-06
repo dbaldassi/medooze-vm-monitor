@@ -1,5 +1,5 @@
 {
-    "name": "balloon-viewersburst{{num_viewers:10}}-thresh{{threshold:200}}-pid",
+    "name": "balloon-pid-viewer-increase-double-longer-par20",
     "steps": [
         {
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
@@ -13,18 +13,7 @@
             "add_publisher" : [{ "id": "mac",  "codec": "vp8", "scenar": "simulcast" }],
             "repeat" : 1
         },
-        {
-            "require": "publisher_connected",
-            "actions": ["add_viewer"],
-            "add_viewer" : [ { "id": "baleze", "count": 10 } ],
-            "repeat": 1
-        },
-        {
-            "actions": [],
-            "wait": 60000,
-            "repeat": 1
-        },
-        {
+	{
             "actions": ["start_balloon_regul"],
             "start_balloon_regul": {
                 "timeout": 1,
@@ -34,20 +23,38 @@
         },
         {
             "actions": [],
+            "wait": 60000,
+            "repeat": 1
+        },
+        {
+            "actions": ["add_viewer"],
+            "add_viewer" : [ { "id": "baleze", "count": 20 } ],
+            "repeat": 4,
+            "wait": 60000
+        },
+	{
+	    "actions": [],
+            "wait": 420000,
+            "repeat": 1
+        },
+        {
+            "actions": ["remove_viewer"],
+            "remove_viewer" : [ { "id": "baleze", "count": 80 } ],
+            "repeat": 1,
+	    "wait": 60000
+        },
+        {
+            "actions": [],
             "wait": 120000,
             "repeat": 1
         },
         {
             "actions": ["add_viewer"],
-            "add_viewer" : [ { "id": "baleze", "count": "{{num_viewers:10}}" } ],
-            "repeat": 1
+            "add_viewer" : [ { "id": "baleze", "count": 40 } ],
+            "repeat": 2,
+            "wait": 60000
         },
-        {
-            "actions": [],
-            "wait": 90000,
-            "repeat": 1
-        },
-        {
+	{
             "actions": ["stop_balloon_regul"],
             "stop_balloon_regul":{},
             "repeat": 1
@@ -60,7 +67,7 @@
         },
         {
             "actions" : [ "save" ],
-            "save": "average_viewer"
+            "save": ""
         },
         {
             "actions" : ["exit"],

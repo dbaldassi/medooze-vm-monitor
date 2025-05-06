@@ -134,6 +134,12 @@ class StatsLogger {
             { id: 'summed_memory', title: 'SUMMED MEMORY' },
             { id: 'vm_free_used', title: 'VM FREE USED'},
             { id: 'vm_free_bufcache', title: 'VM FREE BUFCACHE'},
+            { id: 'swapin', title: 'SWAP IN'},
+            { id: 'swapout', title: 'SWAP OUT'},
+            { id: 'pgpgin', title: 'PGPG IN'},
+            { id: 'pgpgout', title: 'PGPG OUT'},
+            { id: 'host_cpu', title: 'HOST CPU'},
+            { id: 'load_average', title: 'LOAD AVERAGE'},
         ];
 
         this.headers_init_len = this.headers.length;

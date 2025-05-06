@@ -1,5 +1,5 @@
 {
-    "name": "traffic-ballon-reclaim-1h",
+    "name": "traffic-reclaim-1h",
     "steps": [
         {
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
@@ -37,14 +37,6 @@
             "repeat": 1
         },
         {
-            "actions": ["start_balloon_regul"],
-            "start_balloon_regul": {
-                "timeout": 1,
-                "threshold": "{{threshold:200}}"
-            },
-            "repeat": 1
-        },
-        {
             "actions": [],
             "wait": 3600000,
             "repeat": 1
@@ -57,11 +49,6 @@
 	    {
             "actions": ["stop_cgroups_regul"],
             "stop_cgroups_regul":{},
-            "repeat": 1
-        },
-        {
-            "actions": ["stop_balloon_regul"],
-            "stop_balloon_regul":{},
             "repeat": 1
         },
         {
