@@ -1,8 +1,8 @@
 #!/bin/bash
 
-REPET=10
+REPET=1
 # SCENARIO=("reduction-viewers" "reclaim-reduction-viewers")
-SCENARIO=("pid-cgroups" "pid-balloon" "pid-baseline")
+SCENARIO=("visio/visio_base")
 # SCENARIO=("cgroup-reclaim-step")
 # SCENARIO=("spawn-cgroup-reclaim" "spawn-cgroup-max" "spawn-balloon")
 # SCENARIO=("max2500")
@@ -195,9 +195,9 @@ run() {
 	    curl -k -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/next
 	done
 	
-	cd results/$(jsoncli scenario/$scenar.json --get name | tr -d \")
-	su tobias -c "../../scripts/average_exp.py"
-	cd - 
+	# cd results/$(jsoncli scenario/$scenar.json --get name | tr -d \")
+	# su tobias -c "../../scripts/average_exp.py"
+	# cd - 
     done
 }
 

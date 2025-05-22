@@ -8,7 +8,7 @@
     "memory_pressure_file": "memory.pressure",
     "memory_reclaim_file": "memory.reclaim",
     "memory_stat_file": "memory.stat",
-    "memory_stats_path": "/sys/fs/cgroup/machine.slice/machine-qemu\\x2d25\\x2dmedooze.scope",
+    "memory_stats_path": "/sys/fs/cgroup/machine.slice/machine-qemu\\x2d15\\x2dmedooze.scope",
     "initial_max_ram": 4096,
     "host": "134.59.133.57",
     "port": 9000,
@@ -59,6 +59,17 @@
             "capalities": {
                 "max": 50,
                 "network": ["normal", "tc"]
+            }
+        }
+    ],
+    "visio_launchers": [
+        {
+            "id": "baleze",
+            "exec_start": "ssh exp@134.59.129.175 \"screen -L -S visio -dm /home/exp/run_visio.sh\"",
+            "exec_stop": "ssh exp@134.59.129.175 \"/home/exp/stop_visio.sh\"",
+            "capabilities": {
+                "max": 200,
+                "capacities": ["normal"]
             }
         }
     ]

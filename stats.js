@@ -228,6 +228,8 @@ class StatsLogger {
             virsh_swap_out: 0,  // The number of swapped-out pages as reported by the guest OS since the start of the VM.
             virsh_minor_fault: 0, // The number of page faults as reported by the guest OS since the start of the VM. Minor page faults happen quiet often, for example when first accessing newly allocated memory or on copy-on-write. 
             virsh_major_fault: 0, // The number of page faults as reported by the guest OS since the start of the VM. Major page faults on the other hand require disk IO as some data is accessed, which must be paged in from disk first.
+
+            rooms: new Map()
         };
 
         this.create_writer(false);
@@ -261,6 +263,51 @@ class StatsLogger {
             header: this.headers,
             append: append
         }); 
+    }
+
+    async log_room() {
+        const rooms = this.info.rooms;
+
+        for (const [room_id, room] of rooms) {
+            // Check if the CSV writer for this room already exists
+            if (!room.csv || room.headers_modified) {
+                // Create a new CSV writer for this room
+                room.csv = createCsvWriter({
+                    path: `${room_id}_stats.csv`,
+                    header: room.csv_header,
+                    append: room.headers_modified // Set to true if you want to append to the file
+                });
+
+                room.headers_modified = false; // Reset the flag after creating the writer
+            }
+
+            // Add the stats for each participant in the room
+            for (const [participant_id, stats] of room.participants) {
+                let line = {
+                    time: this.info.time,
+                    participant_id: participant_id,
+                    num_participants: room.participants.size,
+                };
+
+                for(const stat of stats) {
+                    if(stat.id === participant_id) {
+                        // Add the stats to the line
+                        line["sent_bitrate"] = stat.bitrate;
+                        line["sent_rtt"] = stat.rtt;
+                        line["sent_fps"] = stat.fps;
+                    }
+                    else {
+                        // Add the stats to the line
+                        line[`${stat.id}_bitrate`] = stat.bitrate;
+                        line[`${stat.id}_rtt`] = stat.rtt;
+                        line[`${stat.id}_fps`] = stat.fps;
+                    }
+                }
+
+                // Write the line to the CSV file
+                await room.csv.writeRecords([line]);
+            }
+        }
     }
     
     async log_info() {
@@ -296,6 +343,8 @@ class StatsLogger {
 
         const cgroup_records = [this.info];
         await this.cgroupCsvWriter.writeRecords(cgroup_records);
+
+        this.log_room();
     }
 }
 

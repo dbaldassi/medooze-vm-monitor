@@ -10,6 +10,8 @@ const SystemManager = require('./system_manager.js');
 // Get Update listener function
 const update_listener = require('./lib/receivers.js').update_listener;
 
+const WebSocketClient = require('websocket').client;
+
 const SECONDS = 1000;
 
 class Monitor {
@@ -20,6 +22,9 @@ class Monitor {
         this.publisher_launchers = require('./lib/publisher_launcher.js').launchers;
         // Client that runs viewers on demand
         this.viewer_launchers = require('./lib/viewer_launcher.js').launchers;
+        // Client that runs visio on demand
+        this.visio_launchers = require('./lib/visio_launcher.js').launchers;
+
         // default medooze
         this.medooze_server = config.medooze_server.find(elt => elt.id === "vm");
 
@@ -179,6 +184,7 @@ class Monitor {
     search_and_run(ids, component, cmd) {
         for(let id of ids) {
             let launcher = config[component].find(elt => elt.id === id);
+            console.log(launcher[cmd]);
             SystemManager.quick_exec(launcher[cmd]);
         }
     }
@@ -205,6 +211,14 @@ class Monitor {
     
     stop_publisher_launchers(ids) {
         this.search_and_run(ids, "publisher_launchers", "exec_stop");
+    }
+
+    start_visio_launchers(ids) {
+        this.stop_visio_launchers(ids); // first stop any remaining viewers otherwise it breaks everything if previous exps crashed
+        this.search_and_run(ids, "visio_launchers", "exec_start");
+    }
+    stop_visio_launchers(ids) {
+        this.search_and_run_sync(ids, "visio_launchers", "exec_stop");
     }
 
     reclaim() {
@@ -248,6 +262,76 @@ class Monitor {
 
 	    this.current_viewer_count += opt.count;
         };
+    }
+
+    create_room(opts) {
+        console.log("create room");
+
+        let client = new WebSocketClient({ tlsOptions: { rejectUnauthorized: false }});
+        
+        client.on('connect', (connection) => {
+            console.log("connected to medooze visio");
+
+            connection.on('message', (message) => {
+                let msg = JSON.parse(message.utf8Data);
+                if(msg.cmd === "create" && msg.success) {
+                    console.log("Room created", msg.roomId);
+                    this.room_created_promise.resolve();
+                }
+            });
+
+            for(let opt of opts) {
+                let obj = {
+                    "cmd": "create",
+                    "roomId": opt.roomId
+                };
+                connection.send(JSON.stringify(obj));
+
+                console.log("Send create command", obj);
+            }
+        });
+
+        client.on('connectFailed', (error) => {
+            console.log('Connect Error: ' + error.toString());
+        });
+
+        this.room_created_promise = Promise.withResolvers();
+
+        client.connect(`wss://${this.medooze_server.host}:${this.medooze_server.port}`, "vm-visio");
+    }
+
+    delete_room(opts) {
+        let client = new WebSocketClient({ tlsOptions: { rejectUnauthorized: false }});
+        client.on('connect', (connection) => {
+            for(let opt of opts) {
+                let obj = {
+                    "cmd": "delete",
+                    "roomId": opt.roomId
+                };
+                connection.send(JSON.stringify(obj));
+            }
+        }
+        );
+        client.connect(`wss://${this.medooze_server.host}:${this.medooze_server.port}`, "vm-visio");
+    }
+
+    add_visio_client(opts) {
+        console.log("Adding visio client");
+        for(let opt of opts) {
+            // Get visio by id
+            let launcher = this.visio_launchers.find(e => e.id === opt.id);
+            // Run a publisher and publish video
+            let obj = {
+                "cmd": "run",
+                "medooze_host": this.medooze_server.host,
+                "medooze_port": this.medooze_server.port,
+                "monitor_host": config.host,
+                "monitor_port": config.port,
+                "roomId": opt.roomId,
+                "count": opt.count,
+            };
+            launcher.ws.sendUTF(JSON.stringify(obj));
+        }
     }
 
     remove_viewer(opts) {
@@ -336,6 +420,11 @@ class Monitor {
         // Copy stats.csv to dest path
         FS.cpSync(logger.csv_name, dest_path);
         FS.cpSync("cgroups_stats.csv", cgroups_dest_path);
+        // Copy rooms csv to dest dir
+        for(let [room_id, _] of logger.info.rooms) {
+            const room_path = Path.join(dest_dir, `${room_id}_${name}`);
+            FS.cpSync(`${room_id}_stats.csv`, room_path);
+        }
 
         // Add viewers csv headers
         logger.sync_headers_sync(dest_path);
@@ -371,6 +460,7 @@ class Monitor {
                 // Wait for a publisher to be connected
                 else if(step.require === "publisher_connected") await this.publisher_connected_promise.promise;
                 else if(step.require === "memory_filled") await this.process_promise.promise;
+                else if(step.require === "room_created") await this.room_created_promise.promise;
             }
 
             // Number of times to repeat this step
