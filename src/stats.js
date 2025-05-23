@@ -1,7 +1,7 @@
 
 const FS = require("fs");
 
-const config = require('./config.json');
+const config = require('../config/config.json');
 const { title } = require("process");
 // Create csv logger to log all stats
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;

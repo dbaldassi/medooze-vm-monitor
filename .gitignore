@@ -1,12 +1,12 @@
 .DS_Store
 ._.DS_Store
 blue_sky_1080p25.y4m
-file.csv
 index_test.js
 node_modules/
 package-lock.json
-stats.csv
-stats_reordered.csv
+*.csv
 results/
 screenlog*
 regulation-heuristics/
+figures/
+run_all.sh

@@ -8,7 +8,7 @@ const { exec, execSync } = require('node:child_process')
 // Get logger
 const logger = require('./stats.js');
 // Get config
-const config = require('./config.json');
+const config = require('../config/config.json');
 const { readFileSync } = require("node:fs");
 const { log } = require("node:console");
 
@@ -280,10 +280,10 @@ class SystemManager {
             // console.log(after-before);
         } catch(error) {
             console.error(error);
-            return false
+            return false;
         }
 
-        return true
+        return true;
     }
 
     start_collecting(interval, callback) {

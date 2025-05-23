@@ -62,7 +62,7 @@ restart_vm() {
 	done
 	
 	echo "Config slice"
-	./config_slice.sh
+	./config/config_slice.sh
 
 	echo "Wait for system to boot"
 	sleep 10

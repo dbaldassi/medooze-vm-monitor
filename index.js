@@ -7,11 +7,11 @@ const parse             = require('json-templates');
 const WebSocketServer   = require ("websocket").server;
 
 // Get config
-const config = require('./config.json');
+const config = require('./config/config.json');
 // Get Update listener function
 const update_listener = require('./lib/receivers.js').update_listener;
 // Get Monitor
-const monitor = require('./monitor.js');
+const monitor = require('./src/monitor.js');
 
 //Create rest api
 const rest = Express();
@@ -20,8 +20,8 @@ rest.use(Express.static("www"));
 
 // Load certs
 const options = {
-	key     : FS.readFileSync ("server.key"),
-	cert	: FS.readFileSync ("server.cert")
+	key     : FS.readFileSync ("config/server.key"),
+	cert	: FS.readFileSync ("config/server.cert")
 };
 
 // Manualy start server

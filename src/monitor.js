@@ -2,13 +2,13 @@ const FS   = require('fs');
 const Path = require('path');
 
 // Get config
-const config = require('./config.json');
+const config = require('../config/config.json');
 // Get logger
 const logger = require('./stats.js');
 // Get system manager
 const SystemManager = require('./system_manager.js');
 // Get Update listener function
-const update_listener = require('./lib/receivers.js').update_listener;
+const update_listener = require('../lib/receivers.js').update_listener;
 
 const WebSocketClient = require('websocket').client;
 
@@ -19,11 +19,11 @@ class Monitor {
         // Create system manager
         this.sys_manager = new SystemManager;
         // Client that runs publisher on demand
-        this.publisher_launchers = require('./lib/publisher_launcher.js').launchers;
+        this.publisher_launchers = require('../lib/publisher_launcher.js').launchers;
         // Client that runs viewers on demand
-        this.viewer_launchers = require('./lib/viewer_launcher.js').launchers;
+        this.viewer_launchers = require('../lib/viewer_launcher.js').launchers;
         // Client that runs visio on demand
-        this.visio_launchers = require('./lib/visio_launcher.js').launchers;
+        this.visio_launchers = require('../lib/visio_launcher.js').launchers;
 
         // default medooze
         this.medooze_server = config.medooze_server.find(elt => elt.id === "vm");

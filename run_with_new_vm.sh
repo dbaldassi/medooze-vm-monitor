@@ -1,1 +1,0 @@
-scripts/run_with_new_vm.sh
