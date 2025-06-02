@@ -7,7 +7,8 @@ from datetime import datetime
 
 def process_folder(folder_path, output_file):
     csv_files = glob.glob(os.path.join(folder_path, "*.csv"))
-    dfs = [pd.read_csv(f) for f in csv_files]
+    # dfs = [pd.read_csv(f) for f in csv_files]
+    dfs = []
     for f in csv_files:
         try:
             print(f"Lecture de {f}")
