@@ -1,0 +1,215 @@
+{
+    "name": "visio-perf-maxroom",
+    "steps": [
+        {
+            "actions" : ["start_visio_launchers", "start_medooze"],
+            "start_visio_launchers": ["baleze"],
+            "start_medooze": "vmservice"
+        },
+        {
+            "require": "medooze_connected",
+            "actions": ["create_room"],
+            "create_room" : [{ "roomId": "room1" }],
+            "repeat" : 1
+        },
+        {
+            "require": "room_created",
+            "actions": ["add_visio_client"],
+            "add_visio_client" : [ { "id": "baleze", "count": 6, "roomId": "room1" } ],
+            "repeat": 1,
+	    "wait": 60000
+        },
+        {
+            "require": "medooze_connected",
+            "actions": ["create_room"],
+            "create_room" : [{ "roomId": "room2" }],
+            "repeat" : 1
+        },
+        {
+            "require": "room_created",
+            "actions": ["add_visio_client"],
+            "add_visio_client" : [ { "id": "baleze", "count": 6, "roomId": "room2" } ],
+            "repeat": 1,
+	    "wait": 60000
+        },
+        {
+            "require": "medooze_connected",
+            "actions": ["create_room"],
+            "create_room" : [{ "roomId": "room3" }],
+            "repeat" : 1
+        },
+        {
+            "require": "room_created",
+            "actions": ["add_visio_client"],
+            "add_visio_client" : [ { "id": "baleze", "count": 6, "roomId": "room3" } ],
+            "repeat": 1,
+	    "wait": 60000
+        },
+        {
+            "require": "medooze_connected",
+            "actions": ["create_room"],
+            "create_room" : [{ "roomId": "room4" }],
+            "repeat" : 1
+        },
+        {
+            "require": "room_created",
+            "actions": ["add_visio_client"],
+            "add_visio_client" : [ { "id": "baleze", "count": 6, "roomId": "room4" } ],
+            "repeat": 1,
+	    "wait": 60000
+        },
+        {
+            "require": "medooze_connected",
+            "actions": ["create_room"],
+            "create_room" : [{ "roomId": "room5" }],
+            "repeat" : 1
+        },
+        {
+            "require": "room_created",
+            "actions": ["add_visio_client"],
+            "add_visio_client" : [ { "id": "baleze", "count": 6, "roomId": "room5" } ],
+            "repeat": 1,
+	    "wait": 60000
+        },
+        {
+            "require": "medooze_connected",
+            "actions": ["create_room"],
+            "create_room" : [{ "roomId": "room6" }],
+            "repeat" : 1
+        },
+        {
+            "require": "room_created",
+            "actions": ["add_visio_client"],
+            "add_visio_client" : [ { "id": "baleze", "count": 6, "roomId": "room6" } ],
+            "repeat": 1,
+	    "wait": 60000
+        },
+        {
+            "require": "medooze_connected",
+            "actions": ["create_room"],
+            "create_room" : [{ "roomId": "room7" }],
+            "repeat" : 1
+        },
+        {
+            "require": "room_created",
+            "actions": ["add_visio_client"],
+            "add_visio_client" : [ { "id": "baleze", "count": 6, "roomId": "room7" } ],
+            "repeat": 1,
+	    "wait": 60000
+        },
+        {
+            "require": "medooze_connected",
+            "actions": ["create_room"],
+            "create_room" : [{ "roomId": "room8" }],
+            "repeat" : 1
+        },
+        {
+            "require": "room_created",
+            "actions": ["add_visio_client"],
+            "add_visio_client" : [ { "id": "baleze", "count": 6, "roomId": "room8" } ],
+            "repeat": 1,
+	    "wait": 60000
+        },
+        {
+            "require": "medooze_connected",
+            "actions": ["create_room"],
+            "create_room" : [{ "roomId": "room9" }],
+            "repeat" : 1
+        },
+        {
+            "require": "room_created",
+            "actions": ["add_visio_client"],
+            "add_visio_client" : [ { "id": "baleze", "count": 6, "roomId": "room9" } ],
+            "repeat": 1,
+	    "wait": 60000
+        },
+        {
+            "require": "medooze_connected",
+            "actions": ["create_room"],
+            "create_room" : [{ "roomId": "room10" }],
+            "repeat" : 1
+        },
+        {
+            "require": "room_created",
+            "actions": ["add_visio_client"],
+            "add_visio_client" : [ { "id": "baleze", "count": 6, "roomId": "room10" } ],
+            "repeat": 1,
+	    "wait": 60000
+        },
+        {
+            "require": "medooze_connected",
+            "actions": ["create_room"],
+            "create_room" : [{ "roomId": "room11" }],
+            "repeat" : 1
+        },
+        {
+            "require": "room_created",
+            "actions": ["add_visio_client"],
+            "add_visio_client" : [ { "id": "baleze", "count": 6, "roomId": "room11" } ],
+            "repeat": 1,
+	    "wait": 60000
+        },
+        {
+            "require": "medooze_connected",
+            "actions": ["create_room"],
+            "create_room" : [{ "roomId": "room12" }],
+            "repeat" : 1
+        },
+        {
+            "require": "room_created",
+            "actions": ["add_visio_client"],
+            "add_visio_client" : [ { "id": "baleze", "count": 6, "roomId": "room12" } ],
+            "repeat": 1,
+	    "wait": 60000
+        },
+        {
+            "require": "medooze_connected",
+            "actions": ["create_room"],
+            "create_room" : [{ "roomId": "room13" }],
+            "repeat" : 1
+        },
+        {
+            "require": "room_created",
+            "actions": ["add_visio_client"],
+            "add_visio_client" : [ { "id": "baleze", "count": 6, "roomId": "room13" } ],
+            "repeat": 1,
+	    "wait": 60000
+        },
+        {
+            "require": "medooze_connected",
+            "actions": ["create_room"],
+            "create_room" : [{ "roomId": "room14" }],
+            "repeat" : 1
+        },
+        {
+            "require": "room_created",
+            "actions": ["add_visio_client"],
+            "add_visio_client" : [ { "id": "baleze", "count": 6, "roomId": "room14" } ],
+            "repeat": 1,
+	    "wait": 60000
+        },
+        {
+            "actions": [],
+            "wait": 120000,
+            "repeat": 1
+        },
+        {
+            "actions" : ["stop_medooze", "stop_visio_launchers"],
+            "stop_visio_launchers": ["baleze"],
+            "stop_medooze": {}
+        },
+        {
+            "actions" : [ "delete_room" ],
+            "delete_room" : [{ "roomId": "room1" }],
+            "repeat" : 1
+        },
+        {
+            "actions" : [ "save" ],
+            "save": {}
+        },
+        {
+            "actions" : ["exit"],
+            "exit" : {}
+        }
+    ]
+}

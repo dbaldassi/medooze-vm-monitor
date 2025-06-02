@@ -1,0 +1,46 @@
+{
+    "name": "visio-perf-participants",
+    "steps": [
+        {
+            "actions" : ["start_visio_launchers", "start_medooze"],
+            "start_visio_launchers": ["baleze"],
+            "start_medooze": "vmservice"
+        },
+        {
+            "require": "medooze_connected",
+            "actions": ["create_room"],
+            "create_room" : [{ "roomId": "room1" }],
+            "repeat" : 1
+        },
+        {
+            "require": "room_created",
+            "actions": ["add_visio_client"],
+            "add_visio_client" : [ { "id": "baleze", "count": 6, "roomId": "room1" } ],
+            "repeat": 14,
+	    "wait": 60000
+        },
+        {
+            "actions": [],
+            "wait": 120000,
+            "repeat": 1
+        },
+        {
+            "actions" : ["stop_medooze", "stop_visio_launchers"],
+            "stop_visio_launchers": ["baleze"],
+            "stop_medooze": {}
+        },
+        {
+            "actions" : [ "delete_room" ],
+            "delete_room" : [{ "roomId": "room1" }],
+            "repeat" : 1
+        },
+        {
+            "actions" : [ "save" ],
+            "save": {}
+        },
+        {
+            "actions" : ["exit"],
+            "exit" : {}
+        }
+    ]
+}

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-REPET=1
+REPET=10
 # SCENARIO=("reduction-viewers" "reclaim-reduction-viewers")
-SCENARIO=("visio/visio_base")
+SCENARIO=("visio/visio_perf_maxviewers" )
 # SCENARIO=("cgroup-reclaim-step")
 # SCENARIO=("spawn-cgroup-reclaim" "spawn-cgroup-max" "spawn-balloon")
 # SCENARIO=("max2500")
