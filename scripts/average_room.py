@@ -8,6 +8,12 @@ from datetime import datetime
 def process_folder(folder_path, output_file):
     csv_files = glob.glob(os.path.join(folder_path, "*.csv"))
     dfs = [pd.read_csv(f) for f in csv_files]
+    for f in csv_files:
+        try:
+            print(f"Lecture de {f}")
+            dfs.append(pd.read_csv(f))
+        except Exception as e:
+            print(f"Erreur lors de la lecture de {f}: {e}")
     # Nettoie les colonnes (enlève les espaces, etc.)
     for i, df in enumerate(dfs):
         df.columns = [c.strip() for c in df.columns]
