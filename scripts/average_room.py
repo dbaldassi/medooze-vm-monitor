@@ -7,7 +7,17 @@ from datetime import datetime
 
 def process_folder(folder_path, output_file):
     csv_files = glob.glob(os.path.join(folder_path, "*.csv"))
-    dfs = [pd.read_csv(f) for f in csv_files]
+    # dfs = [pd.read_csv(f) for f in csv_files]
+    dfs = []
+    for f in csv_files:
+        try:
+            df = pd.read_csv(f, encoding='utf-8')
+            if 'TIME' in df.columns and 'PARTICIPANT_ID' in df.columns:
+                dfs.append(df)
+            else:
+                print(f"Skipping {f}: missing TIME or PARTICIPANT_ID columns.")
+        except Exception as e:
+            print(f"Error reading {f}: {e}")
 
     # Nettoie les colonnes (enlève les espaces, etc.)
     for i, df in enumerate(dfs):

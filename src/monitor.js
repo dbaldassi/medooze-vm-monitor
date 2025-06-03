@@ -394,7 +394,7 @@ class Monitor {
     }
 
     stop_viewer_traffic(opts) {
-	clearInterval(this.viewers_timeout[Symbol.toPrimitive]());
+	    clearInterval(this.viewers_timeout[Symbol.toPrimitive]());
     }
 
     save(opt) {
