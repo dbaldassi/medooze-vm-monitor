@@ -19,11 +19,20 @@ df = df[["TIME", "PARTICIPANT_ID", "NUM_PARTICIPANTS", "SENT_BITRATE", "SENT_RTT
 # Convertir le timestamp en secondes
 df["TIME"] = df["TIME"] / 1000
 
+df["SENT_BITRATE"] = pd.to_numeric(df["SENT_BITRATE"], errors="coerce")
+df.loc[df["SENT_BITRATE"] < 0, "SENT_BITRATE"] = 0
+df["SENT_BITRATE"] = df["SENT_BITRATE"].fillna(0)
+
+print(df["SENT_BITRATE"].head(20))
+print(df["SENT_BITRATE"].dtype)
+print(df["SENT_BITRATE"].min(), df["SENT_BITRATE"].max())
+
 # --- FIGURE 1 : SENT_BITRATE ---
 for pid, group in df.groupby("PARTICIPANT_ID"):
     plt.scatter(group["TIME"], group["SENT_BITRATE"], s=10, alpha=0.5, label=pid)
 
-mean_bitrate = df.groupby("TIME")["SENT_BITRATE"].mean()
+mean_bitrate = df.groupby("TIME")["SENT_BITRATE"].mean().clip(lower=0)
+print(mean_bitrate)
 plt.plot(mean_bitrate.index, mean_bitrate.values, color='black', linewidth=2, label="Moyenne")
 
 plt.xlabel("Timestamp (s)")
