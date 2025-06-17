@@ -2,7 +2,7 @@
 
 set -e
 
-sed -i s/$(cat config.json | grep medooze.scope | cut -d"\\" -f3)/$(find /sys/fs/cgroup/machine.slice/ -name "*medooze.scope" | cut -d"\\" -f2)/ config.json
+sed -i s/$(cat config/config.json | grep medooze.scope | cut -d"\\" -f3)/$(find /sys/fs/cgroup/machine.slice/ -name "*medooze.scope" | cut -d"\\" -f2)/ config/config.json
 
 cd "$(find /sys/fs/cgroup/machine.slice/ -name "*medooze.scope")"
 

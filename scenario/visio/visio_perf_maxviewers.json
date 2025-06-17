@@ -1,5 +1,5 @@
 {
-    "name": "visio-perf-participants2",
+    "name": "visio-perf-participants-by1",
     "steps": [
         {
             "actions" : ["start_visio_launchers", "start_medooze"],

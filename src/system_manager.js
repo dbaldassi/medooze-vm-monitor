@@ -3,7 +3,7 @@ const FS       = require("fs");
 const Inotify  = require("node-inotify").Inotify;
 const os = require('os-utils');
 
-const { exec, execSync } = require('node:child_process')
+const { exec, execSync } = require('node:child_process');
 
 // Get logger
 const logger = require('./stats.js');
@@ -48,7 +48,7 @@ class SystemManager {
             integrator : 0,
 
             dt : 10 // 10sec
-        }
+        };
 
         this.window_size = 30;
         this.threshold_percentage = 1;
@@ -219,7 +219,7 @@ class SystemManager {
 
     pid_regul(target, measured) {
         let error = target - measured;
-        console.log(target, measured);
+        // console.log(target, measured);
 
         this.pid.integrator += error * this.pid.dt;
         
@@ -229,7 +229,7 @@ class SystemManager {
 
         let out = p + i + d;
 
-        console.log("pid : ", p, i, d, out);
+        // console.log("pid : ", p, i, d, out);
 
         this.pid.prevError = error;
 
@@ -239,7 +239,7 @@ class SystemManager {
     // Max in MiB
     set_max_ram(max) {
         // todo write max to memory.max
-        console.log(max);
+        // console.log(max);
 
         max = Math.max(max, 0); // don't write negative value 
         // log in csv stats new max
@@ -461,7 +461,7 @@ class SystemManager {
             integrator : 0,
 
             dt : 10 // 10sec
-        }
+        };
     }
 
     ballon_regul(threshold, dt) {
@@ -473,20 +473,24 @@ class SystemManager {
 
         const target = clamp(threshold + (logger.info.virsh_swap_out - logger.info.virsh_swap_in), min, max);
 
-        console.log({target : target / 1024, min : min / 1024 , max : max / 1024});
+        // console.log({target : target / 1024, min : min / 1024 , max : max / 1024});
 
         let out = this.pid_regul(target, logger.info.virsh_usable);
 
         out = ((logger.info.virsh_usable + out < 0) ? target - logger.info.virsh_usable : Math.floor(out));
 
+        if(Math.abs(out) > 100 * 1024 * 1024) {
+            out = Math.sign(out) * 100 * 1024 * 1024; // limit to 200K
+        }
+
         let new_vm_size = logger.info.virsh_actual + out;
-        console.log({ out, new_vm_size, actual: logger.info.virsh_actual });
+        // console.log({ out, new_vm_size, actual: logger.info.virsh_actual });
 
         let time = 3;
         if(out < 0) {
             time = (1 / 250) * (out / -1024) + 1/2; // found by interpolation
-            time = Math.max(time, 1); // min 1 sec because virsh report stats every second
-            console.log("Time until next : ", time)
+            time = Math.max(time, 5); // min 1 sec because virsh report stats every second
+            // console.log("Time until next : ", time)
         }
 
         SystemManager.quick_exec(`virsh setmem --domain medooze --size ${new_vm_size}K --current`);

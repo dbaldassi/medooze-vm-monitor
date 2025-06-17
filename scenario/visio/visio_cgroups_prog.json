@@ -15,7 +15,7 @@
         {
             "require": "room_created",
             "actions": ["add_visio_client"],
-            "add_visio_client" : [ { "id": "baleze", "count": 6, "roomId": "room1" } ],
+            "add_visio_client" : [ { "id": "baleze", "count": 10, "roomId": "room1" } ],
             "repeat": 1
         },
         {

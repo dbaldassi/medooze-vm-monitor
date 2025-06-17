@@ -367,7 +367,7 @@ if __name__ == "__main__":
             else:
                 y2_axis = sys.argv[i].split(',')
     else:
-        print("Usage : {} <file> <avg|1stq|median|3rdq|min|max> <key_x_axis> <key1_y_axis[,k2,...,kn]> [keys_y2_axis]".format(sys.arvg[0]))
+        print("Usage : {} <file> <avg|1stq|median|3rdq|min|max> <key_x_axis> <key1_y_axis[,k2,...,kn]> [keys_y2_axis]".format(sys.argv[0]))
         exit(1)
 
     print(x_axis, y_axis, y2_axis, window)

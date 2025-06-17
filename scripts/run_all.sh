@@ -2,7 +2,8 @@
 
 REPET=10
 # SCENARIO=("reduction-viewers" "reclaim-reduction-viewers")
-SCENARIO=("visio/visio_perf_maxviewers" "visio/visio_perf_maxroom")
+# SCENARIO=("visio/visio_perf_maxroom" "visio/visio_reclaim_regul" "visio/visio_balloon_regul")
+SCENARIO=("visio/visio_balloon_regul")
 # SCENARIO=("cgroup-reclaim-step")
 # SCENARIO=("spawn-cgroup-reclaim" "spawn-cgroup-max" "spawn-balloon")
 # SCENARIO=("max2500")

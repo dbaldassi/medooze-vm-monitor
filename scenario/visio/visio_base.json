@@ -1,5 +1,5 @@
 {
-    "name": "visio-base",
+    "name": "visio-base-10",
     "steps": [
         {
             "actions" : ["start_visio_launchers", "start_medooze"],
@@ -15,12 +15,13 @@
         {
             "require": "room_created",
             "actions": ["add_visio_client"],
-            "add_visio_client" : [ { "id": "baleze", "count": 6, "roomId": "room1" } ],
-            "repeat": 1
+            "add_visio_client" : [ { "id": "baleze", "count": 1, "roomId": "room1" } ],
+            "repeat": 10,
+	    "wait": 10000
         },
         {
             "actions": [],
-            "wait": 120000,
+            "wait": 300000,
             "repeat": 1
         },
         {

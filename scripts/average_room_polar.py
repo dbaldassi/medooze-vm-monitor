@@ -10,7 +10,12 @@ def process_folder(folder_path, output_file):
     dfs = []
     for f in csv_files:
         try:
-            df = pl.read_csv(f)
+            # Lecture de l'en-tête pour détecter les colonnes à caster en float
+            with open(f) as fh:
+                header = fh.readline().strip().split(",")
+            float_cols = [col for col in header if col not in ['TIME', 'PARTICIPANT_ID']]
+            schema_overrides = {col: pl.Float64 for col in float_cols}
+            df = pl.read_csv(f, schema_overrides=schema_overrides)
             if 'TIME' in df.columns and 'PARTICIPANT_ID' in df.columns:
                 dfs.append(df)
             else:
@@ -47,4 +52,4 @@ if __name__ == "__main__":
     dir_name = os.path.basename(os.getcwd())
     date_str = datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
     out_filename = f"{dir_name}_{date_str}_average_polar.csv"
-    process_folder(os.getcwd(), out_filename)
+    process_folder(os.getcwd(), out_filename) 

@@ -14,25 +14,29 @@ csv_file = sys.argv[1]
 outdir = os.path.dirname(os.path.abspath(csv_file))
 df = pd.read_csv(csv_file)
 
-df = df[["TIME", "PARTICIPANT_ID", "NUM_PARTICIPANTS", "SENT_BITRATE", "SENT_RTT", "SENT_FPS"] + [col for col in df.columns if re.match(r'participant-\d+_BITRATE', col)] +  [col for col in df.columns if re.match(r'participant-\d+_FPS', col)]]
+recv_cols = [col for col in df.columns if re.match(r'participant-\d+_BITRATE', col)]
+
+df = df[["TIME", "PARTICIPANT_ID", "NUM_PARTICIPANTS", "SENT_BITRATE", "SENT_RTT", "SENT_FPS"] + recv_cols +  [col for col in df.columns if re.match(r'participant-\d+_FPS', col)]]
 
 # Convertir le timestamp en secondes
 df["TIME"] = df["TIME"] / 1000
 
-df["SENT_BITRATE"] = pd.to_numeric(df["SENT_BITRATE"], errors="coerce")
-df.loc[df["SENT_BITRATE"] < 0, "SENT_BITRATE"] = 0
-df["SENT_BITRATE"] = df["SENT_BITRATE"].fillna(0)
+for col in df.columns:
+    if col not in ["TIME", "PARTICIPANT_ID"]:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+        df.loc[df[col] < 0, col] = 0
+        df[col] = df[col].fillna(0)
 
-print(df["SENT_BITRATE"].head(20))
-print(df["SENT_BITRATE"].dtype)
-print(df["SENT_BITRATE"].min(), df["SENT_BITRATE"].max())
+# print(df["SENT_BITRATE"].head(20))
+# print(df["SENT_BITRATE"].dtype)
+# print(df["SENT_BITRATE"].min(), df["SENT_BITRATE"].max())
 
 # --- FIGURE 1 : SENT_BITRATE ---
 for pid, group in df.groupby("PARTICIPANT_ID"):
     plt.scatter(group["TIME"], group["SENT_BITRATE"], s=10, alpha=0.5, label=pid)
 
 mean_bitrate = df.groupby("TIME")["SENT_BITRATE"].mean().clip(lower=0)
-print(mean_bitrate)
+# print(mean_bitrate)
 plt.plot(mean_bitrate.index, mean_bitrate.values, color='black', linewidth=2, label="Moyenne")
 
 plt.xlabel("Timestamp (s)")
@@ -64,7 +68,7 @@ plt.savefig(img_file_rtt)
 plt.close()
 
 # --- FIGURE 3 : RECEIVED BITRATE (MOYENNE) ---
-recv_cols = [col for col in df.columns if re.match(r'participant-\d+_BITRATE', col)]
+
 if recv_cols:
     df["RECEIVED_BITRATE_MEAN"] = df[recv_cols].mean(axis=1)
     plt.figure()

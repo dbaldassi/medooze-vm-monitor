@@ -36,6 +36,7 @@ class Monitor {
     }
 
     medooze_connected(ws) {
+	console.log("Medooze connected");
         this.medooze_ws = ws;
 
         // Set up max memory as the current max of the vm
@@ -447,6 +448,8 @@ class Monitor {
         this.exp_name = scenar.name;
 
         for(let step of scenar.steps) {
+	    console.log("---------------------- ", step, " --------------------");
+	    
             // Await for requirement to be fullfilled before performing the step
             if(step.require) { 
                 // Wait for medooze to be connected
@@ -455,7 +458,9 @@ class Monitor {
                     if(!this.medooze_connected_promise) 
                         this.medooze_connected_promise = Promise.withResolvers();
 
+		    console.log("await medooze promise");
                     await this.medooze_connected_promise.promise;
+		    console.log("Medooze PROMISE OK");
                 }
                 // Wait for a publisher to be connected
                 else if(step.require === "publisher_connected") await this.publisher_connected_promise.promise;
