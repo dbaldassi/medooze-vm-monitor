@@ -35,7 +35,7 @@ const handlers = {
 	"publisher_launcher" : require('./lib/publisher_launcher.js').handler,
 	"viewer_launcher"    : require('./lib/viewer_launcher.js').handler,
 	"viewer"             : require('./lib/viewers.js'),
-	"visio"             : require('./lib/visio.js'),
+	"visio"              : require('./lib/visio.js'),
 	"receiver"           : require('./lib/receivers.js').handler,
 	"visio_launcher"     : require('./lib/visio_launcher.js').handler,	
 };

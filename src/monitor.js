@@ -36,7 +36,7 @@ class Monitor {
     }
 
     medooze_connected(ws) {
-	console.log("Medooze connected");
+	    console.log("Medooze connected");
         this.medooze_ws = ws;
 
         // Set up max memory as the current max of the vm
@@ -133,7 +133,7 @@ class Monitor {
     }
 
     stop_balloon_reduction() {
-        console.log("Le ballon éclate")
+        console.log("Le ballon éclate");
         clearInterval(this.balloon_timeout[Symbol.toPrimitive]());
     }
 
@@ -448,8 +448,6 @@ class Monitor {
         this.exp_name = scenar.name;
 
         for(let step of scenar.steps) {
-	    console.log("---------------------- ", step, " --------------------");
-	    
             // Await for requirement to be fullfilled before performing the step
             if(step.require) { 
                 // Wait for medooze to be connected
