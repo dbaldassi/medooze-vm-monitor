@@ -16,55 +16,59 @@ OUT_TOP=11
 
 function move_files() {
     SRC=$1
-    DEST=$2
+    DST=$2
 
+    echo "DST=$DST"
     # mv $SRC/*2_1.pdf $DEST/2_1
     # mv $SRC/*1_1.pdf $DEST/1_1
-    mv $SRC/*.pdf $DEST/ieee
+    mv $SRC/*.pdf $DST/ieee
 }
+
+
+DEST=figure-fr
 
 # create file tree
 
 # sfu mem
-# mkdir -p figures/sfu-memory/2_1
-# mkdir -p figures/sfu-memory/1_1
+# mkdir -p $DEST/sfu-memory/2_1
+# mkdir -p $DEST/sfu-memory/1_1
 
 # progressive reduction
-# mkdir -p figures/progressive-reduction/ballooning/2_1
-# mkdir -p figures/progressive-reduction/ballooning/1_1
-mkdir -p figures/progressive-reduction/cgroups-max/2_1
-mkdir -p figures/progressive-reduction/cgroups-max/1_1
-mkdir -p figures/progressive-reduction/cgroups-max/ieee
-mkdir -p figures/progressive-reduction/cgroups-reclaim/2_1
-mkdir -p figures/progressive-reduction/cgroups-reclaim/1_1
-mkdir -p figures/progressive-reduction/cgroups-reclaim/ieee
-mkdir -p figures/progressive-reduction/all/2_1
-mkdir -p figures/progressive-reduction/all/1_1
-mkdir -p figures/progressive-reduction/all/ieee
+# mkdir -p $DEST/progressive-reduction/ballooning/2_1
+# mkdir -p $DEST/progressive-reduction/ballooning/1_1
+mkdir -p $DEST/progressive-reduction/cgroups-max/2_1
+mkdir -p $DEST/progressive-reduction/cgroups-max/1_1
+mkdir -p $DEST/progressive-reduction/cgroups-max/ieee
+mkdir -p $DEST/progressive-reduction/cgroups-reclaim/2_1
+mkdir -p $DEST/progressive-reduction/cgroups-reclaim/1_1
+mkdir -p $DEST/progressive-reduction/cgroups-reclaim/ieee
+mkdir -p $DEST/progressive-reduction/all/2_1
+mkdir -p $DEST/progressive-reduction/all/1_1
+mkdir -p $DEST/progressive-reduction/all/ieee
 
 # one step closer
-mkdir -p figures/steps/2_1
-mkdir -p figures/steps/1_1
-mkdir -p figures/steps/ieee
+mkdir -p $DEST/steps/2_1
+mkdir -p $DEST/steps/1_1
+mkdir -p $DEST/steps/ieee
 
 # pid regulation
-mkdir -p figures/regulation/ballooning/regul-par20viewers/2_1
-mkdir -p figures/regulation/ballooning/regul-par20viewers/1_1
-mkdir -p figures/regulation/ballooning/regul-par20viewers/ieee
-mkdir -p figures/regulation/baseline/regul-par20viewers/2_1
-mkdir -p figures/regulation/baseline/regul-par20viewers/1_1
-mkdir -p figures/regulation/baseline/regul-par20viewers/ieee
-mkdir -p figures/regulation/cgroups/regul-par20viewers/2_1
-mkdir -p figures/regulation/cgroups/regul-par20viewers/1_1
-mkdir -p figures/regulation/cgroups/regul-par20viewers/ieee
+mkdir -p $DEST/regulation/ballooning/regul-par20viewers/2_1
+mkdir -p $DEST/regulation/ballooning/regul-par20viewers/1_1
+mkdir -p $DEST/regulation/ballooning/regul-par20viewers/ieee
+mkdir -p $DEST/regulation/baseline/regul-par20viewers/2_1
+mkdir -p $DEST/regulation/baseline/regul-par20viewers/1_1
+mkdir -p $DEST/regulation/baseline/regul-par20viewers/ieee
+mkdir -p $DEST/regulation/cgroups/regul-par20viewers/2_1
+mkdir -p $DEST/regulation/cgroups/regul-par20viewers/1_1
+mkdir -p $DEST/regulation/cgroups/regul-par20viewers/ieee
 
 # viewer burst
-# mkdir -p figures/viewer-burst/ballooning/2_1
-# mkdir -p figures/viewer-burst/ballooning/1_1
-# mkdir -p figures/viewer-burst/cgroups/2_1
-# mkdir -p figures/viewer-burst/cgroups/1_1
-# mkdir -p figures/viewer-burst/all/2_1
-# mkdir -p figures/viewer-burst/all/1_1
+# mkdir -p $DEST/viewer-burst/ballooning/2_1
+# mkdir -p $DEST/viewer-burst/ballooning/1_1
+# mkdir -p $DEST/viewer-burst/cgroups/2_1
+# mkdir -p $DEST/viewer-burst/cgroups/1_1
+# mkdir -p $DEST/viewer-burst/all/2_1
+# mkdir -p $DEST/viewer-burst/all/1_1
 
 # save path
 root_wd=$PWD
@@ -75,23 +79,23 @@ sfu_mem_exe=$root_wd/scripts/sfu_memory.py
 
 # start generate pics
 
-# # progressive reduction
-# cd $root_wd/results/cgroups-stats/cgroups-max-reduction/cgroups_stats
-# avg_file=cgroups-max_stats_2025-03-19-11-02-01_average_10.csv
-# avg_reclaim=cgroup-reclaim_stats_2025-03-19-11-05-53_average_10.csv 
+# progressive reduction
+cd $root_wd/results/1ton/cgroups-stats/cgroups-max-reduction/cgroups_stats
+avg_file=cgroups-max_stats_2025-03-19-11-02-01_average_10.csv
+avg_reclaim=cgroup-reclaim_stats_2025-03-19-11-05-53_average_10.csv 
 
-# $cgroup_plot_exe $avg_file TIME ACTIVE_ANON,INACTIVE_ANON,RAM_USAGE,SWAP_USAGE
-# move_files . $root_wd/figures/progressive-reduction/cgroups-max
+$cgroup_plot_exe $avg_file TIME ACTIVE_ANON,INACTIVE_ANON,RAM_USAGE,SWAP_USAGE
+move_files . $root_wd/$DEST/progressive-reduction/cgroups-max
 
-# cd ../../cgroups-reclaim/cgroup_stats
-# $cgroup_plot_exe $avg_reclaim TIME ACTIVE_ANON,INACTIVE_ANON,RAM_USAGE,SWAP_USAGE
-# move_files . $root_wd/figures/progressive-reduction/cgroups-reclaim
+cd ../../cgroups-reclaim/cgroup_stats
+$cgroup_plot_exe $avg_reclaim TIME ACTIVE_ANON,INACTIVE_ANON,RAM_USAGE,SWAP_USAGE
+move_files . $root_wd/$DEST/progressive-reduction/cgroups-reclaim
 
-# cd ../../
+cd ../../
 
-# $cgroup_plot_exe cgroups-max-reduction/cgroups_stats/cgroups-max_stats_2025-03-19-11-02-01_average_10.csv,cgroups-reclaim/cgroup_stats/cgroup-reclaim_stats_2025-03-19-11-05-53_average_10.csv TIME PGMAJFAULT loc=$LOWER_RIGHT
-# cd cgroups-max-reduction
-# move_files . $root_wd/figures/progressive-reduction/all
+$cgroup_plot_exe cgroups-max-reduction/cgroups_stats/cgroups-max_stats_2025-03-19-11-02-01_average_10.csv,cgroups-reclaim/cgroup_stats/cgroup-reclaim_stats_2025-03-19-11-05-53_average_10.csv TIME PGMAJFAULT loc=$LOWER_RIGHT
+cd cgroups-max-reduction
+move_files . $root_wd/$DEST/progressive-reduction/all
 
 # # regulation
 
@@ -99,36 +103,57 @@ INDICATOR=median
 
 ## cgroups
 
-cd $root_wd/results/double/cgroups-regul-stddev-30-viewer-double-increase-par20
-avg_bitrate_file=cgroups-regul-stddev-30-viewer-double-increase-par20_2025-05-01-18-59-48_average_10.csv
-avg_cgroup_file=cgroup_stats_2025-05-01-18-58-18_average_10.csv
+# cd $root_wd/results/double/cgroups-regul-stddev-30-viewer-double-increase-par20
+# avg_bitrate_file=cgroups-regul-stddev-30-viewer-double-increase-par20_2025-05-01-18-59-48_average_10.csv
+# avg_cgroup_file=cgroup_stats_2025-05-01-18-58-18_average_10.csv
 
-$plot_exe $avg_bitrate_file $INDICATOR TIME PUBLISHER_BITRATE,VIEWER_BITRATE PUBLISHER_RTT,VIEWER_DELAY   loc=$LOWER_CENTER leg_col=2
-move_files . $root_wd/figures/regulation/cgroups/regul-par20viewers
+# $plot_exe $avg_bitrate_file $INDICATOR TIME PUBLISHER_BITRATE,VIEWER_BITRATE PUBLISHER_RTT,VIEWER_DELAY   loc=$LOWER_CENTER leg_col=2
+# move_files . $root_wd/$DEST/regulation/cgroups/regul-par20viewers
 
-cd cgroup_stats
+# cd cgroup_stats
 
-$cgroup_plot_exe $avg_cgroup_file TIME ACTIVE_ANON,INACTIVE_ANON,RAM_USAGE,SWAP_USAGE ylim=4400 loc=$UPPER_LEFT # loc=$LOWER_CENTER leg_col=2
-move_files . $root_wd/figures/regulation/cgroups/regul-par20viewers
+# $cgroup_plot_exe $avg_cgroup_file TIME ACTIVE_ANON,INACTIVE_ANON,RAM_USAGE,SWAP_USAGE ylim=4400 loc=$UPPER_LEFT # loc=$LOWER_CENTER leg_col=2
+# move_files . $root_wd/$DEST/regulation/cgroups/regul-par20viewers
 
-# ## ballooning
-# cd $root_wd/results/double/balloon-pid-viewer-increase-double-longer-par20
-# avg_bitrate_file=balloon-pid-viewer-increase-double-longer-par20_2025-05-01-19-01-11_average_10.csv
+cd ~/redis-10-again
 
-# $plot_exe $avg_bitrate_file $INDICATOR TIME PUBLISHER_BITRATE,VIEWER_BITRATE PUBLISHER_RTT,VIEWER_DELAY loc=$LOWER_CENTER leg_col=2
-# $plot_exe $avg_bitrate_file $INDICATOR TIME VIRSH_AVAILABLE,VIRSH_USABLE,VIRSH_SWAP_OUT,VM_MEMORY_USAGE ylim=4400
-# move_files . $root_wd/figures/regulation/ballooning/regul-par20viewers
+cd balloon-pid-mongodb
 
-# ## baseline
-# cd $root_wd/results/double/noregul-viewer-increase-double-longer-par20
-# avg_bitrate_file=noregul-viewer-increase-double-longer-par20_2025-05-01-19-03-18_average_10.csv
+file=balloon-pid-mongodb_2025-07-06-17-25-12_average_10.csv
+$plot_exe $file $INDICATOR TIME MEMORY_USED,SWAP,VM_MEMORY_USAGE loc=$LOWER_CENTER leg_col=2
 
-# $plot_exe $avg_bitrate_file $INDICATOR TIME PUBLISHER_BITRATE,VIEWER_BITRATE PUBLISHER_RTT,VIEWER_DELAY loc=$LOWER_CENTER leg_col=3 annotate
-# move_files . $root_wd/figures/regulation/baseline/regul-par20viewers
+cd ..
 
-# # one step closer
-# cd $root_wd/results/ok/one-step-closer
+cd baseline-pid-mongodb
 
-# $boxplot_exe cgroups-max cgroups-reclaim ballooning
-# move_files . $root_wd/figures/steps
+file=baseline-pid-mongodb_2025-07-06-17-25-12_average_10.csv
+$plot_exe $file $INDICATOR TIME MEMORY_USED,SWAP,VM_MEMORY_USAGE loc=$LOWER_CENTER leg_col=2
+
+cd ..
+
+cd cgroups-pid-mongodb
+
+file=cgroups-pid-mongodb_2025-07-06-17-25-13_average_10.csv
+$plot_exe $file $INDICATOR TIME MEMORY_USED,SWAP,VM_MEMORY_USAGE loc=$LOWER_CENTER leg_col=2
+
+## ballooning
+cd $root_wd/results/1ton/double/balloon-pid-viewer-increase-double-longer-par20
+avg_bitrate_file=balloon-pid-viewer-increase-double-longer-par20_2025-05-01-19-01-11_average_10.csv
+
+$plot_exe $avg_bitrate_file $INDICATOR TIME PUBLISHER_BITRATE,VIEWER_BITRATE PUBLISHER_RTT,VIEWER_DELAY loc=$LOWER_CENTER leg_col=2
+$plot_exe $avg_bitrate_file $INDICATOR TIME VIRSH_AVAILABLE,VIRSH_USABLE,VIRSH_SWAP_OUT,VM_MEMORY_USAGE ylim=4400
+move_files . $root_wd/$DEST/regulation/ballooning/regul-par20viewers
+
+## baseline
+cd $root_wd/results/1ton/double/noregul-viewer-increase-double-longer-par20
+avg_bitrate_file=noregul-viewer-increase-double-longer-par20_2025-05-01-19-03-18_average_10.csv
+
+$plot_exe $avg_bitrate_file $INDICATOR TIME PUBLISHER_BITRATE,VIEWER_BITRATE PUBLISHER_RTT,VIEWER_DELAY loc=$LOWER_CENTER leg_col=3 annotate
+move_files . $root_wd/$DEST/regulation/baseline/regul-par20viewers
+
+# one step closer
+cd $root_wd/results//1ton/ok/one-step-closer
+
+$boxplot_exe cgroups-max cgroups-reclaim ballooning
+move_files . $root_wd/$DEST/steps
 

@@ -47,7 +47,7 @@ ANCHOR=[(0,0), (1,1), (0,1), (0,0), (1,0), (1,0.5), (0,0.5), (1,0.5), (0.5,1), (
 
 # Headers basés sur cgroup_headers
 headers = {
-    'TIME': [0, None, lambda x: float(x) / 1000., "time", "(s)", "Time"],
+    'TIME': [0, None, lambda x: float(x) / 1000., "temps", "(s)", "Temps"],
     'ANON': [1, 'b', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Anonymous Memory"],
     'FILE': [2, 'm', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "File Cache"],
     'KERNEL': [3, 'k', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Kernel Memory"],
@@ -67,8 +67,8 @@ headers = {
     'ANON_THP': [17, 'navy', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Anonymous THP"],
     'FILE_THP': [18, 'olive', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "File THP"],
     'SHMEM_THP': [19, 'maroon', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Shared Memory THP"],
-    'INACTIVE_ANON': [20, 'darkGreen', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Inactive Anonymous"],
-    'ACTIVE_ANON': [21, 'darkBlue', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Active Anonymous"],
+    'INACTIVE_ANON': [20, 'darkGreen', lambda x: float(x) / (1024 * 1024), "Mémoire", "(MiB)", "Anonyme inactive"],
+    'ACTIVE_ANON': [21, 'darkBlue', lambda x: float(x) / (1024 * 1024), "Mémoire", "(MiB)", "Anonyme active"],
     'INACTIVE_FILE': [22, 'darkCyan', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Inactive File"],
     'ACTIVE_FILE': [23, 'darkMagenta', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Active File"],
     'UNEVICTABLE': [24, 'black', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Unevictable"],
@@ -94,8 +94,8 @@ headers = {
     'PGSTEAL_KSWAPD': [44, 'darkBlue', lambda x: float(x), "Count", "", "Page Steal KSWAPD"],
     'PGSTEAL_DIRECT': [45, 'darkCyan', lambda x: float(x), "Count", "", "Page Steal Direct"],
     'PGSTEAL_KHUGEPAGED': [46, 'darkMagenta', lambda x: float(x), "Count", "", "Page Steal KHugePaged"],
-    'PGFAULT': [47, 'black', lambda x: float(x), "Count", "", "Page Faults"],
-    'PGMAJFAULT': [48, 'gray', lambda x: float(x), "Count", "", "Major Page Faults"],
+    'PGFAULT': [47, 'black', lambda x: float(x), "Count", "", "Défauts de page"],
+    'PGMAJFAULT': [48, 'gray', lambda x: float(x), "Count", "", "Défauts de page majeurs"],
     'PGREFILL': [49, 'silver', lambda x: float(x), "Count", "", "Page Refill"],
     'PGACTIVATE': [50, 'lightBlue', lambda x: float(x), "Count", "", "Page Activate"],
     'PGDEACTIVATE': [51, 'lightGreen', lambda x: float(x), "Count", "", "Page Deactivate"],
@@ -113,9 +113,9 @@ headers = {
     'NUMA_PAGES_MIGRATED': [63, 'olive', lambda x: float(x), "Count", "", "NUMA Pages Migrated"],
     'NUMA_PTE_UPDATES': [64, 'maroon', lambda x: float(x), "Count", "", "NUMA PTE Updates"],
     'NUMA_HINT_FAULTS': [65, 'darkGreen', lambda x: float(x), "Count", "", "NUMA Hint Faults"],
-    'RAM_USAGE': [66, 'blue', lambda x: float(x), "Memory", "(MiB)", "Memory Current"],
-    'SWAP_USAGE': [67, 'red', lambda x: float(x), "Memory", "(MiB)", "Swap (cgroups)"],
-    'MAXRAM': [68, 'green', lambda x: float(x), "Memory", "(MiB)", "Memory Max"],
+    'RAM_USAGE': [66, 'blue', lambda x: float(x), "Mémoire", "(MiB)", "memory.current"],
+    'SWAP_USAGE': [67, 'red', lambda x: float(x), "Mémoire", "(MiB)", "Swap (cgroups)"],
+    'MAXRAM': [68, 'green', lambda x: float(x), "Mémoire", "(MiB)", "memory.max"],
     'PRESSURE_AVG10': [69, 'purple', lambda x: float(x), "Pressure", "(PSI)", "Memory Pressure"],
     'SUMMED_MEMORY': [70, 'purple', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Summed Memory"],
 }

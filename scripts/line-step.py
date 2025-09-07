@@ -61,12 +61,12 @@ COLOR={
     "cgroups-reclaim": 'g'
 }
 
-LABELS = [ "Duration (s)", "CPU (%)", "Pressure_Stall_Information (PSI)", "Publisher_Bitrate (kbps)",       
-           "Viewers_bitrate (kbps)",
-           "Publisher_FPS (FPS)", "Viewer_FPS (FPS)", "Publisher_RTT (ms)", 
-           "Pressure_duration (s)", "Pressure_average (PSI)", "Pressure_Peak (PSI)",
-           "Publisher_Collapse_Duration (s)", "Publisher_Collapse_Bitrate (kbps)", "Publisher_Collapse_peak (kbps)", "High quality ()",
-            "Medium quality ()", "Low quality ()" ]
+LABELS = [ "Durée (s)", "CPU (\%)", "Pressure_Stall_Information (PSI)", "Débit_émetteur (kbps)",       
+           "Débit_récepteur (kbps)",
+           "FPS_émetteur (FPS)", "Viewer_FPS (FPS)", "RTT_Émetteur (ms)", 
+           "Durée_Pression (s)", "Moyenne_pression (PSI)", "Pic_pression (PSI)",
+           "Durée_chute_émetteur (s)", "Débit_chute_émetteur (kbps)", "Pic_chute_émetteur (kbps)", "Haute qualité ()",
+            "Moyenne qualité ()", "Basse qualité ()" ]
 
 # LABELS = [ "Active_to_inactive (%)", "First_Swap (%)", "Inactive_to_active (%)", "Inactive_to_swap (%)", "Memory_to_swap (%)", "Active cumulated sum (MiB)", "Free_memory_?? (MiB)"]
 
@@ -338,7 +338,7 @@ if __name__ == "__main__":
                     values[m] = stats.stats[index][i].copy()
 
             # print(values)
-            dfs.append(pd.DataFrame(data=values).assign(Size=incr))
+            dfs.append(pd.DataFrame(data=values).assign(Taille=incr))
 
 
         # for m in methods:
@@ -355,12 +355,12 @@ if __name__ == "__main__":
             # ax.plot(stats.increment, to_plot, "o-", color=stats.color, label=m, linewidth=3)
 
         concat = pd.concat(dfs)
-        to_plot = pd.melt(concat, id_vars=['Size'], var_name=['Method'])  
+        to_plot = pd.melt(concat, id_vars=['Taille'], var_name=['Method'])  
         # print(to_plot)
-        ax = sns.boxplot(x="Size", y="value", hue="Method", data=to_plot, palette=['r', 'g', 'b'])
+        ax = sns.boxplot(x="Taille", y="value", hue="Method", data=to_plot, palette=['r', 'g', 'b'])
 
         # Set label name
-        ax.set_xlabel("Size (MiB)")
+        ax.set_xlabel("Taille (MiB)")
         ax.set_ylabel(LABELS[i].replace("_", " "))
         # ax.set_xticklabels(increment_xticks)
         # ax.grid()
