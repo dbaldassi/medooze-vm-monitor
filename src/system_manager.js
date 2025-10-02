@@ -479,9 +479,9 @@ class SystemManager {
 
         out = ((logger.info.virsh_usable + out < 0) ? target - logger.info.virsh_usable : Math.floor(out));
 
-        if(Math.abs(out) > 100 * 1024 * 1024) {
+        /*if(Math.abs(out) > 100 * 1024 * 1024) {
             out = Math.sign(out) * 100 * 1024 * 1024; // limit to 200K
-        }
+        }*/
 
         let new_vm_size = logger.info.virsh_actual + out;
         // console.log({ out, new_vm_size, actual: logger.info.virsh_actual });

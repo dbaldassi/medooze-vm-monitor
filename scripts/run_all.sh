@@ -174,6 +174,36 @@ run_with_viewers_threshold() {
 	done
 }
 
+run_pid_compare() {
+	scenar="pid-balloon"
+	REPET=1
+
+	KP=(0.1 0.3 0.5 1)
+	KI=(0.1 0.3 0.5 1)
+	KD=(0.1 0.3 0.5 1)
+
+	for i in $(seq 1 $REPET)
+	do
+	    curl -k -d "name=$scenar-$i" -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/new
+	done
+
+	for i in $(seq 1 $REPET)
+	do
+	    for kp in ${KP[@]}
+	    do
+		for ki in ${KI[@]}
+		do
+		    for kd in ${KD[@]}
+		    do
+			restart_vm
+			echo "Run node"
+			su tobias -c "source ~/.bashrc; node . $scenar kp:$kp ki:$ki kd:$kd"
+			curl -k -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/next
+		    done
+		done
+	    done
+	done
+}
 
 run() {
     for scenar in ${SCENARIO[@]}

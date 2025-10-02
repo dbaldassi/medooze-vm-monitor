@@ -1,5 +1,5 @@
 {
-    "name": "balloon-pid-viewer-increase-double-longer-par20",
+    "name": "balloon-pid-compare-{{kp:0.3}}-{{ki:0.1}}-{{kd:0.18}}",
     "steps": [
         {
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
@@ -17,31 +17,14 @@
             "actions": ["start_balloon_regul"],
             "start_balloon_regul": {
                 "timeout": 1,
-                "threshold": "{{threshold:200}}"
+                "threshold": "{{threshold:200}}",
+                "pid": {
+                    "kp": "{{kp:0.3}}",
+                    "ki": "{{ki:0.1}}",
+                    "kd": "{{kd:0.18}}"
+                }
             },
             "repeat": 1
-        },
-        {
-            "actions": [],
-            "wait": 60000,
-            "repeat": 1
-        },
-        {
-            "actions": ["add_viewer"],
-            "add_viewer" : [ { "id": "baleze", "count": 20 } ],
-            "repeat": 4,
-            "wait": 60000
-        },
-	{
-	    "actions": [],
-            "wait": 420000,
-            "repeat": 1
-        },
-        {
-            "actions": ["remove_viewer"],
-            "remove_viewer" : [ { "id": "baleze", "count": 80 } ],
-            "repeat": 1,
-	    "wait": 60000
         },
         {
             "actions": [],
@@ -49,12 +32,6 @@
             "repeat": 1
         },
         {
-            "actions": ["add_viewer"],
-            "add_viewer" : [ { "id": "baleze", "count": 40 } ],
-            "repeat": 2,
-            "wait": 60000
-        },
-	{
             "actions": ["stop_balloon_regul"],
             "stop_balloon_regul":{},
             "repeat": 1
