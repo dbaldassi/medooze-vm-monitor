@@ -104,9 +104,11 @@ class Monitor {
     start_balloon_regul(opts) {
         let params = opts.pid;
         // trasnform params into float
-        this.pid.kp = parseFloat(params.kp);
-        this.pid.ki = parseFloat(params.ki);
-        this.pid.kd = parseFloat(params.kd);
+	console.log(params, this.sys_manager.pid);
+	
+        this.sys_manager.pid.kp = parseFloat(params.kp);
+        this.sys_manager.pid.ki = parseFloat(params.ki);
+        this.sys_manager.pid.kd = parseFloat(params.kd);
 
         let time = opts.timeout;
         let callback = () => {

@@ -243,7 +243,8 @@ trap 'trap_sigint' INT
 
 # REPET=20
 # SCENARIO=("reduction" "reclaim-reduction")
-run
+# run
+run_pid_compare
 
 # REPET=5
 # SCENARIO=("reduction-viewers" "reclaim-reduction-viewers")

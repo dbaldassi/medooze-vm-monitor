@@ -86,7 +86,7 @@ if (process.argv.length >= 3) {
 
 		let param = template.parameters.find(e => e.key === split[0]);
 	
-		if(param) obj[`${split[0]}`] = Number.isNaN(parseInt(split[1])) ? split[1] : parseInt(split[1]);
+		if(param) obj[`${split[0]}`] = Number.isNaN(parseFloat(split[1])) ? split[1] : parseFloat(split[1]);
 	}
 
     console.log(JSON.stringify(template(obj)));
