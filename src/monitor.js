@@ -37,6 +37,12 @@ class Monitor {
 
     medooze_connected(ws) {
 	    console.log("Medooze connected");
+
+        this.sys_manager.quick_exec_sync(`virsh domifaddr medooze --source=agent | grep enp8s0 | awk '{print $4}' | awk -F'/' '{print $1}'`, (ip) => {
+            this.medooze_server.host = ip.trim();
+            console.log("Medooze IP", this.medooze_server.host);
+        });
+
         this.medooze_ws = ws;
 
         // Set up max memory as the current max of the vm
