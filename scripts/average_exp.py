@@ -23,11 +23,11 @@ num_indicators = 1
 
 for header in all_stats[0][0]:
     newheaders.append(header)
-    # newheaders.append("1stQ")
-    # newheaders.append("Median")
-    # newheaders.append("3rdQ")
-    # newheaders.append("Min")
-    # newheaders.append("Max")
+    newheaders.append("1stQ")
+    newheaders.append("Median")
+    newheaders.append("3rdQ")
+    newheaders.append("Min")
+    newheaders.append("Max")
 
 average_stats.append(newheaders) # add headers
 
@@ -73,11 +73,11 @@ for i in range(num_lines):
 
         col.sort()
         result.append(sum(col) / len(col))
-        # result.append(col[len(col) // 4])
-        # result.append(col[len(col) // 2])
-        # result.append(col[len(col) * 3 // 4])
-        # result.append(min(col))
-        # result.append(max(col))
+        result.append(col[len(col) // 4])
+        result.append(col[len(col) // 2])
+        result.append(col[len(col) * 3 // 4])
+        result.append(min(col))
+        result.append(max(col))
 
     average_stats.append(result)
 

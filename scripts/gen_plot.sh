@@ -9,7 +9,7 @@ do
     do
         # memory x pressure
         # ./scripts/plot.py $i $indicator TIME MEMORY_USED,MEMORY_FREE,MEMORY_MAX,SWAP,VM_MEMORY_USAGE,VM_MEMORY_FREE MEMORY_PRESSURE_AVG10
-	    ./scripts/plot.py $i $indicator TIME MEMORY_USED,SWAP,VM_MEMORY_USAGE MEMORY_PRESSURE_AVG10
+	./scripts/plot.py $i $indicator TIME MEMORY_USED,SWAP,VM_MEMORY_USAGE MEMORY_PRESSURE_AVG10
         # bitrate x delays
         ./scripts/plot.py $i $indicator TIME PUBLISHER_BITRATE,VIEWER_BITRATE PUBLISHER_RTT,VIEWER_DELAY
         # bitrate x fps

@@ -475,6 +475,8 @@ class SystemManager {
 
         // console.log({target : target / 1024, min : min / 1024 , max : max / 1024});
 
+        console.log("pid : ", this.pid);
+
         let out = this.pid_regul(target, logger.info.virsh_usable);
 
         out = ((logger.info.virsh_usable + out < 0) ? target - logger.info.virsh_usable : Math.floor(out));

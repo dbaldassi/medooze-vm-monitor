@@ -13,7 +13,13 @@
             "add_publisher" : [{ "id": "mac",  "codec": "vp8", "scenar": "simulcast" }],
             "repeat" : 1
         },
-	{
+        {
+            "require": "publisher_connected",
+            "actions": ["add_viewer"],
+            "add_viewer" : [{ "id": "baleze", "count": 1 }],
+            "repeat": 1
+        },
+        {
             "actions": ["start_balloon_regul"],
             "start_balloon_regul": {
                 "timeout": 1,
