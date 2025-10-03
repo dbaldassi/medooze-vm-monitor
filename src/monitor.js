@@ -12,6 +12,8 @@ const update_listener = require('../lib/receivers.js').update_listener;
 
 const WebSocketClient = require('websocket').client;
 
+const { exec, execSync } = require('node:child_process');
+
 const SECONDS = 1000;
 
 class Monitor {
@@ -38,8 +40,14 @@ class Monitor {
     medooze_connected(ws) {
 	    console.log("Medooze connected");
 
-        this.sys_manager.quick_exec_sync(`virsh domifaddr medooze --source=agent | grep enp8s0 | awk '{print $4}' | awk -F'/' '{print $1}'`, (ip) => {
-            this.medooze_server.host = ip.trim();
+        execSync(`virsh domifaddr medooze --source=agent | grep enp8s0 | awk '{print $4}' | awk -F'/' '{print $1}'`, {}, (err, output) => {
+
+            if(err) {
+                console.error("Error getting medooze IP", err);
+                return;
+            }
+
+            this.medooze_server.host = output.trim();
             console.log("Medooze IP", this.medooze_server.host);
         });
 
