@@ -479,13 +479,20 @@ class SystemManager {
 
         let out = this.pid_regul(target, logger.info.virsh_usable);
 
+        console.log("pid out : ", out);
+
         out = ((logger.info.virsh_usable + out < 0) ? target - logger.info.virsh_usable : Math.floor(out));
+
+        console.log("pid out : ", out);
 
         /*if(Math.abs(out) > 100 * 1024 * 1024) {
             out = Math.sign(out) * 100 * 1024 * 1024; // limit to 200K
         }*/
 
         let new_vm_size = logger.info.virsh_actual + out;
+
+        console.log({ new_vm_size });
+
         // console.log({ out, new_vm_size, actual: logger.info.virsh_actual });
 
         let time = 3;
