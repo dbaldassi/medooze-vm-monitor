@@ -475,21 +475,21 @@ class SystemManager {
 
         // console.log({target : target / 1024, min : min / 1024 , max : max / 1024});
 
-        console.log("pid : ", this.pid);
+        // console.log("pid : ", this.pid);
 
         let out = this.pid_regul(target, logger.info.virsh_usable);
 
-        console.log("pid out : ", out);
+        // console.log("pid out : ", out);
 
-        out = ((logger.info.virsh_usable + out < 0) ? target - logger.info.virsh_usable : Math.floor(out));
+        // out = ((logger.info.virsh_usable + out < 0) ? target - logger.info.virsh_usable : Math.floor(out));
 
-        console.log("pid out : ", out);
+        // console.log("pid out : ", out);
 
         /*if(Math.abs(out) > 100 * 1024 * 1024) {
             out = Math.sign(out) * 100 * 1024 * 1024; // limit to 200K
         }*/
 
-        let new_vm_size = logger.info.virsh_actual + out;
+        let new_vm_size = clamp(logger.info.virsh_actual + out, target, max);;
 
         console.log({ new_vm_size });
 
