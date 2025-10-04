@@ -38,18 +38,15 @@ class Monitor {
     }
 
     medooze_connected(ws) {
-	    console.log("Medooze connected");
+	console.log("Medooze connected");
 
-        execSync(`virsh domifaddr medooze --source=agent | grep enp8s0 | awk '{print $4}' | awk -F'/' '{print $1}'`, {}, (err, output) => {
+	console.log("!!!");
+        const output = execSync("/usr/local/bin/get_vm_ip");
 
-            if(err) {
-                console.error("Error getting medooze IP", err);
-                return;
-            }
+        this.medooze_server.host = output.toString().trim();
+        console.log("Medooze IP :", this.medooze_server.host);
 
-            this.medooze_server.host = output.trim();
-            console.log("Medooze IP", this.medooze_server.host);
-        });
+	console.log("???");
 
         this.medooze_ws = ws;
 
