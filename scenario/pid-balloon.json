@@ -34,13 +34,12 @@
         },
         {
             "actions": [],
-            "wait": 90000,
+            "wait": 120000,
             "repeat": 1
         },
         {
-            "require": "publisher_connected",
-            "actions": ["add_viewer"],
-            "add_viewer" : [{ "id": "baleze", "count": 40 }],
+            "actions": ["start_spawning_process"],
+            "start_spawning_process":{},
             "repeat": 1
         },
         {

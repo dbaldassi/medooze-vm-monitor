@@ -177,7 +177,7 @@ run_with_viewers_threshold() {
 
 run_pid_compare() {
 	scenar="pid-balloon"
-	REPET=1
+	REPET=10
 
 	KP=(0.1 0.3 0.5 1)
 	KI=(0 0.01 0.1 0.5)
@@ -249,7 +249,7 @@ trap 'trap_sigint' INT
 REPET=1
 # SCENARIO=("reduction" "reclaim-reduction")
 run
-# run_pid_compare
+run_pid_compare
 
 # REPET=5
 # SCENARIO=("reduction-viewers" "reclaim-reduction-viewers")
