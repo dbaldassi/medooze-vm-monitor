@@ -489,7 +489,7 @@ class SystemManager {
             out = Math.sign(out) * 100 * 1024 * 1024; // limit to 200K
         }*/
 
-        let new_vm_size = clamp(logger.info.virsh_actual + out, target, max);;
+        let new_vm_size = Math.floor(clamp(logger.info.virsh_actual + out, target, max));
 
         console.log({ new_vm_size });
 

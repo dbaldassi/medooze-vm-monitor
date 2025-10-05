@@ -16,7 +16,7 @@
             "require": "room_created",
             "actions": ["add_visio_client"],
             "add_visio_client" : [ { "id": "baleze", "count": 1, "roomId": "room1" } ],
-            "repeat": 10,
+            "repeat": 6,
 	    "wait": 10000
         },
         {
@@ -29,7 +29,7 @@
             "require": "room_created",
             "actions": ["add_visio_client"],
             "add_visio_client" : [ { "id": "baleze", "count": 1, "roomId": "room2" } ],
-            "repeat": 10,
+            "repeat": 6,
 	    "wait": 10000
         },
         {
@@ -42,7 +42,7 @@
             "require": "room_created",
             "actions": ["add_visio_client"],
             "add_visio_client" : [ { "id": "baleze", "count": 1, "roomId": "room3" } ],
-            "repeat": 10,
+            "repeat": 6,
 	    "wait": 10000
         },
         {
@@ -55,7 +55,7 @@
             "require": "room_created",
             "actions": ["add_visio_client"],
             "add_visio_client" : [ { "id": "baleze", "count": 1, "roomId": "room4" } ],
-            "repeat": 10,
+            "repeat": 6,
 	    "wait": 10000
         },
         {
@@ -68,7 +68,7 @@
             "require": "room_created",
             "actions": ["add_visio_client"],
             "add_visio_client" : [ { "id": "baleze", "count": 1, "roomId": "room5" } ],
-            "repeat": 10,
+            "repeat": 6,
 	    "wait": 10000
         },
         {
@@ -81,7 +81,7 @@
             "require": "room_created",
             "actions": ["add_visio_client"],
             "add_visio_client" : [ { "id": "baleze", "count": 1, "roomId": "room6" } ],
-            "repeat": 10,
+            "repeat": 6,
 	    "wait": 10000
         },
         {
@@ -94,7 +94,7 @@
             "require": "room_created",
             "actions": ["add_visio_client"],
             "add_visio_client" : [ { "id": "baleze", "count": 1, "roomId": "room7" } ],
-            "repeat": 10,
+            "repeat": 6,
 	    "wait": 10000
         },
         {
@@ -107,7 +107,7 @@
             "require": "room_created",
             "actions": ["add_visio_client"],
             "add_visio_client" : [ { "id": "baleze", "count": 1, "roomId": "room8" } ],
-            "repeat": 10,
+            "repeat": 6,
 	    "wait": 10000
         },
         {
