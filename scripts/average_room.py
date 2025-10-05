@@ -31,7 +31,7 @@ def process_folder(folder_path, output_file):
             merged, df, 
             on=['TIME', 'PARTICIPANT_ID'], 
             suffixes=(None, '_dup'), 
-            how='outer'
+            how='inner'
         )
 
     print("Taille après fusion :", merged.shape)
@@ -42,7 +42,7 @@ def process_folder(folder_path, output_file):
     for col in base_cols:
         # Récupère toutes les colonnes correspondantes (col, col_dup, col_dup_dup, etc.)
         col_versions = [c for c in merged.columns if c.startswith(col)]
-        result[col] = merged[col_versions].mean(axis=1, skipna=True)
+        result[col] = merged[col_versions].mean(axis=1)
 
     # Réordonne les colonnes comme à l'origine
     result = result[['TIME', 'PARTICIPANT_ID'] + base_cols]
