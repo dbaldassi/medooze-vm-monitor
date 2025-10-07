@@ -481,7 +481,7 @@ class SystemManager {
 
         // console.log("pid out : ", out);
 
-        // out = ((logger.info.virsh_usable + out < 0) ? target - logger.info.virsh_usable : Math.floor(out));
+        out = ((logger.info.virsh_usable + out < target) ? target - logger.info.virsh_usable : Math.floor(out));
 
         // console.log("pid out : ", out);
 

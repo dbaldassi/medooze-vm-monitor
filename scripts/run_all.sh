@@ -177,15 +177,15 @@ run_with_viewers_threshold() {
 
 run_pid_compare() {
 	scenar="pid-balloon"
-	REPET=10
+	REPET=5
 
 	KP=(0.1 0.3 0.5 1)
-	KI=(0 0.01 0.1 0.5)
-	KD=(0 0.01 0.1 0.5)
+	# KI=(0 0.01 0.1 0.5)
+	# KD=(0 0.01 0.1 0.5)
 
 	# KP=(0.1 1 5 10)
-	# KI=(0.1 1 5 10)
-	# KD=(0.1 1 5 10)
+	KI=(0 0.01 0.1 0.5)
+	KD=(0 0.5 1 2)
 
 	for i in $(seq 1 $REPET)
 	do
@@ -246,7 +246,7 @@ curl -k -X POST https://$PROGRESS_HOST:$PROGRESS_PORT/reset
 
 trap 'trap_sigint' INT
 
-REPET=1
+REPET=10
 # SCENARIO=("reduction" "reclaim-reduction")
 run
 run_pid_compare
