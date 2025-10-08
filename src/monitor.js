@@ -116,11 +116,11 @@ class Monitor {
         let params = opts.pid;
         // trasnform params into float
 	console.log(params, this.sys_manager.pid);
-	
+	/*
         this.sys_manager.pid.kp = parseFloat(params.kp);
         this.sys_manager.pid.ki = parseFloat(params.ki);
         this.sys_manager.pid.kd = parseFloat(params.kd);
-
+*/
         let time = opts.timeout;
         let callback = () => {
             time = this.sys_manager.ballon_regul(opts.threshold, time);

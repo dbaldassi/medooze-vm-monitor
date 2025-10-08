@@ -41,8 +41,8 @@ class SystemManager {
 
         this.pid = {
             kp : 3/10, // to be tuned
-            ki : 1/10, // to be tuned
-            kd : 2/11, // to be tuned
+            ki : 0/10, // to be tuned
+            kd : 10/10, // to be tuned
             
             prevError : 0,
             integrator : 0,
@@ -484,12 +484,14 @@ class SystemManager {
         out = ((logger.info.virsh_usable + out < target) ? target - logger.info.virsh_usable : Math.floor(out));
 
         // console.log("pid out : ", out);
+	console.log(logger.info.virsh_actual, out, -100 * 1024);
+	const LIMIT = 50;
+        if(out < -LIMIT * 1024) {
+            out = Math.sign(out) * LIMIT * 1024; // limit to 200K
+        }
 
-        /*if(Math.abs(out) > 100 * 1024 * 1024) {
-            out = Math.sign(out) * 100 * 1024 * 1024; // limit to 200K
-        }*/
-
-        let new_vm_size = Math.floor(clamp(logger.info.virsh_actual + out, target, max));
+	console.log(logger.info.virsh_actual, out, target, max);
+        let new_vm_size = Math.floor(clamp(logger.info.virsh_actual + out, target, 4 * 1024 * 1024));
 
         console.log({ new_vm_size });
 
