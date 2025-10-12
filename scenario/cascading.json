@@ -1,0 +1,45 @@
+{
+    "name": "cascading" ,
+    "steps": [
+        {
+            "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
+            "start_medooze": { "service": "vmservice", "count": 2 }
+        },
+        {
+            "require": "medooze_connected",
+            "actions": ["add_publisher"],
+            "add_publisher" : [{ "id": "mac",  "codec": "vp8", "scenar": "max2500" }],
+            "repeat" : 1
+        },
+        {
+            "require": "publisher_connected",
+            "actions": ["cascade"],
+            "cascade" : {}
+        },
+        {
+            "require": "publisher_connected",
+            "actions": ["add_viewer"],
+            "add_viewer" : [ { "id": "baleze", "count": 60 } ],
+            "repeat": 1
+        },
+        {
+            "actions": [],
+            "wait": 1200000,
+            "repeat": 1
+        },
+        {
+            "actions" : ["stop_publisher_launchers", "stop_viewer_launchers", "stop_medooze"],
+            "stop_publisher_launchers": ["mac"],
+            "stop_viewer_launchers": ["baleze"],
+            "stop_medooze": {}
+        },
+        {
+            "actions" : [ "save" ],
+            "save": {}
+        },
+        {
+            "actions" : ["exit"],
+            "exit" : {}
+        }
+    ]
+}

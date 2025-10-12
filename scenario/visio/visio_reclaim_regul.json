@@ -6,7 +6,7 @@
             "start_visio_launchers": ["baleze"],
             "start_medooze": "vmservice"
         },
-	{
+	    {
 	    "require" : "medooze_connected",
             "actions": ["start_cgroups_regul"],
             "start_cgroups_regul": {

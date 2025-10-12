@@ -30,38 +30,56 @@ class Monitor {
         // default medooze
         this.medooze_server = config.medooze_server.find(elt => elt.id === "vm");
 
-	this.current_viewer_count = 0;
+        this.medooze_servers = [];
+
+	    this.current_viewer_count = 0;
     }
 
     set_max_ram(max) {
         this.sys_manager.set_max_ram(max);
     }
 
-    medooze_connected(ws) {
-	console.log("Medooze connected");
+    medooze_connected(ws, ip) {
+    	console.log("Medooze connected");
 
-	console.log("!!!");
-        const output = execSync("/usr/local/bin/get_vm_ip");
-
-        this.medooze_server.host = output.toString().trim();
-        console.log("Medooze IP :", this.medooze_server.host);
-
-	console.log("???");
-
+        // const output = execSync("/usr/local/bin/get_vm_ip");
+        
+        this.medooze_server.host = ip;
         this.medooze_ws = ws;
+
+        this.medooze_servers.push({
+            ip: ip,
+            ws: ws
+        });
 
         // Set up max memory as the current max of the vm
         // This is to avoid having 'inf' in the cgroup file
-        this.sys_manager.set_max_ram(config.initial_max_ram);
+        /*this.sys_manager.set_max_ram(config.initial_max_ram);
         // Start collecting cgroup stats
         this.sys_manager.start_collecting(config.time_interval, (time) => {
             logger.info.time += config.time_interval;
 
             update_listener();
             logger.log_info();
-        });
+        });*/
 
-        this.medooze_connected_promise.resolve();
+        --this.medooze_count;
+
+        if(this.medooze_count === 0) {
+            this.medooze_connected_promise.resolve();
+        }
+    }
+
+    cascade(opts) {
+        for(let i = 1; i < this.medooze_servers.length; ++i) {
+            this.medooze_servers[0].ws.sendUTF(JSON.stringify({"cmd" : "cascade", 
+                ip : [this.medooze_servers[i].ip]
+            }));
+
+            this.medooze_servers[i].ws.sendUTF(JSON.stringify({"cmd" : "subcascade", 
+                ip : this.medooze_servers[0].ip
+            }));
+        }
     }
     
     medooze_disconnected() {
@@ -159,10 +177,15 @@ class Monitor {
     start_medooze(id) {
         console.log("Starting medooze", id);
 
-        this.medooze_server = config.medooze_server.find(elt => elt.id === id);
+        if(id.count) {
+            this.medooze_count = id.count;
+        } else {
+            this.medooze_server = config.medooze_server.find(elt => elt.id === id);
+            this.medooze_count = 1;
+        }
 
         if(this.medooze_server.exec_start) {
-            SystemManager.quick_exec(this.medooze_server.exec_start);
+            // SystemManager.quick_exec(this.medooze_server.exec_start);
         }
 
         // Create promised to be resolved when medooze connects
@@ -283,6 +306,30 @@ class Monitor {
 	    this.current_viewer_count += opt.count;
         };
     }
+    
+    add_viewer_cascade(opts) {
+        for(let opt of opts) {
+            let launcher = this.viewer_launchers.find(e => e.id === opt.id);
+
+            for(let sub of this.medooze_servers) {
+                if(sub.ip !== this.medooze_server.ip) {
+                    let obj = {
+                        "cmd": "run",
+                        "count": opt.count,
+                        "network": opt.network ?? "none",
+                        "medooze_host": sub.ip,
+                        "medooze_port": this.medooze_server.port
+                    };
+
+                    if(opt.viewerid) obj.viewerid = opt.viewerid;
+
+                    launcher.ws.sendUTF(JSON.stringify(obj));
+
+                    this.current_viewer_count += opt.count;
+                }
+            }
+        }
+    }
 
     create_room(opts) {
         console.log("create room");
@@ -355,62 +402,62 @@ class Monitor {
     }
 
     remove_viewer(opts) {
-	for(let opt of opts) {
-	    console.log(`Removing ${opt.count} viewers`);
-	    
-	    let launcher = this.viewer_launchers.find(e => e.id === opt.id);
+        for(let opt of opts) {
+            console.log(`Removing ${opt.count} viewers`);
+            
+            let launcher = this.viewer_launchers.find(e => e.id === opt.id);
 
-	    let obj = {
-		"cmd": "kill",
-		"count": opt.count
-	    };
+            let obj = {
+            "cmd": "kill",
+            "count": opt.count
+            };
 
-	    launcher.ws.sendUTF(JSON.stringify(obj));
+            launcher.ws.sendUTF(JSON.stringify(obj));
 
-	    this.current_viewer_count -= opt.count;
-	}
+            this.current_viewer_count -= opt.count;
+        }
     }
     
     random(min, max) {
-	return Math.floor(Math.random() * (max + 1 - min)) + min;
+	    return Math.floor(Math.random() * (max + 1 - min)) + min;
     }
 
     start_viewer_traffic(opts) {
-	const ADD = 0;
-	const REMOVE = 1;
-	
-	const time = this.random(opts.time_min, opts.time_max);
-	console.log("traffic wait time : ", time);
-	
-	this.viewers_timeout = setTimeout(() => {
-	    const count = this.random(opts.viewers_min, opts.viewers_max);
-	    const op = this.random(0,1);
+        const ADD = 0;
+        const REMOVE = 1;
+        
+        const time = this.random(opts.time_min, opts.time_max);
+        console.log("traffic wait time : ", time);
+        
+        this.viewers_timeout = setTimeout(() => {
+            const count = this.random(opts.viewers_min, opts.viewers_max);
+            const op = this.random(0,1);
 
-	    console.log({count});
-	    
-	    if(op === ADD) {		
-		let obj = {
-		    id: opts.id,
-		    count: Math.min(count, opts.max - this.current_viewer_count)
-		};
+            console.log({count});
+            
+            if(op === ADD) {		
+            let obj = {
+                id: opts.id,
+                count: Math.min(count, opts.max - this.current_viewer_count)
+            };
 
-		console.log(obj);
-		
-		this.add_viewer([obj]);
-	    }
-	    else if(op === REMOVE) {
-		let obj = {
-		    id: opts.id,
-		    count: Math.min(count, this.current_viewer_count)
-		};
+            console.log(obj);
+            
+            this.add_viewer([obj]);
+            }
+            else if(op === REMOVE) {
+            let obj = {
+                id: opts.id,
+                count: Math.min(count, this.current_viewer_count)
+            };
 
-		console.log(obj);
-		
-		this.remove_viewer([obj]);
-	    }
-	    
-	    this.start_viewer_traffic(opts);
-	}, time * SECONDS);
+            console.log(obj);
+            
+            this.remove_viewer([obj]);
+            }
+            
+            this.start_viewer_traffic(opts);
+        }, time * SECONDS);
     }
 
     stop_viewer_traffic(opts) {
@@ -475,12 +522,16 @@ class Monitor {
                     if(!this.medooze_connected_promise) 
                         this.medooze_connected_promise = Promise.withResolvers();
 
-		    console.log("await medooze promise");
                     await this.medooze_connected_promise.promise;
-		    console.log("Medooze PROMISE OK");
                 }
                 // Wait for a publisher to be connected
-                else if(step.require === "publisher_connected") await this.publisher_connected_promise.promise;
+                else if(step.require === "publisher_connected") {
+                    console.log("Waiting for publisher to be connected");
+                    if(!this.publisher_connected_promise) 
+                        this.publisher_connected_promise = Promise.withResolvers();
+
+                    await this.publisher_connected_promise.promise;
+                }
                 else if(step.require === "memory_filled") await this.process_promise.promise;
                 else if(step.require === "room_created") await this.room_created_promise.promise;
             }
