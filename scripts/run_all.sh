@@ -1,11 +1,11 @@
 #!/bin/bash
 
-REPET=5
+REPET=1
 # SCENARIO=("reduction-viewers" "reclaim-reduction-viewers")
 # SCENARIO=("visio/visio_perf_maxroom" "visio/visio_reclaim_regul" "visio/visio_balloon_regul")
 # SCENARIO=("visio/visio_balloon_regul")
 # SCENARIO=("visio/visio_multiroom_balloon")
-SCENARIO=("cascade")
+SCENARIO=("cascading")
 # SCENARIO=("cgroup-reclaim-step")
 # SCENARIO=("spawn-cgroup-reclaim" "spawn-cgroup-max" "spawn-balloon")
 # SCENARIO=("max2500")
@@ -21,6 +21,9 @@ INCREMENT=(100)
 # INCREMENT=(200)
 SWAPPINESS=(60)
 
+# MEDOOZE=("medooze" "medooze_sub1" "medooze_sub2")
+MEDOOZE=("medooze")
+
 export LIBVIRT_DEFAULT_URI=qemu:///system
 
 PROGRESS_HOST=134.59.133.57
@@ -32,36 +35,39 @@ restart_vm() {
 	
 	TRY=0
 
-	while [ $? -eq 0 ] # Run until there is an error because you can shutdown a domain not active
+	for sfu in ${MEDOOZE[@]}
 	do
-		echo "Waiting for medooze to stop"
+	    while [ $? -eq 0 ] # Run until there is an error because you can shutdown a domain not active
+	    do
+		echo "Waiting for $sfu to stop"
 		sleep 10
 
 		if [ $TRY -eq 5 ]
 		then
-			echo "Too much try, destroying medooze"
-			su tobias -c "virsh destroy medooze"
+		    echo "Too much try, destroying $sfu"
+		    su tobias -c "virsh destroy $sfu"
 		else
-			TRY=$(($TRY + 1))
-			su tobias -c "virsh shutdown medooze"
+		    TRY=$(($TRY + 1))
+		    su tobias -c "virsh shutdown $sfu"
 		fi
-	done
+	    done
 
-	echo "Start new medooze"
-	su tobias -c "virsh start medooze"
+	    echo "Start new $sfu"
+	    su tobias -c "virsh start $sfu"
 
-	# if the shut off was not complete
-	while [ $? -ne 0 ]
-	do
-		echo "Medooze was not shut off completly, retrying in 10secs"
+	    # if the shut off was not complete
+	    while [ $? -ne 0 ]
+	    do
+		echo "$sfu was not shut off completly, retrying in 10secs"
 		sleep 10
-		su tobias -c "virsh start medooze"
+		su tobias -c "virsh start $sfu"
+	    done
 	done
-
+	
 	while [ -z "$(find /sys/fs/cgroup/machine.slice/ -name "*medooze.scope")" ]
 	do
-		echo "Waiting for slice to be created"
-		sleep 1
+	    echo "Waiting for slice to be created"
+	    sleep 1
 	done
 	
 	echo "Config slice"
@@ -249,7 +255,7 @@ trap 'trap_sigint' INT
 
 # REPET=5
 # SCENARIO=("reduction" "reclaim-reduction")
-# run
+run
 # run_pid_compare
 
 # REPET=5

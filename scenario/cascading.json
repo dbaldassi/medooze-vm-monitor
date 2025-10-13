@@ -3,7 +3,9 @@
     "steps": [
         {
             "actions" : ["start_publisher_launchers", "start_viewer_launchers", "start_medooze"],
-            "start_medooze": { "service": "vmservice", "count": 2 }
+            "start_medooze": { "service": "vmservice", "count": 2 },
+	    "start_publisher_launchers": ["mac"],
+            "start_viewer_launchers": ["baleze"]
         },
         {
             "require": "medooze_connected",
@@ -18,9 +20,10 @@
         },
         {
             "require": "publisher_connected",
-            "actions": ["add_viewer"],
-            "add_viewer" : [ { "id": "baleze", "count": 60 } ],
-            "repeat": 1
+            "actions": ["add_viewer_cascade"],
+            "add_viewer_cascade" : [ { "id": "baleze", "count": [2, 2, 2] } ],
+            "repeat": 40,
+	    "wait": 1000
         },
         {
             "actions": [],

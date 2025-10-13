@@ -46,22 +46,24 @@ class Monitor {
         
         this.medooze_server.host = ip;
         this.medooze_ws = ws;
-
+	
         this.medooze_servers.push({
             ip: ip,
             ws: ws
         });
 
+	console.log(this.medooze_servers);
+
         // Set up max memory as the current max of the vm
         // This is to avoid having 'inf' in the cgroup file
-        /*this.sys_manager.set_max_ram(config.initial_max_ram);
+        // this.sys_manager.set_max_ram(config.initial_max_ram);
         // Start collecting cgroup stats
         this.sys_manager.start_collecting(config.time_interval, (time) => {
             logger.info.time += config.time_interval;
 
             update_listener();
             logger.log_info();
-        });*/
+        });
 
         --this.medooze_count;
 
@@ -274,9 +276,11 @@ class Monitor {
             // Get publisher by id
             let launcher = this.publisher_launchers.find(e => e.id === opt.id);
             // Run a publisher and publish video
+	    
+	    console.log(this.medooze_servers);
             let obj = {
                 "cmd": "run",
-                "host": `${this.medooze_server.host}:${this.medooze_server.port}`,
+                "host": `${this.medooze_servers[0].ip}:${this.medooze_server.port}`,
                 "codec": opt.codec,
                 "scenar": opt.scenar
             };
@@ -308,25 +312,25 @@ class Monitor {
     }
     
     add_viewer_cascade(opts) {
+	let c = 0;
         for(let opt of opts) {
             let launcher = this.viewer_launchers.find(e => e.id === opt.id);
 
             for(let sub of this.medooze_servers) {
-                if(sub.ip !== this.medooze_server.ip) {
-                    let obj = {
-                        "cmd": "run",
-                        "count": opt.count,
-                        "network": opt.network ?? "none",
-                        "medooze_host": sub.ip,
-                        "medooze_port": this.medooze_server.port
-                    };
+                let obj = {
+                    "cmd": "viewercascade",
+                    "count": opt.count[c],
+                    "network": opt.network ?? "none",
+                    "medooze_host": sub.ip,
+                    "medooze_port": this.medooze_server.port
+                };
 
-                    if(opt.viewerid) obj.viewerid = opt.viewerid;
-
-                    launcher.ws.sendUTF(JSON.stringify(obj));
-
-                    this.current_viewer_count += opt.count;
-                }
+                if(opt.viewerid) obj.viewerid = opt.viewerid;
+		
+                launcher.ws.sendUTF(JSON.stringify(obj));
+		
+                this.current_viewer_count += opt.count;
+		++c;
             }
         }
     }
