@@ -5,8 +5,6 @@ index_test.js
 node_modules/
 package-lock.json
 *.csv
-results/
 screenlog*
 regulation-heuristics/
-figures/
 run_all.sh

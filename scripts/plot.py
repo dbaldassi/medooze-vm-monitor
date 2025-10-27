@@ -3,14 +3,17 @@
 import csv
 import sys
 from matplotlib import pyplot as plt
+import matplotlib
 
 import scienceplots
 
 plt.style.use(['science','ieee'])
 
 plt.rcParams.update({
-    "font.size": 10
+    "font.size": 16
 })
+
+plt.rcParams['axes.prop_cycle'] = matplotlib.cycler('linestyle', ['-', '--', ':', '-.'])
 
 # plt.rc('font', size=40)          # controls default text sizes
 # plt.rc('axes', titlesize=44)     # fontsize of the axes title
@@ -64,35 +67,90 @@ def sliding_window(x, w):
 
     return sum(w) / len(w)
 
+# headers = {
+#     'TIME': [0, None, lambda x: float(x) / 1000., "Temps", "(s)", "Temps"],
+#     'MEMORY_USED': [1, 'b', lambda x: float(x), "Mémoire", "(MiB)", "cgroup memory.current"],
+#     'MEMORY_FREE': [2, 'm', lambda x: float(x), "Memory", "(MiB)", "cgroup mémoire libre"],
+#     'MEMORY_MAX': [3, 'k', lambda x: float(x), "Memory", "(MiB)", "cgroup memory.max"],
+#     'SWAP': [4, 'r', lambda x: float(x), "Mémoire", "(MiB)", "cgroup utilisation swap"],
+#     'CGROUP_CACHE': [5, 'y', lambda x: float(x) / 1024 / 1024, "Memory", "(MiB)", "cgroup cache"],
+#     'CGROUP_SWAPPABLE': [6, 'c', lambda x: float(x) / 1024 / 1024, "Memory", "(MiB)", "cgroupe swappable"],
+#     'MEMORY_PRESSURE_AVG10': [7, 'darkRed', lambda x: float(x), "Pressure Stall Information", "(PSI)", "Memory pressure"],
+#     'MEMORY_PRESSURE_AVG60': [8],
+#     'MEMORY_PRESSURE_AVG300': [9],
+#     'MEMORY_PRESSURE_TOTAL': [10],
+#     'VIRSH_ACTUAL': [11, 'k', lambda x: float(x) / 1024., "Memory", "(MiB)", "Mémoire allouée à la VM"],
+#     'VIRSH_UNUSED': [12, 'tomato', lambda x: float(x) / 1024., "Memory", "(MiB)", "Mémoire inutilisée de la VM"],
+#     'VIRSH_USABLE': [13, 'm', lambda x: float(x) / 1024., "Memory", "(MiB)", "Mémoire libre de l'invité"],
+#     'VIRSH_AVAILABLE': [14, 'g', lambda x: float(x) / 1024., "Mémoire", "(MiB)", "vRAM de l'invité"],
+#     'VIRSH_SWAP_IN': [15, '', lambda x: float(x) / 1024., "Memory", "(MiB)", "VM swap in"],
+#     'VIRSH_SWAP_OUT': [16, 'r', lambda x: float(x) / 1024., "Mémoire", "(MiB)", "Swap de l'invité"],
+#     'VIRSH_MINOR_FAULT': [17],
+#     'VIRSH_MAJOR_FAULT': [18],
+#     'PUBLISHER_BITRATE': [19, 'b', lambda x: sliding_window(x, s_windows["publisher_bitrate"]), "Débit", "(kbps)", "Débit émetteur"],
+#     'PUBLISHER_FPS': [20, 'r', lambda x: sliding_window(x, s_windows["publisher_fps"]), "FPS", "", "FPS émetteur"],
+#     'PUBLISHER_RES': [21],
+#     'PUBLISHER_RTT': [22, 'r', lambda x: float(x), "Délai", "(ms)", "RTT émetteur"],
+#     'CONNECTION_STATE': [23],
+#     'VIEWER_COUNT': [24, 'y', lambda x: float(x), "Viewer Count", "", "Nombre de récepteurs"],
+#     'VM_MEMORY_USAGE': [25, 'midnightBlue', lambda x: float(x), "Mémoire", "(MiB)", "Mémoire utilisée par l'invité"],
+#     'VM_MEMORY_FREE': [26, 'tomato', lambda x: float(x), "Memory", "(MiB)", "VM current free memory"],
+#     'VM_CPU_USAGE': [27, 'b', lambda x: max(0, float(x) * 100), "CPU", "(%)", "Utilisation CPU (VM)"],
+#     'VM_FREE_TOTAL': [28, 'purple', lambda x: float(x), "Memory", "(MiB)", "VM free total"], 
+#     'VM_FREE_USED': [29, 'orange', lambda x: float(x), "Memory", "(MiB)", "VM free used"], 
+#     'VM_FREE_BUFCACHE': [30, 'cyan', lambda x: float(x), "Memory", "(MiB)", "VM free buff/cache"],
+#     'MEDOOZE_INCOMING_LOST': [31],
+#     'MEDOOZE_INCOMING_DROP': [32],
+#     'MEDOOZE_INCOMING_BITRATE': [33],
+#     'MEDOOZE_INCOMING_NACK': [34],
+#     'MEDOOZE_INCOMING_PLI': [35],
+#     'RX_PACKET': [36],
+#     'RX_DROPPED': [37],
+#     'RX_ERRORS': [38],
+#     'RX_MISSED': [39],
+#     'TX_PACKET': [40],
+#     'TX_DROPPED': [41],
+#     'TX_ERRORS': [42],
+#     'TX_MISSED': [43],
+#     'VIEWER_TARGET': [44, 'k', lambda x: float(x), "Débit", "(kbps)", "viewer encoder target"],
+#     'VIEWER_BITRATE': [45, 'g', lambda x: sliding_window(x, s_windows["viewer_bitrate"]), "Débit", "(kbps)", "Débit récepteurs"],
+#     'VIEWER_RTT': [46],
+#     'VIEWER_DELAY': [47, 'm', lambda x: float(x), "Délai", "(ms)", "Délai bout à bout"],
+#     'VIEWER_FPS': [48, 'm', lambda x: sliding_window(x, s_windows["viewer_fps"]), "FPS", "", "FPS récepteurs"],
+#     'VIEWER_RID_H': [49, 'g', lambda x: float(x), "RID Count", "", "simulcast couche haute"],
+#     'VIEWER_RID_M': [50, 'b', lambda x: float(x), "RID Count", "", "simulcast couche moyenne"],
+#     'VIEWER_RID_L': [51, 'r', lambda x: float(x), "RID Count", "", "simulcast couche basse"],
+# }
+
 headers = {
-    'TIME': [0, None, lambda x: float(x) / 1000., "Temps", "(s)", "Temps"],
-    'MEMORY_USED': [1, 'b', lambda x: float(x), "Mémoire", "(MiB)", "cgroup memory.current"],
-    'MEMORY_FREE': [2, 'm', lambda x: float(x), "Memory", "(MiB)", "cgroup mémoire libre"],
-    'MEMORY_MAX': [3, 'k', lambda x: float(x), "Memory", "(MiB)", "cgroup memory.max"],
-    'SWAP': [4, 'r', lambda x: float(x), "Mémoire", "(MiB)", "cgroup utilisation swap"],
+    'TIME': [0, None, lambda x: float(x) / 1000., "time", "(s)", "Time"],
+    'MEMORY_USED': [1, 'b', lambda x: float(x), "Memory", "(MiB)", "cgroup memory"],
+    'MEMORY_FREE': [2, 'm', lambda x: float(x), "Memory", "(MiB)", "cgroup current free memory"],
+    'MEMORY_MAX': [3, 'k', lambda x: float(x), "Memory", "(MiB)", "cgroup max memory"],
+    'SWAP': [4, 'r', lambda x: float(x), "Memory", "(MiB)", "cgroup swap"],
     'CGROUP_CACHE': [5, 'y', lambda x: float(x) / 1024 / 1024, "Memory", "(MiB)", "cgroup cache"],
     'CGROUP_SWAPPABLE': [6, 'c', lambda x: float(x) / 1024 / 1024, "Memory", "(MiB)", "cgroupe swappable"],
     'MEMORY_PRESSURE_AVG10': [7, 'darkRed', lambda x: float(x), "Pressure Stall Information", "(PSI)", "Memory pressure"],
     'MEMORY_PRESSURE_AVG60': [8],
     'MEMORY_PRESSURE_AVG300': [9],
     'MEMORY_PRESSURE_TOTAL': [10],
-    'VIRSH_ACTUAL': [11, 'k', lambda x: float(x) / 1024., "Memory", "(MiB)", "Mémoire allouée à la VM"],
-    'VIRSH_UNUSED': [12, 'tomato', lambda x: float(x) / 1024., "Memory", "(MiB)", "Mémoire inutilisée de la VM"],
-    'VIRSH_USABLE': [13, 'm', lambda x: float(x) / 1024., "Memory", "(MiB)", "Mémoire libre de l'invité"],
-    'VIRSH_AVAILABLE': [14, 'g', lambda x: float(x) / 1024., "Mémoire", "(MiB)", "vRAM de l'invité"],
+    'VIRSH_ACTUAL': [11, 'k', lambda x: float(x) / 1024., "Memory", "(MiB)", "VM allocated memory"],
+    'VIRSH_UNUSED': [12, 'tomato', lambda x: float(x) / 1024., "Memory", "(MiB)", "VM unused memory"],
+    'VIRSH_USABLE': [13, 'm', lambda x: float(x) / 1024., "Memory", "(MiB)", "Guest free memory"],
+    'VIRSH_AVAILABLE': [14, 'g', lambda x: float(x) / 1024., "Memory", "(MiB)", "Guest vRAM"],
     'VIRSH_SWAP_IN': [15, '', lambda x: float(x) / 1024., "Memory", "(MiB)", "VM swap in"],
-    'VIRSH_SWAP_OUT': [16, 'r', lambda x: float(x) / 1024., "Mémoire", "(MiB)", "Swap de l'invité"],
+    'VIRSH_SWAP_OUT': [16, 'r', lambda x: float(x) / 1024., "Memory", "(MiB)", "Guest swap"],
     'VIRSH_MINOR_FAULT': [17],
     'VIRSH_MAJOR_FAULT': [18],
-    'PUBLISHER_BITRATE': [19, 'b', lambda x: sliding_window(x, s_windows["publisher_bitrate"]), "Débit", "(kbps)", "Débit émetteur"],
-    'PUBLISHER_FPS': [20, 'r', lambda x: sliding_window(x, s_windows["publisher_fps"]), "FPS", "", "FPS émetteur"],
+    'PUBLISHER_BITRATE': [19, 'b', lambda x: sliding_window(x, s_windows["publisher_bitrate"]), "Bitrate", "(kbps)", "publisher bitrate"],
+    'PUBLISHER_FPS': [20, 'r', lambda x: sliding_window(x, s_windows["publisher_fps"]), "FPS", "", "publisher fps"],
     'PUBLISHER_RES': [21],
-    'PUBLISHER_RTT': [22, 'r', lambda x: float(x), "Délai", "(ms)", "RTT émetteur"],
+    'PUBLISHER_RTT': [22, 'r', lambda x: float(x), "Delay", "(ms)", "publisher rtt"],
     'CONNECTION_STATE': [23],
-    'VIEWER_COUNT': [24, 'y', lambda x: float(x), "Viewer Count", "", "Nombre de récepteurs"],
-    'VM_MEMORY_USAGE': [25, 'midnightBlue', lambda x: float(x), "Mémoire", "(MiB)", "Mémoire utilisée par l'invité"],
+    'VIEWER_COUNT': [24, 'y', lambda x: float(x), "Viewer Count", "", "Viewer count"],
+    'VM_MEMORY_USAGE': [25, 'midnightBlue', lambda x: float(x), "Memory", "(MiB)", "Guest memory"],
     'VM_MEMORY_FREE': [26, 'tomato', lambda x: float(x), "Memory", "(MiB)", "VM current free memory"],
-    'VM_CPU_USAGE': [27, 'b', lambda x: max(0, float(x) * 100), "CPU", "(%)", "Utilisation CPU (VM)"],
+    'VM_CPU_USAGE': [27, 'b', lambda x: max(0, float(x) * 100), "CPU", "(%)", "VM cpu usage"],
     'VM_FREE_TOTAL': [28, 'purple', lambda x: float(x), "Memory", "(MiB)", "VM free total"], 
     'VM_FREE_USED': [29, 'orange', lambda x: float(x), "Memory", "(MiB)", "VM free used"], 
     'VM_FREE_BUFCACHE': [30, 'cyan', lambda x: float(x), "Memory", "(MiB)", "VM free buff/cache"],
@@ -109,14 +167,14 @@ headers = {
     'TX_DROPPED': [41],
     'TX_ERRORS': [42],
     'TX_MISSED': [43],
-    'VIEWER_TARGET': [44, 'k', lambda x: float(x), "Débit", "(kbps)", "viewer encoder target"],
-    'VIEWER_BITRATE': [45, 'g', lambda x: sliding_window(x, s_windows["viewer_bitrate"]), "Débit", "(kbps)", "Débit récepteurs"],
+    'VIEWER_TARGET': [44, 'k', lambda x: float(x), "Bitrate", "(kbps)", "viewer encoder target"],
+    'VIEWER_BITRATE': [45, 'g', lambda x: sliding_window(x, s_windows["viewer_bitrate"]), "Bitrate", "(kbps)", "viewer received bitrate"],
     'VIEWER_RTT': [46],
-    'VIEWER_DELAY': [47, 'm', lambda x: float(x), "Délai", "(ms)", "Délai bout à bout"],
-    'VIEWER_FPS': [48, 'm', lambda x: sliding_window(x, s_windows["viewer_fps"]), "FPS", "", "FPS récepteurs"],
-    'VIEWER_RID_H': [49, 'g', lambda x: float(x), "RID Count", "", "simulcast couche haute"],
-    'VIEWER_RID_M': [50, 'b', lambda x: float(x), "RID Count", "", "simulcast couche moyenne"],
-    'VIEWER_RID_L': [51, 'r', lambda x: float(x), "RID Count", "", "simulcast couche basse"],
+    'VIEWER_DELAY': [47, 'm', lambda x: float(x), "Delay", "(ms)", "End to end delay"],
+    'VIEWER_FPS': [48, 'm', lambda x: sliding_window(x, s_windows["viewer_fps"]), "FPS", "", "viewer received FPS"],
+    'VIEWER_RID_H': [49, 'g', lambda x: float(x), "RID Count", "", "simulcast high layer"],
+    'VIEWER_RID_M': [50, 'b', lambda x: float(x), "RID Count", "", "simulcast medium layer"],
+    'VIEWER_RID_L': [51, 'r', lambda x: float(x), "RID Count", "", "simulcast low layer"],
 }
 
 indicators = ["avg", "1stq", "median", "3rdq", "min", "max"]
@@ -188,6 +246,9 @@ def plot_yy(ax, lines, header, indicator, x_axis_values, w, style, color, label)
         # get corresponding values
         y_axis_value = [ header[PROCESS](line[y_idx]) if len(line) > y_idx else 0 for line in lines ]
         # plot y values in function of x values on the plot
+        if y_axis_value[w[0]] == 0:
+            w[0] += 1
+
         ax.plot(x_axis_values[w[0]:w[1]], y_axis_value[w[0]:w[1]], color=color, label=label, linestyle=style)
         # ax.plot(x_axis_values[w[0]:w[1]], y_axis_value[w[0]:w[1]], label=label)
     else:
@@ -266,7 +327,7 @@ def find_window_index(values, window):
 def plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, res, location, legend_col, annotate = False):
     # create figure with specified ratio
     # fig,ax = plt.subplots(figsize=(res[0], res[1]))
-    fig,ax = plt.subplots()
+    fig,ax = plt.subplots(figsize=(4,4))
     # set label for figure
     ax.set_xlabel("{} {}".format(headers[x_axis][LABEL], headers[x_axis][UNIT]))
     label_ind = LABEL if len(filenames) == 1 or len(y_axis) > 1 else NAME
@@ -300,9 +361,13 @@ def plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, res, locat
         # Substract the start window value to all values to start at 0
         x_axis_values = [ x - x_axis_values[window_index[0]] for x in x_axis_values ]
  
+        style = None
+        if len(y2_axis) > 0:
+            style = '-'
+
         # plot on primary vertical axis
         for y in y_axis:
-            plot_y(ax, lines, headers[y], indicator, x_axis_values, window_index, '-', filename if len(filenames) > 1 else None, multiple_on_y, twin)
+            plot_y(ax, lines, headers[y], indicator, x_axis_values, window_index, None, filename if len(filenames) > 1 else None, multiple_on_y, twin)
 
         # plot on secondary vertical axis
         for y in y2_axis:
@@ -319,7 +384,7 @@ def plot(filenames, x_axis, y_axis, y2_axis, window, indicator, show, res, locat
         # ax.legend()
 
     # add legend to the figure
-    fig.legend(loc=location, bbox_to_anchor=ANCHOR[location], bbox_transform=ax.transAxes, ncol=legend_col)
+    fig.legend(loc=location, bbox_to_anchor=ANCHOR[location], bbox_transform=ax.transAxes, ncol=legend_col, frameon=True)
     # fig.legend(ncol=2)
 
     # save fig
