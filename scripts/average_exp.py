@@ -28,7 +28,7 @@ for header in all_stats[0][0]:
     # newheaders.append("3rdQ")
     # newheaders.append("Min")
     # newheaders.append("Max")
-
+ 
 average_stats.append(newheaders) # add headers
 
 # remove headers from all stats

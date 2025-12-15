@@ -485,7 +485,7 @@ class SystemManager {
 
         // console.log("pid out : ", out);
 	console.log(logger.info.virsh_actual, out, -100 * 1024);
-	const LIMIT = 50;
+	const LIMIT = 300;
         if(out < -LIMIT * 1024) {
             out = Math.sign(out) * LIMIT * 1024; // limit to 200K
         }

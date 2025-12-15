@@ -1,11 +1,12 @@
 #!/bin/bash
 
-REPET=5
+REPET=10
 # SCENARIO=("reduction-viewers" "reclaim-reduction-viewers")
 # SCENARIO=("visio/visio_perf_maxroom" "visio/visio_reclaim_regul" "visio/visio_balloon_regul")
 # SCENARIO=("visio/visio_balloon_regul")
 # SCENARIO=("visio/visio_multiroom_balloon")
-SCENARIO=("cascade")
+# SCENARIO=("cascade")
+SCENARIO=("mongo/pid-balloon")
 # SCENARIO=("cgroup-reclaim-step")
 # SCENARIO=("spawn-cgroup-reclaim" "spawn-cgroup-max" "spawn-balloon")
 # SCENARIO=("max2500")
@@ -249,7 +250,7 @@ trap 'trap_sigint' INT
 
 # REPET=5
 # SCENARIO=("reduction" "reclaim-reduction")
-# run
+run
 # run_pid_compare
 
 # REPET=5

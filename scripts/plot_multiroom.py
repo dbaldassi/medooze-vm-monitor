@@ -6,8 +6,12 @@ import sys
 import os
 import re
 
+# Transparence globale
 plt.rcParams.update({
-    "font.size": 20
+    "font.size": 20,
+    "figure.facecolor": "none",
+    "axes.facecolor": "none",
+    "savefig.transparent": True,
 })
 
 if len(sys.argv) < 2:
@@ -50,7 +54,11 @@ for csv_file, room_name in zip(csv_files, room_names):
 
 # Pour chaque métrique, scatter les moyennes de chaque room et plot la moyenne des moyennes
 for metric, ylabel in metrics:
-    plt.figure()
+    fig = plt.figure()
+    fig.patch.set_alpha(0.0)  # figure transparente
+    ax = plt.gca()
+    ax.set_facecolor('none')  # axes transparents
+
     all_times = sorted(set().union(*[room_data[room][metric].index for room in room_data if metric in room_data[room]]))
     # Interpoler les moyennes sur tous les timestamps pour chaque room
     interpolated = []
@@ -59,14 +67,17 @@ for metric, ylabel in metrics:
             series = room_data[room][metric].reindex(all_times).interpolate()
             plt.scatter(series.index, series.values, s=15, alpha=0.7, label=room)
             interpolated.append(series.values)
-    # Moyenne des moyennes, en ignorant les NaN (rooms non actives)
+    # Moyenne des moyennes, en ignorant les NaN
     if interpolated:
-        df_interp = pd.DataFrame(interpolated).T  # shape: (len(all_times), n_rooms)
+        df_interp = pd.DataFrame(interpolated).T
         mean_of_means = df_interp.mean(axis=1, skipna=True)
         plt.plot(all_times, mean_of_means, color='black', linewidth=2, label="Moyenne")
+
     plt.xlabel("Temps (s)")
     plt.ylabel(ylabel)
-    plt.legend(markerscale=2, fontsize=10)
+
+    plt.legend(markerscale=2, fontsize=14, frameon=True)
+
     plt.tight_layout()
-    plt.savefig(f"multiroom_{metric.lower()}.pdf")
+    plt.savefig(f"multiroom_{metric.lower()}.pdf", format="pdf", transparent=True, bbox_inches="tight")
     plt.close()

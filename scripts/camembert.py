@@ -10,18 +10,18 @@ plt.style.use(['science', 'ieee'])
 # })
 
 # Données principales (en octets)
-data = {
-    "anonymous memory": 1528983552,
-    "files/slabs": 98304 + 1218992,
-    "other": 16492680,
-    # "slabs": 1218992,
-}
-
 # data = {
-#     "Guest memory" : 485268,
-#     "Guest buff/cache": 524716,
-#     "Other": 1817927680 / 1024 - (485268 + 524716),
+#     "anonymous\nmemory": 1528983552,
+#     "files/slabs": 98304 + 1218992,
+#     "other": 16492680,
+#     # "slabs": 1218992,
 # }
+
+data = {
+    "Guest\nmemory" : 485268,
+    "Guest\nbuff/cache": 524716,
+    "Other": 1817927680 / 1024 - (485268 + 524716),
+}
 
 labels = []
 sizes = []
@@ -50,19 +50,24 @@ for i, p in enumerate(wedges):
 
     pos = (1.35 * np.sign(x), 1.4 * y)
     if labels[i] == "other":
-        pos =  (1.35 * np.sign(x), 1 * y)
+        pos =  (1.25 * np.sign(x), 1 * y)
+    elif labels[i] == "Guest\nmemory":
+        horizontalalignment = 'right'
+        pos =  (1.25 * np.sign(x), 1 * y)
+        connectionstyle = None #"angle,angleA=0,angleB=0"# .format(ang)
+        # pos =  (1.45 * np.sign(x), 1 * y)
 
     ax.annotate(
         labels[i],
         xy=(x, y),
         xytext=pos,
         horizontalalignment=horizontalalignment,
-        fontsize=22,
+        fontsize=26,
         arrowprops=dict(arrowstyle="-", color=colors[i], connectionstyle=connectionstyle)
     )
 
 # plt.title("Répartition mémoire (MiB)")
 plt.tight_layout()
-# plt.savefig("anon_pie.pdf")
-plt.savefig("memory_pie_science.pdf")
+plt.savefig("anon_pie.pdf")
+# plt.savefig("memory_pie_science.pdf")
 plt.show()

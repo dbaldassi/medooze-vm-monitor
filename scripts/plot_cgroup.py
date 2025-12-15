@@ -10,7 +10,7 @@ import scienceplots
 plt.style.use(['science','ieee'])
 
 plt.rcParams.update({
-    "font.size": 13
+    "font.size": 18
 })
 
 plt.rcParams['axes.prop_cycle'] = matplotlib.cycler('linestyle', ['-', '--', ':', '-.', (0, (3, 1, 1, 1, 1, 1))])
@@ -25,7 +25,7 @@ plt.rcParams['axes.prop_cycle'] = matplotlib.cycler('linestyle', ['-', '--', ':'
 
 
 px = 1 / plt.rcParams['figure.dpi']  # pixel in inches
-LINEWIDTH = 4
+LINEWIDTH = 3
 
 INDEX = 0
 COLOR = 1
@@ -49,83 +49,8 @@ method_style = {
 ANCHOR=[(0,0), (1,1), (0,1), (0,0), (1,0), (1,0.5), (0,0.5), (1,0.5), (0.5,1), (0,0), (0.5,1), (0,2)]
 
 # Headers basés sur cgroup_headers
-# headers = {
-#     'TIME': [0, None, lambda x: float(x) / 1000., "temps", "(s)", "Temps"],
-#     'ANON': [1, 'b', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Anonymous Memory"],
-#     'FILE': [2, 'm', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "File Cache"],
-#     'KERNEL': [3, 'k', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Kernel Memory"],
-#     'KERNEL_STACK': [4, 'g', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Kernel Stack"],
-#     'PAGETABLES': [5, 'r', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Page Tables"],
-#     'SEC_PAGETABLES': [6, 'c', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Secondary Page Tables"],
-#     'PERCPU': [7, 'y', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Per-CPU Memory"],
-#     'SOCK': [8, 'darkRed', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Socket Memory"],
-#     'VMALLOC': [9, 'purple', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "VMalloc Memory"],
-#     'SHMEM': [10, 'orange', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Shared Memory"],
-#     'ZSWAP': [11, 'pink', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "ZSwap"],
-#     'ZSWAPPED': [12, 'brown', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "ZSwapped"],
-#     'FILE_MAPPED': [13, 'cyan', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "File Mapped"],
-#     'FILE_DIRTY': [14, 'lime', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "File Dirty"],
-#     'FILE_WRITEBACK': [15, 'teal', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "File Writeback"],
-#     'SWAPCACHED': [16, 'gold', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Swap Cached"],
-#     'ANON_THP': [17, 'navy', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Anonymous THP"],
-#     'FILE_THP': [18, 'olive', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "File THP"],
-#     'SHMEM_THP': [19, 'maroon', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Shared Memory THP"],
-#     'INACTIVE_ANON': [20, 'darkGreen', lambda x: float(x) / (1024 * 1024), "Mémoire", "(MiB)", "Anonyme inactive"],
-#     'ACTIVE_ANON': [21, '#c14e17', lambda x: float(x) / (1024 * 1024), "Mémoire", "(MiB)", "Anonyme active"],
-#     'INACTIVE_FILE': [22, 'darkCyan', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Inactive File"],
-#     'ACTIVE_FILE': [23, 'darkMagenta', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Active File"],
-#     'UNEVICTABLE': [24, 'black', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Unevictable"],
-#     'SLAB_RECLAIMABLE': [25, 'gray', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Slab Reclaimable"],
-#     'SLAB_UNRECLAIMABLE': [26, 'silver', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Slab Unreclaimable"],
-#     'SLAB': [27, 'lightBlue', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Slab"],
-#     'WORKINGSET_REFAULT_ANON': [28, 'lightGreen', lambda x: float(x), "Count", "", "Working Set Refault Anon"],
-#     'WORKINGSET_REFAULT_FILE': [29, 'lightRed', lambda x: float(x), "Count", "", "Working Set Refault File"],
-#     'WORKINGSET_ACTIVATE_ANON': [30, 'darkOrange', lambda x: float(x), "Count", "", "Working Set Activate Anon"],
-#     'WORKINGSET_ACTIVATE_FILE': [31, 'darkPurple', lambda x: float(x), "Count", "", "Working Set Activate File"],
-#     'WORKINGSET_RESTORE_ANON': [32, 'darkGray', lambda x: float(x), "Count", "", "Working Set Restore Anon"],
-#     'WORKINGSET_RESTORE_FILE': [33, 'lightGray', lambda x: float(x), "Count", "", "Working Set Restore File"],
-#     'WORKINGSET_NODERECLAIM': [34, 'gold', lambda x: float(x), "Count", "", "Working Set No Reclaim"],
-#     'PGDEMOTE_KSWAPD': [35, 'pink', lambda x: float(x), "Count", "", "Page Demote KSWAPD"],
-#     'PGDEMOTE_DIRECT': [36, 'brown', lambda x: float(x), "Count", "", "Page Demote Direct"],
-#     'PGDEMOTE_KHUGEPAGED': [37, 'cyan', lambda x: float(x), "Count", "", "Page Demote KHugePaged"],
-#     'PGPROMOTE_SUCCESS': [38, 'lime', lambda x: float(x), "Count", "", "Page Promote Success"],
-#     'PGSCAN': [39, 'teal', lambda x: float(x), "Count", "", "Page Scan"],
-#     'PGSTEAL': [40, 'navy', lambda x: float(x), "Count", "", "Page Steal"],
-#     'PGSCAN_KSWAPD': [41, 'olive', lambda x: float(x), "Count", "", "Page Scan KSWAPD"],
-#     'PGSCAN_DIRECT': [42, 'maroon', lambda x: float(x), "Count", "", "Page Scan Direct"],
-#     'PGSCAN_KHUGEPAGED': [43, 'darkGreen', lambda x: float(x), "Count", "", "Page Scan KHugePaged"],
-#     'PGSTEAL_KSWAPD': [44, 'darkBlue', lambda x: float(x), "Count", "", "Page Steal KSWAPD"],
-#     'PGSTEAL_DIRECT': [45, 'darkCyan', lambda x: float(x), "Count", "", "Page Steal Direct"],
-#     'PGSTEAL_KHUGEPAGED': [46, 'darkMagenta', lambda x: float(x), "Count", "", "Page Steal KHugePaged"],
-#     'PGFAULT': [47, 'black', lambda x: float(x), "Count", "", "Défauts de page"],
-#     'PGMAJFAULT': [48, 'gray', lambda x: float(x), "Count", "", "Défauts de page majeurs"],
-#     'PGREFILL': [49, 'silver', lambda x: float(x), "Count", "", "Page Refill"],
-#     'PGACTIVATE': [50, 'lightBlue', lambda x: float(x), "Count", "", "Page Activate"],
-#     'PGDEACTIVATE': [51, 'lightGreen', lambda x: float(x), "Count", "", "Page Deactivate"],
-#     'PGLAZYFREE': [52, 'lightRed', lambda x: float(x), "Count", "", "Lazy Free"],
-#     'PGLAZYFREED': [53, 'darkOrange', lambda x: float(x), "Count", "", "Lazy Freed"],
-#     'SWPIN_ZERO': [54, 'darkPurple', lambda x: float(x), "Count", "", "Swap In Zero"],
-#     'SWPOUT_ZERO': [55, 'darkGray', lambda x: float(x), "Count", "", "Swap Out Zero"],
-#     'ZSWPIN': [56, 'gold', lambda x: float(x), "Count", "", "ZSwap In"],
-#     'ZSWPOUT': [57, 'pink', lambda x: float(x), "Count", "", "ZSwap Out"],
-#     'ZSWPWB': [58, 'brown', lambda x: float(x), "Count", "", "ZSwap Writeback"],
-#     'THP_FAULT_ALLOC': [59, 'cyan', lambda x: float(x), "Count", "", "THP Fault Alloc"],
-#     'THP_COLLAPSE_ALLOC': [60, 'lime', lambda x: float(x), "Count", "", "THP Collapse Alloc"],
-#     'THP_SWPOUT': [61, 'teal', lambda x: float(x), "Count", "", "THP Swap Out"],
-#     'THP_SWPOUT_FALLBACK': [62, 'navy', lambda x: float(x), "Count", "", "THP Swap Out Fallback"],
-#     'NUMA_PAGES_MIGRATED': [63, 'olive', lambda x: float(x), "Count", "", "NUMA Pages Migrated"],
-#     'NUMA_PTE_UPDATES': [64, 'maroon', lambda x: float(x), "Count", "", "NUMA PTE Updates"],
-#     'NUMA_HINT_FAULTS': [65, 'darkGreen', lambda x: float(x), "Count", "", "NUMA Hint Faults"],
-#     'RAM_USAGE': [66, 'blue', lambda x: float(x), "Mémoire", "(MiB)", "memory.current"],
-#     'SWAP_USAGE': [67, 'red', lambda x: float(x), "Mémoire", "(MiB)", "Swap (cgroups)"],
-#     'MAXRAM': [68, 'green', lambda x: float(x), "Mémoire", "(MiB)", "memory.max"],
-#     'PRESSURE_AVG10': [69, 'purple', lambda x: float(x), "Pressure", "(PSI)", "Memory Pressure"],
-#     'SUMMED_MEMORY': [70, 'purple', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Summed Memory"],
-# }
-
-
 headers = {
-    'TIME': [0, None, lambda x: float(x) / 1000., "time", "(s)", "Time"],
+    'TIME': [0, None, lambda x: float(x) / 1000., "temps", "(s)", "Temps"],
     'ANON': [1, 'b', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Anonymous Memory"],
     'FILE': [2, 'm', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "File Cache"],
     'KERNEL': [3, 'k', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Kernel Memory"],
@@ -145,8 +70,8 @@ headers = {
     'ANON_THP': [17, 'navy', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Anonymous THP"],
     'FILE_THP': [18, 'olive', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "File THP"],
     'SHMEM_THP': [19, 'maroon', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Shared Memory THP"],
-    'INACTIVE_ANON': [20, 'darkGreen', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Inactive Anonymous"],
-    'ACTIVE_ANON': [21, 'darkBlue', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Active Anonymous"],
+    'INACTIVE_ANON': [20, 'darkGreen', lambda x: float(x) / (1024 * 1024), "Mémoire", "(MiB)", "Anonyme inactive"],
+    'ACTIVE_ANON': [21, '#c14e17', lambda x: float(x) / (1024 * 1024), "Mémoire", "(MiB)", "Anonyme active"],
     'INACTIVE_FILE': [22, 'darkCyan', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Inactive File"],
     'ACTIVE_FILE': [23, 'darkMagenta', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Active File"],
     'UNEVICTABLE': [24, 'black', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Unevictable"],
@@ -172,8 +97,8 @@ headers = {
     'PGSTEAL_KSWAPD': [44, 'darkBlue', lambda x: float(x), "Count", "", "Page Steal KSWAPD"],
     'PGSTEAL_DIRECT': [45, 'darkCyan', lambda x: float(x), "Count", "", "Page Steal Direct"],
     'PGSTEAL_KHUGEPAGED': [46, 'darkMagenta', lambda x: float(x), "Count", "", "Page Steal KHugePaged"],
-    'PGFAULT': [47, 'black', lambda x: float(x), "Count", "", "Page Faults"],
-    'PGMAJFAULT': [48, 'gray', lambda x: float(x), "Count", "", "Major Page Faults"],
+    'PGFAULT': [47, 'black', lambda x: float(x), "Count", "", "Défauts de page"],
+    'PGMAJFAULT': [48, 'gray', lambda x: float(x), "Count", "", "Défauts de page majeurs"],
     'PGREFILL': [49, 'silver', lambda x: float(x), "Count", "", "Page Refill"],
     'PGACTIVATE': [50, 'lightBlue', lambda x: float(x), "Count", "", "Page Activate"],
     'PGDEACTIVATE': [51, 'lightGreen', lambda x: float(x), "Count", "", "Page Deactivate"],
@@ -191,12 +116,87 @@ headers = {
     'NUMA_PAGES_MIGRATED': [63, 'olive', lambda x: float(x), "Count", "", "NUMA Pages Migrated"],
     'NUMA_PTE_UPDATES': [64, 'maroon', lambda x: float(x), "Count", "", "NUMA PTE Updates"],
     'NUMA_HINT_FAULTS': [65, 'darkGreen', lambda x: float(x), "Count", "", "NUMA Hint Faults"],
-    'RAM_USAGE': [66, 'blue', lambda x: float(x), "Memory", "(MiB)", "Memory Current"],
-    'SWAP_USAGE': [67, 'red', lambda x: float(x), "Memory", "(MiB)", "Swap (cgroups)"],
-    'MAXRAM': [68, 'green', lambda x: float(x), "Memory", "(MiB)", "Memory Max"],
+    'RAM_USAGE': [66, 'blue', lambda x: float(x), "Mémoire", "(MiB)", "memory.current"],
+    'SWAP_USAGE': [67, 'red', lambda x: float(x), "Mémoire", "(MiB)", "Swap (cgroups)"],
+    'MAXRAM': [68, 'green', lambda x: float(x), "Mémoire", "(MiB)", "memory.max"],
     'PRESSURE_AVG10': [69, 'purple', lambda x: float(x), "Pressure", "(PSI)", "Memory Pressure"],
     'SUMMED_MEMORY': [70, 'purple', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Summed Memory"],
 }
+
+
+# headers = {
+#     'TIME': [0, None, lambda x: float(x) / 1000., "time", "(s)", "Time"],
+#     'ANON': [1, 'b', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Anonymous Memory"],
+#     'FILE': [2, 'm', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "File Cache"],
+#     'KERNEL': [3, 'k', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Kernel Memory"],
+#     'KERNEL_STACK': [4, 'g', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Kernel Stack"],
+#     'PAGETABLES': [5, 'r', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Page Tables"],
+#     'SEC_PAGETABLES': [6, 'c', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Secondary Page Tables"],
+#     'PERCPU': [7, 'y', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Per-CPU Memory"],
+#     'SOCK': [8, 'darkRed', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Socket Memory"],
+#     'VMALLOC': [9, 'purple', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "VMalloc Memory"],
+#     'SHMEM': [10, 'orange', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Shared Memory"],
+#     'ZSWAP': [11, 'pink', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "ZSwap"],
+#     'ZSWAPPED': [12, 'brown', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "ZSwapped"],
+#     'FILE_MAPPED': [13, 'cyan', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "File Mapped"],
+#     'FILE_DIRTY': [14, 'lime', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "File Dirty"],
+#     'FILE_WRITEBACK': [15, 'teal', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "File Writeback"],
+#     'SWAPCACHED': [16, 'gold', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Swap Cached"],
+#     'ANON_THP': [17, 'navy', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Anonymous THP"],
+#     'FILE_THP': [18, 'olive', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "File THP"],
+#     'SHMEM_THP': [19, 'maroon', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Shared Memory THP"],
+#     'INACTIVE_ANON': [20, 'darkGreen', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Inactive Anonymous"],
+#     'ACTIVE_ANON': [21, 'darkBlue', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Active Anonymous"],
+#     'INACTIVE_FILE': [22, 'darkCyan', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Inactive File"],
+#     'ACTIVE_FILE': [23, 'darkMagenta', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Active File"],
+#     'UNEVICTABLE': [24, 'black', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Unevictable"],
+#     'SLAB_RECLAIMABLE': [25, 'gray', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Slab Reclaimable"],
+#     'SLAB_UNRECLAIMABLE': [26, 'silver', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Slab Unreclaimable"],
+#     'SLAB': [27, 'lightBlue', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Slab"],
+#     'WORKINGSET_REFAULT_ANON': [28, 'lightGreen', lambda x: float(x), "Count", "", "Working Set Refault Anon"],
+#     'WORKINGSET_REFAULT_FILE': [29, 'lightRed', lambda x: float(x), "Count", "", "Working Set Refault File"],
+#     'WORKINGSET_ACTIVATE_ANON': [30, 'darkOrange', lambda x: float(x), "Count", "", "Working Set Activate Anon"],
+#     'WORKINGSET_ACTIVATE_FILE': [31, 'darkPurple', lambda x: float(x), "Count", "", "Working Set Activate File"],
+#     'WORKINGSET_RESTORE_ANON': [32, 'darkGray', lambda x: float(x), "Count", "", "Working Set Restore Anon"],
+#     'WORKINGSET_RESTORE_FILE': [33, 'lightGray', lambda x: float(x), "Count", "", "Working Set Restore File"],
+#     'WORKINGSET_NODERECLAIM': [34, 'gold', lambda x: float(x), "Count", "", "Working Set No Reclaim"],
+#     'PGDEMOTE_KSWAPD': [35, 'pink', lambda x: float(x), "Count", "", "Page Demote KSWAPD"],
+#     'PGDEMOTE_DIRECT': [36, 'brown', lambda x: float(x), "Count", "", "Page Demote Direct"],
+#     'PGDEMOTE_KHUGEPAGED': [37, 'cyan', lambda x: float(x), "Count", "", "Page Demote KHugePaged"],
+#     'PGPROMOTE_SUCCESS': [38, 'lime', lambda x: float(x), "Count", "", "Page Promote Success"],
+#     'PGSCAN': [39, 'teal', lambda x: float(x), "Count", "", "Page Scan"],
+#     'PGSTEAL': [40, 'navy', lambda x: float(x), "Count", "", "Page Steal"],
+#     'PGSCAN_KSWAPD': [41, 'olive', lambda x: float(x), "Count", "", "Page Scan KSWAPD"],
+#     'PGSCAN_DIRECT': [42, 'maroon', lambda x: float(x), "Count", "", "Page Scan Direct"],
+#     'PGSCAN_KHUGEPAGED': [43, 'darkGreen', lambda x: float(x), "Count", "", "Page Scan KHugePaged"],
+#     'PGSTEAL_KSWAPD': [44, 'darkBlue', lambda x: float(x), "Count", "", "Page Steal KSWAPD"],
+#     'PGSTEAL_DIRECT': [45, 'darkCyan', lambda x: float(x), "Count", "", "Page Steal Direct"],
+#     'PGSTEAL_KHUGEPAGED': [46, 'darkMagenta', lambda x: float(x), "Count", "", "Page Steal KHugePaged"],
+#     'PGFAULT': [47, 'black', lambda x: float(x), "Count", "", "Page Faults"],
+#     'PGMAJFAULT': [48, 'gray', lambda x: float(x), "Count", "", "Major Page Faults"],
+#     'PGREFILL': [49, 'silver', lambda x: float(x), "Count", "", "Page Refill"],
+#     'PGACTIVATE': [50, 'lightBlue', lambda x: float(x), "Count", "", "Page Activate"],
+#     'PGDEACTIVATE': [51, 'lightGreen', lambda x: float(x), "Count", "", "Page Deactivate"],
+#     'PGLAZYFREE': [52, 'lightRed', lambda x: float(x), "Count", "", "Lazy Free"],
+#     'PGLAZYFREED': [53, 'darkOrange', lambda x: float(x), "Count", "", "Lazy Freed"],
+#     'SWPIN_ZERO': [54, 'darkPurple', lambda x: float(x), "Count", "", "Swap In Zero"],
+#     'SWPOUT_ZERO': [55, 'darkGray', lambda x: float(x), "Count", "", "Swap Out Zero"],
+#     'ZSWPIN': [56, 'gold', lambda x: float(x), "Count", "", "ZSwap In"],
+#     'ZSWPOUT': [57, 'pink', lambda x: float(x), "Count", "", "ZSwap Out"],
+#     'ZSWPWB': [58, 'brown', lambda x: float(x), "Count", "", "ZSwap Writeback"],
+#     'THP_FAULT_ALLOC': [59, 'cyan', lambda x: float(x), "Count", "", "THP Fault Alloc"],
+#     'THP_COLLAPSE_ALLOC': [60, 'lime', lambda x: float(x), "Count", "", "THP Collapse Alloc"],
+#     'THP_SWPOUT': [61, 'teal', lambda x: float(x), "Count", "", "THP Swap Out"],
+#     'THP_SWPOUT_FALLBACK': [62, 'navy', lambda x: float(x), "Count", "", "THP Swap Out Fallback"],
+#     'NUMA_PAGES_MIGRATED': [63, 'olive', lambda x: float(x), "Count", "", "NUMA Pages Migrated"],
+#     'NUMA_PTE_UPDATES': [64, 'maroon', lambda x: float(x), "Count", "", "NUMA PTE Updates"],
+#     'NUMA_HINT_FAULTS': [65, 'darkGreen', lambda x: float(x), "Count", "", "NUMA Hint Faults"],
+#     'RAM_USAGE': [66, 'blue', lambda x: float(x), "Memory", "(MiB)", "Memory Current"],
+#     'SWAP_USAGE': [67, 'red', lambda x: float(x), "Memory", "(MiB)", "Swap (cgroups)"],
+#     'MAXRAM': [68, 'green', lambda x: float(x), "Memory", "(MiB)", "Memory Max"],
+#     'PRESSURE_AVG10': [69, 'purple', lambda x: float(x), "Pressure", "(PSI)", "Memory Pressure"],
+#     'SUMMED_MEMORY': [70, 'purple', lambda x: float(x) / (1024 * 1024), "Memory", "(MiB)", "Summed Memory"],
+# }
 
 def check_args(axis):
     for name in axis:
@@ -227,6 +227,37 @@ def get_method(filename):
     
     return None
 
+def go_annotate(ax):
+    # Annotate the figure with background colors for different phases
+    # phases = [
+    #     {"start": 0, "end": 60, "color": "lightgray", "label": "No viewers"},
+    #     {"start": 60, "end": 120, "color": "lightblue", "label": "20 viewers"},
+    #     {"start": 120, "end": 180, "color": "lightgreen", "label": "40 viewers"},
+    #     {"start": 180, "end": 240, "color": "yellow", "label": "60 viewers"},
+    #     {"start": 240, "end": 720, "color": "orange", "label": "80 viewers"},
+    #     {"start": 720, "end": 920, "color": "lightgray", "label": None },
+    #     {"start": 920, "end": 980, "color": "lightgreen", "label": None },
+    #     {"start": 980, "end": None, "color": "orange", "label": None },
+    # ]
+    phases = [
+        {"start": 0, "end": 60, "color": "lightgray", "label": "Pas de récepteurs"},
+        {"start": 60, "end": 120, "color": "lightblue", "label": "20 récepteurs"},
+        {"start": 120, "end": 180, "color": "lightgreen", "label": "40 récepteurs"},
+        {"start": 180, "end": 240, "color": "yellow", "label": "60 récepteurs"},
+        {"start": 240, "end": 720, "color": "orange", "label": "80 récepteurs"},
+        {"start": 720, "end": 920, "color": "lightgray", "label": None },
+        {"start": 920, "end": 980, "color": "lightgreen", "label": None },
+        {"start": 980, "end": None, "color": "orange", "label": None },
+    ]
+
+    for phase in phases:
+        ax.axvspan(
+            phase["start"],
+            phase["end"] if phase["end"] is not None else ax.get_xlim()[1],
+            color=phase["color"],
+            alpha=0.3,
+            label=phase["label"]
+        )
 
 def plot_yy(ax, lines, header, x_axis_values, w, style, color, label):
     # get the correct index in the csv array
@@ -238,7 +269,7 @@ def plot_yy(ax, lines, header, x_axis_values, w, style, color, label):
         w[0] += 1
 
     # plot y values in function of x values on the plot
-    ax.plot(x_axis_values[w[0]:w[1]], y_axis_value[w[0]:w[1]], color=color, label=label, linestyle=style)
+    ax.plot(x_axis_values[w[0]:w[1]], y_axis_value[w[0]:w[1]], color=color, label=label, linestyle=style, linewidth=LINEWIDTH)
 
 def plot_y(ax, lines, header, x_axis_values, window, style, filename, multiple_on_y, twin):
     color = header[COLOR]
@@ -284,7 +315,7 @@ def save(filenames, x_axis, y_axis, y2_axis, show, res):
         else:
             dest_path[-1] = "plot_{}x{}_{}_{}.{}".format(x_axis, y_axis[0], res[0]//res[1], 1, ext)
 
-        plt.savefig("/".join(dest_path), format=ext)
+        plt.savefig("/".join(dest_path), format=ext, transparent=True)
 
 def find_window_index(values, window):
     window_index = [0, len(values)]
@@ -305,10 +336,12 @@ def find_window_index(values, window):
 
     return window_index
 
-def plot(filenames, x_axis, y_axis, y2_axis, window, show, res, location, legend_col, ylim = None):
+def plot(filenames, x_axis, y_axis, y2_axis, window, show, res, location, legend_col, ylim = None, annotate = False):
     # create figure with specified ratio
     # fig,ax = plt.subplots(figsize=(res[0], res[1]))
-    fig,ax = plt.subplots()
+    fig,ax = plt.subplots(figsize=(5,5))
+    fig.patch.set_alpha(0.0)
+    ax.set_facecolor('none')
     # set label for figure
     ax.set_xlabel("{} {}".format(headers[x_axis][LABEL], headers[x_axis][UNIT]))
     label_ind = LABEL if len(filenames) == 1 or len(y_axis) > 1 else NAME
@@ -320,6 +353,7 @@ def plot(filenames, x_axis, y_axis, y2_axis, window, show, res, location, legend
     if len(y2_axis) > 0:
         bx = ax.twinx()
         bx.set_ylabel("{} {}".format(headers[y2_axis[0]][label_ind], headers[y2_axis[0]][UNIT]))
+        bx.set_facecolor('none')
         twin = True
 
     multiple_on_y = len(y_axis) > 1 or len(y2_axis) > 1
@@ -356,8 +390,16 @@ def plot(filenames, x_axis, y_axis, y2_axis, window, show, res, location, legend
         if bx:
             bx.set_ylim(bottom=0)
 
+    ax.set_ylim([0,2500])
+    ax.set_xlim([0,400])
+
+    if annotate:
+        go_annotate(ax)
+
     # add legend to the figure
-    fig.legend(loc=location, bbox_to_anchor=ANCHOR[location], bbox_transform=ax.transAxes, ncol=legend_col, frameon=True)
+    leg = fig.legend(loc=location, bbox_to_anchor=ANCHOR[location], bbox_transform=ax.transAxes, ncol=legend_col, frameon=True)
+    if leg:
+        leg.get_frame().set_alpha(0.0)
 
     # save fig
     save(filenames, x_axis, y_axis, y2_axis, show, res)
@@ -378,6 +420,8 @@ if __name__ == "__main__":
     num_required_args = 4
 
     ylim = None
+
+    annotate = False
 
     if len(sys.argv) >= num_required_args:
         filenames = sys.argv[1].split(',')
@@ -400,6 +444,8 @@ if __name__ == "__main__":
             elif sys.argv[i].startswith("ylim="):
                 split = sys.argv[i].split('=')
                 ylim = int(split[1])
+            elif sys.argv[i] == "annotate":
+                annotate = True
             else:
                 y2_axis = sys.argv[i].split(',')
     else:
@@ -415,5 +461,5 @@ if __name__ == "__main__":
         print("You specified a column not valid")
         exit(1)
 
-    plot(filenames, x_axis, y_axis, y2_axis, window, show, (1980,960), location, legend_col, ylim) # ratio 2:1
+    plot(filenames, x_axis, y_axis, y2_axis, window, show, (1980,960), location, legend_col, ylim, annotate) # ratio 2:1
     # plot(filenames, x_axis, y_axis, y2_axis, window, show, (2,2), location) # ratio 1:1

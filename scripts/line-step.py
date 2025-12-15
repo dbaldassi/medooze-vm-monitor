@@ -16,7 +16,7 @@ colors = matplotlib.cm.get_cmap('tab20').colors
 plt.style.use(['science','ieee'])
 
 plt.rcParams.update({
-    "font.size": 12
+    "font.size": 16
 })
 
 # plt.rc('font', size=40)          # controls default text sizes
@@ -64,19 +64,19 @@ COLOR={
     "cgroups-reclaim": colors[0]
 }
 
-# LABELS = [ "Durée (s)", "CPU (\%)", "Pressure_Stall_Information (PSI)", "Débit_émetteur (kbps)",       
-#            "Débit_récepteur (kbps)",
-#            "FPS_émetteur (FPS)", "Viewer_FPS (FPS)", "RTT_Émetteur (ms)", 
-#            "Durée_Pression (s)", "Moyenne_pression (PSI)", "Pic_pression (PSI)",
-#            "Durée_chute_émetteur (s)", "Débit_chute_émetteur (kbps)", "Pic_chute_émetteur (kbps)", "Haute qualité ()",
-#             "Moyenne qualité ()", "Basse qualité ()" ]
+LABELS = [ "Durée (s)", "CPU (\%)", "Pressure_Stall_Information (PSI)", "Débit_émetteur (kbps)",       
+           "Débit_récepteur (kbps)",
+           "FPS_émetteur (FPS)", "Viewer_FPS (FPS)", "RTT_Émetteur (ms)", 
+           "Durée_Pression (s)", "Moyenne_pression (PSI)", "Pic_pression (PSI)",
+           "Durée_chute (s)", "Débit_émetteur_chute (kbps)", "Débit_émetteur_chute_pic (kbps)", "Haute_qualité ()",
+            "Moyenne_qualité ()", "Basse_qualité ()" ]
 
-LABELS = [ "Duration (s)", "CPU (\%)", "Pressure_Stall_Information (PSI)", "Publisher_Bitrate (kbps)",       
-           "Viewers_bitrate (kbps)",
-           "Publisher_FPS (FPS)", "Viewer_FPS (FPS)", "Publisher_RTT (ms)", 
-           "Pressure_duration (s)", "Pressure_average (PSI)", "Pressure_Peak (PSI)",
-           "Publisher_Collapse_Duration (s)", "Publisher_Collapse_Bitrate (kbps)", "Publisher_Collapse_peak (kbps)", "High quality ()",
-            "Medium quality ()", "Low quality ()" ]
+# LABELS = [ "Duration (s)", "CPU (\%)", "Pressure_Stall_Information (PSI)", "Publisher_Bitrate (kbps)",       
+#            "Viewers_bitrate (kbps)",
+#            "Publisher_FPS (FPS)", "Viewer_FPS (FPS)", "Publisher_RTT (ms)", 
+#            "Pressure_duration (s)", "Pressure_average (PSI)", "Pressure_Peak (PSI)",
+#            "Publisher_Collapse_Duration (s)", "Publisher_Collapse_Bitrate (kbps)", "Publisher_Collapse_peak (kbps)", "High quality ()",
+#             "Medium quality ()", "Low quality ()" ]
 
 # LABELS = [ "Active_to_inactive (%)", "First_Swap (%)", "Inactive_to_active (%)", "Inactive_to_swap (%)", "Memory_to_swap (%)", "Active cumulated sum (MiB)", "Free_memory_?? (MiB)"]
 
@@ -112,7 +112,7 @@ if __name__ == "__main__":
         exit(1)
 
     increment_xticks = []
-    no = [ "1500", "3000", "2000", "0", "1"]
+    no = [ "1500", "3000", "2000", "0"]
     # no = []
     for m in methods:
         tmp_stats = {}
@@ -156,6 +156,9 @@ if __name__ == "__main__":
     increment_xticks.sort()
     increment_xticks = [ str(i) for i in increment_xticks]
 
+    print("Increments found:", increment_xticks)
+    print(NUM)
+
     # fig, ax = plt.subplots()
 
     # stats = all_stats["cgroups-max"]
@@ -186,7 +189,9 @@ if __name__ == "__main__":
     for i in range(NUM):
         # for r in res:
         # fig,ax = plt.subplots(figsize=(r[0]*px, r[1]*px))
-        fig,ax = plt.subplots()
+        fig,ax = plt.subplots(figsize=(5,5))
+        fig.patch.set_alpha(0.0)
+        ax.set_facecolor('none')
         # curve for each method
         dfs = []
         for incr in increment_xticks:
@@ -200,7 +205,7 @@ if __name__ == "__main__":
                     values[m] = stats.stats[index][i].copy()
 
             # print(values)
-            dfs.append(pd.DataFrame(data=values).assign(Taille=incr))
+            dfs.append(pd.DataFrame(data=values).assign(Taille="0" if incr == "1"else incr))
 
 
         # for m in methods:
@@ -221,9 +226,11 @@ if __name__ == "__main__":
         # print(to_plot)
         ax = sns.boxplot(x="Taille", y="value", hue="Method", data=to_plot, palette=[colors[0], colors[1]])
 
+        label =  LABELS[i].replace("_", " ")
         # Set label name
+        ax.set_facecolor('none')
         ax.set_xlabel("Taille (MiB)")
-        ax.set_ylabel(LABELS[i].replace("_", " "))
+        ax.set_ylabel("Débit (kbps)" if "Débit" in label else ("Durée (s)" if "Durée" in label else label))
         # ax.set_xticklabels(increment_xticks)
         # ax.grid()
 
@@ -242,7 +249,7 @@ if __name__ == "__main__":
         # Image destination path
         dest_path = "allbox_{}_{}_{}.pdf".format(LABELS[i].split(" ")[0], 2, 1)
         # save fig !
-        plt.savefig(dest_path, format='pdf')
+        plt.savefig(dest_path, format='pdf', transparent=True)
         plt.close()
 
 

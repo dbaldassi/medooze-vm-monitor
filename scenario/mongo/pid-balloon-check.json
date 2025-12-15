@@ -1,0 +1,61 @@
+{
+    "name": "balloon-pid-mongodb",
+    "steps": [
+        {
+            "actions" : ["start_medooze"],
+            "start_publisher_launchers": ["mac"],
+            "start_viewer_launchers": ["baleze"],
+            "start_medooze": "vmservice"
+        },
+	{
+	    "require": "medooze_connected",
+	    "actions": [],
+	    "wait": 120000,
+	    "repeat": 1
+	},
+        {
+            "actions": ["start_mongo_benchmark"],
+            "start_mongo_benchmark" : { "op": 100000 },
+            "repeat" : 1
+        },
+	{
+	    "require": "mongo_finished",
+	    "actions": ["flush_db"],
+	    "flush_db": {},
+	    "repeat": 1,
+	    "wait": 60000
+	},
+	{
+            "actions": ["start_balloon_regul"],                                                                  
+            "start_balloon_regul": {
+                "timeout": 1,
+                "threshold": "{{threshold:200}}"
+            }, 
+            "repeat": 1
+        },
+	{
+	    "actions": [],
+	    "wait": 240000,
+	    "repeat": 1
+	},
+	{
+            "actions": ["stop_balloon_regul"],
+            "stop_balloon_regul":{},
+            "repeat": 1
+        },
+        {
+            "actions" : ["stop_medooze"],
+            "stop_publisher_launchers": ["mac"],
+            "stop_viewer_launchers": ["baleze"],
+            "stop_medooze": {}
+        },
+        {
+            "actions" : [ "save" ],
+            "save": ""
+        },
+        {
+            "actions" : ["exit"],
+            "exit" : {}
+        }
+    ]
+}

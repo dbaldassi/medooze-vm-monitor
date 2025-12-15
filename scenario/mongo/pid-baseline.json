@@ -1,0 +1,43 @@
+{
+    "name": "baseline-pid-mongodb-latest",
+    "steps": [
+        {
+            "actions" : ["start_medooze"],
+            "start_publisher_launchers": ["mac"],
+            "start_viewer_launchers": ["baleze"],
+            "start_medooze": "vmservice"
+        },
+	{ 
+            "actions": [], 
+            "wait": 120000, 
+            "repeat": 1 
+        }, 
+	{ 
+            "require": "medooze_connected", 
+            "actions": ["start_mongo_benchmark"], 
+            "start_mongo_benchmark" : { "op": 100000 }, 
+            "repeat" : 1 
+        },
+	 { 
+            "require": "mongo_finished", 
+            "actions": ["flush_db"], 
+            "flush_db": {}, 
+            "repeat": 1, 
+            "wait": 180000 
+        },
+        {
+            "actions" : ["stop_medooze"],
+            "stop_publisher_launchers": ["mac"],
+            "stop_viewer_launchers": ["baleze"],
+            "stop_medooze": {}
+        },
+        {
+            "actions" : [ "save" ],
+            "save": ""
+        },
+        {
+            "actions" : ["exit"],
+            "exit" : {}
+        }
+    ]
+}

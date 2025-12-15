@@ -8,3 +8,4 @@ package-lock.json
 screenlog*
 regulation-heuristics/
 run_all.sh
+results/
