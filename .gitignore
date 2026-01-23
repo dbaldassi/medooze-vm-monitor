@@ -9,3 +9,6 @@ screenlog*
 regulation-heuristics/
 run_all.sh
 results/
+__pycache__/
+*.pyc
+*.pyo
