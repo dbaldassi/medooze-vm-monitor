@@ -480,12 +480,14 @@ def plot(settings, x_axis, y_axis, y2_axis, window, indicator, annotate=False):
         x_series = apply_column_transform(df, x_axis, indicator[0], headers[x_axis][PROCESS])
         if x_series is None:
             continue
-        x_axis_values = x_series.to_list()
 
-        # find start and end index of the specified window
-        window_index = find_window_index(x_axis_values, window)
-        # Subtract the start window value to all values to start at 0
-        x_axis_values = [ x - x_axis_values[window_index[0]] for x in x_axis_values ]
+        # find start and end index of the specified window (still needs list for find_window_index)
+        x_axis_values_temp = x_series.to_list()
+        window_index = find_window_index(x_axis_values_temp, window)
+        
+        # Use Polars operations to subtract start value
+        x0 = x_series[window_index[0]]
+        x_axis_values = (x_series - x0).to_list()
  
         style = None
         if len(y2_axis) > 0:
@@ -583,12 +585,11 @@ def plot_delta(settings, x_axis, y_axis, window, indicator, annotate=False):
         ax.set_xlim([0,1200])
         header = headers[metric]
         
-        # Get baseline series using Polars
+        # Get baseline series using Polars with native slicing
         baseline_series_obj = apply_column_transform(baseline_df, metric, ind, header[PROCESS])
         if baseline_series_obj is None:
             continue
-        baseline_series_full = baseline_series_obj.to_list()
-        baseline_series = baseline_series_full[window_index[0]:window_index[1]]
+        baseline_series_sliced = baseline_series_obj.slice(window_index[0], window_index[1] - window_index[0])
 
         # Plot delta pour chaque fichier (sauf baseline)
         for fi, df in enumerate(all_dfs[1:], start=1):
@@ -596,13 +597,14 @@ def plot_delta(settings, x_axis, y_axis, window, indicator, annotate=False):
             series_obj = apply_column_transform(df, metric, ind, header[PROCESS])
             if series_obj is None:
                 continue
-            series_full = series_obj.to_list()
-            series = series_full[window_index[0]:window_index[1]]
+            
+            # Use Polars native slicing for efficiency
+            series_sliced = series_obj.slice(window_index[0], window_index[1] - window_index[0])
             
             # Alignement longueur min et calcul delta avec Polars
-            mlen = min(len(series), len(baseline_series), len(x_axis_values))
-            # Use Polars for efficient delta calculation
-            delta_series = pl.Series(series[:mlen]) - pl.Series(baseline_series[:mlen])
+            mlen = min(len(series_sliced), len(baseline_series_sliced), len(x_axis_values))
+            # Use Polars for efficient delta calculation with native slicing
+            delta_series = series_sliced.slice(0, mlen) - baseline_series_sliced.slice(0, mlen)
             delta = delta_series.to_list()
             
             method = methods[fi - 1]

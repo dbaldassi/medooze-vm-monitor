@@ -26,7 +26,7 @@ y_values = [header[PROCESS](line[y_idx]) if len(line) > y_idx else 0 for line in
 
 # After: Polars column operations
 df = open_csv(filename)  # Returns Polars DataFrame
-y_series = apply_column_transform(df, column_name, indicator[0], header[PROCESS])
+y_series = apply_column_transform(df, 'VM_CPU_USAGE', 'median', header[PROCESS])
 y_values = y_series.to_list()
 ```
 
