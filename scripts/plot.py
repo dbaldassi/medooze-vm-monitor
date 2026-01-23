@@ -93,7 +93,9 @@ def sliding_window(x, w):
 # label_key and name_key are used to look up translations
 def get_column_metadata(lang='fr'):
     """Returns column metadata with translations for the specified language."""
-    t = TRANSLATIONS.get(lang, TRANSLATIONS['fr'])
+    # Helper function to get name key based on language
+    def name_key(en_key, fr_key):
+        return en_key if lang == 'en' else fr_key
     
     return {
         'TIME': [0, None, lambda x: float(x) / 1000., 'TIME', 'TIME'],
@@ -107,23 +109,23 @@ def get_column_metadata(lang='fr'):
         'MEMORY_PRESSURE_AVG60': [8],
         'MEMORY_PRESSURE_AVG300': [9],
         'MEMORY_PRESSURE_TOTAL': [10],
-        'VIRSH_ACTUAL': [11, 'k', lambda x: float(x) / 1024., 'MEMORY', 'vm_allocated_memory' if lang == 'en' else 'vm_allocated_memory_fr'],
-        'VIRSH_UNUSED': [12, 'tomato', lambda x: float(x) / 1024., 'MEMORY', 'vm_unused_memory' if lang == 'en' else 'vm_unused_memory_fr'],
-        'VIRSH_USABLE': [13, 'm', lambda x: float(x) / 1024., 'MEMORY', 'guest_free_memory' if lang == 'en' else 'guest_free_memory_fr'],
-        'VIRSH_AVAILABLE': [14, 'g', lambda x: float(x) / 1024., 'MEMORY', 'guest_vram' if lang == 'en' else 'guest_capacity'],
+        'VIRSH_ACTUAL': [11, 'k', lambda x: float(x) / 1024., 'MEMORY', name_key('vm_allocated_memory', 'vm_allocated_memory_fr')],
+        'VIRSH_UNUSED': [12, 'tomato', lambda x: float(x) / 1024., 'MEMORY', name_key('vm_unused_memory', 'vm_unused_memory_fr')],
+        'VIRSH_USABLE': [13, 'm', lambda x: float(x) / 1024., 'MEMORY', name_key('guest_free_memory', 'guest_free_memory_fr')],
+        'VIRSH_AVAILABLE': [14, 'g', lambda x: float(x) / 1024., 'MEMORY', name_key('guest_vram', 'guest_capacity')],
         'VIRSH_SWAP_IN': [15, '', lambda x: float(x) / 1024., 'MEMORY', 'vm_swap_in'],
-        'VIRSH_SWAP_OUT': [16, 'r', lambda x: float(x) / 1024., 'MEMORY', 'guest_swap' if lang == 'en' else 'guest_swap_fr'],
+        'VIRSH_SWAP_OUT': [16, 'r', lambda x: float(x) / 1024., 'MEMORY', name_key('guest_swap', 'guest_swap_fr')],
         'VIRSH_MINOR_FAULT': [17],
         'VIRSH_MAJOR_FAULT': [18],
-        'PUBLISHER_BITRATE': [19, 'b', lambda x: sliding_window(x, s_windows["publisher_bitrate"]), 'BITRATE', 'publisher_bitrate' if lang == 'en' else 'publisher_bitrate_fr'],
-        'PUBLISHER_FPS': [20, 'r', lambda x: sliding_window(x, s_windows["publisher_fps"]), 'FPS', 'publisher_fps' if lang == 'en' else 'publisher_fps_fr'],
+        'PUBLISHER_BITRATE': [19, 'b', lambda x: sliding_window(x, s_windows["publisher_bitrate"]), 'BITRATE', name_key('publisher_bitrate', 'publisher_bitrate_fr')],
+        'PUBLISHER_FPS': [20, 'r', lambda x: sliding_window(x, s_windows["publisher_fps"]), 'FPS', name_key('publisher_fps', 'publisher_fps_fr')],
         'PUBLISHER_RES': [21],
-        'PUBLISHER_RTT': [22, 'r', lambda x: float(x), 'DELAY', 'publisher_rtt' if lang == 'en' else 'publisher_rtt_fr'],
+        'PUBLISHER_RTT': [22, 'r', lambda x: float(x), 'DELAY', name_key('publisher_rtt', 'publisher_rtt_fr')],
         'CONNECTION_STATE': [23],
-        'VIEWER_COUNT': [24, 'y', lambda x: float(x), 'VIEWER_COUNT', 'viewer_count' if lang == 'en' else 'viewer_count_fr'],
-        'VM_MEMORY_USAGE': [25, 'midnightBlue', lambda x: float(x), 'MEMORY', 'guest_memory' if lang == 'en' else 'guest_memory_fr'],
+        'VIEWER_COUNT': [24, 'y', lambda x: float(x), 'VIEWER_COUNT', name_key('viewer_count', 'viewer_count_fr')],
+        'VM_MEMORY_USAGE': [25, 'midnightBlue', lambda x: float(x), 'MEMORY', name_key('guest_memory', 'guest_memory_fr')],
         'VM_MEMORY_FREE': [26, 'tomato', lambda x: float(x), 'MEMORY', 'vm_free_memory'],
-        'VM_CPU_USAGE': [27, 'b', lambda x: max(0, float(x) * 100), 'CPU', 'vm_cpu_usage' if lang == 'en' else 'vm_cpu_usage_fr'],
+        'VM_CPU_USAGE': [27, 'b', lambda x: max(0, float(x) * 100), 'CPU', name_key('vm_cpu_usage', 'vm_cpu_usage_fr')],
         'VM_FREE_TOTAL': [28, 'purple', lambda x: float(x), 'MEMORY', 'vm_free_total'], 
         'VM_FREE_USED': [29, 'orange', lambda x: float(x), 'MEMORY', 'vm_free_used'], 
         'VM_FREE_BUFCACHE': [30, 'cyan', lambda x: float(x), 'MEMORY', 'vm_free_bufcache'],
@@ -141,13 +143,13 @@ def get_column_metadata(lang='fr'):
         'TX_ERRORS': [42],
         'TX_MISSED': [43],
         'VIEWER_TARGET': [44, 'k', lambda x: float(x), 'BITRATE', 'viewer_encoder_target'],
-        'VIEWER_BITRATE': [45, 'g', lambda x: sliding_window(x, s_windows["viewer_bitrate"]), 'BITRATE', 'viewer_received_bitrate' if lang == 'en' else 'viewer_received_bitrate_fr'],
+        'VIEWER_BITRATE': [45, 'g', lambda x: sliding_window(x, s_windows["viewer_bitrate"]), 'BITRATE', name_key('viewer_received_bitrate', 'viewer_received_bitrate_fr')],
         'VIEWER_RTT': [46],
-        'VIEWER_DELAY': [47, 'm', lambda x: float(x), 'DELAY', 'end_to_end_delay' if lang == 'en' else 'end_to_end_delay_fr'],
-        'VIEWER_FPS': [48, 'm', lambda x: sliding_window(x, s_windows["viewer_fps"]), 'FPS', 'viewer_received_fps' if lang == 'en' else 'viewer_received_fps_fr'],
-        'VIEWER_RID_H': [49, 'g', lambda x: float(x), 'RID_COUNT', 'simulcast_high_layer' if lang == 'en' else 'simulcast_high_layer_fr'],
-        'VIEWER_RID_M': [50, 'b', lambda x: float(x), 'RID_COUNT', 'simulcast_medium_layer' if lang == 'en' else 'simulcast_medium_layer_fr'],
-        'VIEWER_RID_L': [51, 'r', lambda x: float(x), 'RID_COUNT', 'simulcast_low_layer' if lang == 'en' else 'simulcast_low_layer_fr'],
+        'VIEWER_DELAY': [47, 'm', lambda x: float(x), 'DELAY', name_key('end_to_end_delay', 'end_to_end_delay_fr')],
+        'VIEWER_FPS': [48, 'm', lambda x: sliding_window(x, s_windows["viewer_fps"]), 'FPS', name_key('viewer_received_fps', 'viewer_received_fps_fr')],
+        'VIEWER_RID_H': [49, 'g', lambda x: float(x), 'RID_COUNT', name_key('simulcast_high_layer', 'simulcast_high_layer_fr')],
+        'VIEWER_RID_M': [50, 'b', lambda x: float(x), 'RID_COUNT', name_key('simulcast_medium_layer', 'simulcast_medium_layer_fr')],
+        'VIEWER_RID_L': [51, 'r', lambda x: float(x), 'RID_COUNT', name_key('simulcast_low_layer', 'simulcast_low_layer_fr')],
     }
 
 # Specific name translations
@@ -246,12 +248,8 @@ def check_args(axis, headers):
             return False
     return True
 
-def open_csv_polars(filename):
-    """Open CSV file using Polars."""
-    return pl.read_csv(filename)
-
 def open_csv(filename):
-    """Open CSV file and return as list of lists for compatibility."""
+    """Open CSV file using Polars and return as list of lists for compatibility."""
     df = pl.read_csv(filename)
     # Convert to list of lists (excluding headers)
     return df.to_numpy().tolist()
@@ -374,7 +372,7 @@ def save(settings, x_axis, y_axis, y2_axis, indicator):
     filenames = settings.get("files", [])
 
     if show:
-        # show the figure in a window as asked
+        # show the figure in a window if requested
         plt.show()
     else:
         # Save the figure otherwise
@@ -465,7 +463,7 @@ def plot(settings, x_axis, y_axis, y2_axis, window, indicator, annotate=False):
 
     multiple_on_y = len(y_axis) > 1 or len(y2_axis) > 1
 
-    # iterate through all specified file to combine them on one fig
+    # iterate through all specified files to combine them on one fig
     for filename in filenames:
         # open the csv average file
         lines = open_csv(filename) 
