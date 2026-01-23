@@ -64,14 +64,14 @@ COLOR={
     "cgroups-reclaim": colors[0]
 }
 
-LABELS = [ "Durée (s)", "CPU (\%)", "Pressure_Stall_Information (PSI)", "Débit_émetteur (kbps)",       
+LABELS = [ "Durée (s)", "CPU (\\%)", "Pressure_Stall_Information (PSI)", "Débit_émetteur (kbps)",
            "Débit_récepteur (kbps)",
            "FPS_émetteur (FPS)", "Viewer_FPS (FPS)", "RTT_Émetteur (ms)", 
            "Durée_Pression (s)", "Moyenne_pression (PSI)", "Pic_pression (PSI)",
            "Durée_chute (s)", "Débit_émetteur_chute (kbps)", "Débit_émetteur_chute_pic (kbps)", "Haute_qualité ()",
             "Moyenne_qualité ()", "Basse_qualité ()" ]
 
-# LABELS = [ "Duration (s)", "CPU (\%)", "Pressure_Stall_Information (PSI)", "Publisher_Bitrate (kbps)",       
+# LABELS = [ "Duration (s)", "CPU (\\%)", "Pressure_Stall_Information (PSI)", "Publisher_Bitrate (kbps)",
 #            "Viewers_bitrate (kbps)",
 #            "Publisher_FPS (FPS)", "Viewer_FPS (FPS)", "Publisher_RTT (ms)", 
 #            "Pressure_duration (s)", "Pressure_average (PSI)", "Pressure_Peak (PSI)",
@@ -96,20 +96,9 @@ def check_no(f, no):
         
     return True
 
-if __name__ == "__main__":
-    methods = []
+def process_and_plot(settings):
+    methods = settings["reclamation"]
     all_stats = {}
-
-    if len(sys.argv) > 1:
-        for i in range(1, len(sys.argv)):
-            if not os.path.isdir(sys.argv[i]):
-                print("This is not a valid directory", sys.argv[i])
-                exit(1)
-
-            methods.append(sys.argv[i])
-    else:
-        print("Please provide at least one folder")
-        exit(1)
 
     increment_xticks = []
     no = [ "1500", "3000", "2000", "0"]
@@ -222,7 +211,7 @@ if __name__ == "__main__":
             # ax.plot(stats.increment, to_plot, "o-", color=stats.color, label=m, linewidth=3)
 
         concat = pd.concat(dfs)
-        to_plot = pd.melt(concat, id_vars=['Taille'], var_name=['Method'])  
+        to_plot = pd.melt(concat, id_vars=['Taille'], var_name='Method')
         # print(to_plot)
         ax = sns.boxplot(x="Taille", y="value", hue="Method", data=to_plot, palette=[colors[0], colors[1]])
 
@@ -253,3 +242,31 @@ if __name__ == "__main__":
         plt.close()
 
 
+def run(settings):
+    for method in settings.get("reclamation", []):
+        if not os.path.isdir(method):
+            print("This is not a valid directory: ", method)
+            return
+
+    process_and_plot(settings)
+
+
+if __name__ == "__main__":
+    methods = []
+
+    if len(sys.argv) > 1:
+        for i in range(1, len(sys.argv)):
+            if not os.path.isdir(sys.argv[i]):
+                print("This is not a valid directory", sys.argv[i])
+                exit(1)
+
+            methods.append(sys.argv[i])
+    else:
+        print("Please provide at least one folder")
+        exit(1)
+
+    settings = {
+        reclamation: methods
+    }
+
+    process_and_plot(settings)

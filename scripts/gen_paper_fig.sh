@@ -141,39 +141,39 @@ INDICATOR=median
 
 # # cgroups
 
-# cd $root_wd/results/1ton/double/cgroups-regul-stddev-30-viewer-double-increase-par20
-# avg_bitrate_file=cgroups-regul-stddev-30-viewer-double-increase-par20_2025-05-01-18-59-48_average_10.csv
-# avg_cgroup_file=cgroup_stats_2025-05-01-18-58-18_average_10.csv
+cd $root_wd/results/1ton/double/cgroups-regul-stddev-30-viewer-double-increase-par20
+avg_bitrate_file=cgroups-regul-stddev-30-viewer-double-increase-par20_2025-05-01-18-59-48_average_10.csv
+avg_cgroup_file=cgroup_stats_2025-05-01-18-58-18_average_10.csv
 
-# # $plot_exe $avg_bitrate_file $INDICATOR TIME PUBLISHER_BITRATE,VIEWER_BITRATE PUBLISHER_RTT,VIEWER_DELAY loc=$CENTER_LEFT annotate # leg_col=2
-# # move_files . $root_wd/$DEST/regulation/cgroups/regul-par20viewers
+$plot_exe $avg_bitrate_file $INDICATOR TIME PUBLISHER_BITRATE,VIEWER_BITRATE PUBLISHER_RTT,VIEWER_DELAY loc=$CENTER_LEFT annotate # leg_col=2
+move_files . $root_wd/$DEST/regulation/cgroups/regul-par20viewers
 
-# cd cgroup_stats
+cd cgroup_stats
 
-# $cgroup_plot_exe $avg_cgroup_file TIME RAM_USAGE,ACTIVE_ANON,SWAP_USAGE,INACTIVE_ANON ylim=4400 loc=$LOWER_CENTER leg_col=3 annotate # loc=$LOWER_CENTER leg_col=2
-# move_files . $root_wd/$DEST/regulation/cgroups/regul-par20viewers
+$cgroup_plot_exe $avg_cgroup_file TIME RAM_USAGE,ACTIVE_ANON,SWAP_USAGE,INACTIVE_ANON ylim=4400 loc=$LOWER_CENTER leg_col=3 annotate # loc=$LOWER_CENTER leg_col=2
+move_files . $root_wd/$DEST/regulation/cgroups/regul-par20viewers
 
-## ballooning
-# cd $root_wd/results/1ton/double/balloon-pid-viewer-increase-double-longer-par20
-# avg_bitrate_file=balloon-pid-viewer-increase-double-longer-par20_2025-05-01-19-01-11_average_10.csv
+ballooning
+cd $root_wd/results/1ton/double/balloon-pid-viewer-increase-double-longer-par20
+avg_bitrate_file=balloon-pid-viewer-increase-double-longer-par20_2025-05-01-19-01-11_average_10.csv
 
-# # $plot_exe $avg_bitrate_file $INDICATOR TIME PUBLISHER_BITRATE,VIEWER_BITRATE PUBLISHER_RTT,VIEWER_DELAY loc=$CENTER_LEFT annotate # leg_col=2
-# $plot_exe $avg_bitrate_file $INDICATOR TIME VIRSH_AVAILABLE,VIRSH_USABLE,VIRSH_SWAP_OUT,VM_MEMORY_USAGE  loc=$LOWER_CENTER leg_col=3 annotate # ylim=4400
-# move_files . $root_wd/$DEST/regulation/ballooning/regul-par20viewers
+# $plot_exe $avg_bitrate_file $INDICATOR TIME PUBLISHER_BITRATE,VIEWER_BITRATE PUBLISHER_RTT,VIEWER_DELAY loc=$CENTER_LEFT annotate # leg_col=2
+$plot_exe $avg_bitrate_file $INDICATOR TIME VIRSH_AVAILABLE,VIRSH_USABLE,VIRSH_SWAP_OUT,VM_MEMORY_USAGE  loc=$LOWER_CENTER leg_col=3 annotate # ylim=4400
+move_files . $root_wd/$DEST/regulation/ballooning/regul-par20viewers
 
-# # baseline
-# cd $root_wd/results/1ton/double/noregul-viewer-increase-double-longer-par20
-# avg_bitrate_file=noregul-viewer-increase-double-longer-par20_2025-05-01-19-03-18_average_10.csv
+# baseline
+cd $root_wd/results/1ton/double/noregul-viewer-increase-double-longer-par20
+avg_bitrate_file=noregul-viewer-increase-double-longer-par20_2025-05-01-19-03-18_average_10.csv
 
-# $plot_exe $avg_bitrate_file $INDICATOR TIME VIRSH_AVAILABLE,VIRSH_USABLE,VIRSH_SWAP_OUT,VM_MEMORY_USAGE  loc=$LOWER_CENTER leg_col=3 annotate # ylim=4400
-# # $plot_exe $avg_bitrate_file $INDICATOR TIME PUBLISHER_BITRATE,VIEWER_BITRATE PUBLISHER_RTT,VIEWER_DELAY loc=$LOWER_CENTER leg_col=3 annotate
-# move_files . $root_wd/$DEST/regulation/baseline/regul-par20viewers
+$plot_exe $avg_bitrate_file $INDICATOR TIME VIRSH_AVAILABLE,VIRSH_USABLE,VIRSH_SWAP_OUT,VM_MEMORY_USAGE  loc=$LOWER_CENTER leg_col=3 annotate # ylim=4400
+# $plot_exe $avg_bitrate_file $INDICATOR TIME PUBLISHER_BITRATE,VIEWER_BITRATE PUBLISHER_RTT,VIEWER_DELAY loc=$LOWER_CENTER leg_col=3 annotate
+move_files . $root_wd/$DEST/regulation/baseline/regul-par20viewers
 
-# cd cgroup_stats
+cd cgroup_stats
 
-# avg_file=cgroup_stats_2025-11-25-13-33-52_average_10.csv
-# $cgroup_plot_exe $avg_file TIME RAM_USAGE,ACTIVE_ANON,SWAP_USAGE,INACTIVE_ANON ylim=4400 loc=$LOWER_CENTER leg_col=3 annotate # loc=$LOWER_CENTER leg_col=2
-# move_files . $root_wd/$DEST/regulation/baseline/regul-par20viewers
+avg_file=cgroup_stats_2025-11-25-13-33-52_average_10.csv
+$cgroup_plot_exe $avg_file TIME RAM_USAGE,ACTIVE_ANON,SWAP_USAGE,INACTIVE_ANON ylim=4400 loc=$LOWER_CENTER leg_col=3 annotate # loc=$LOWER_CENTER leg_col=2
+move_files . $root_wd/$DEST/regulation/baseline/regul-par20viewers
 
 # # delta regul
 # cd $root_wd/results/1ton/double/noregul-viewer-increase-double-longer-par20
@@ -187,7 +187,7 @@ INDICATOR=median
 
 # redis 
 
-cd results/redis-10-again
+# cd results/redis-10-again
 
 # cd baseline-pid-mongodb
 # pwd
@@ -215,16 +215,16 @@ file=baseline-pid-mongodb-latest_2025-10-31-17-30-58_average_11.csv
 $plot_exe $file $INDICATOR TIME MEMORY_USED,VM_MEMORY_USAGE,SWAP,VIRSH_AVAILABLE loc=$LOWER_CENTER leg_col=2 
 move_files . $root_wd/$DEST/db/baseline
 
-# cd $root_wd/results/cgroups-pid-mongodb-latest
-# file=cgroups-pid-mongodb-latest_2025-10-31-11-11-35_average_11.csv
-# $plot_exe $file $INDICATOR TIME MEMORY_USED,VM_MEMORY_USAGE,SWAP loc=$LOWER_LEFT # loc=$LOWER_CENTER # leg_col=2
-# move_files . $root_wd/$DEST/db/cgroups
+cd $root_wd/results/cgroups-pid-mongodb-latest
+file=cgroups-pid-mongodb-latest_2025-10-31-11-11-35_average_11.csv
+$plot_exe $file $INDICATOR TIME MEMORY_USED,VM_MEMORY_USAGE,SWAP loc=$LOWER_LEFT # loc=$LOWER_CENTER # leg_col=2
+move_files . $root_wd/$DEST/db/cgroups
 
-# cd $root_wd/results/balloon-pid-mongodb-latest-300
+cd $root_wd/results/balloon-pid-mongodb-latest-300
 
-# file=balloon-pid-mongodb-latest-300_2025-10-31-16-59-12_average_10.csv
-# $plot_exe $file $INDICATOR TIME VIRSH_AVAILABLE,VM_MEMORY_USAGE,SWAP loc=$LOWER_LEFT # loc=$LOWER_CENTER # leg_col=2
-# move_files . $root_wd/$DEST/db/ballooning
+file=balloon-pid-mongodb-latest-300_2025-10-31-16-59-12_average_10.csv
+$plot_exe $file $INDICATOR TIME VIRSH_AVAILABLE,VM_MEMORY_USAGE,SWAP loc=$LOWER_LEFT # loc=$LOWER_CENTER # leg_col=2
+move_files . $root_wd/$DEST/db/ballooning
 
 
 # # one step closer

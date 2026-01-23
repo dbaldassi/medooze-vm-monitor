@@ -407,6 +407,44 @@ def plot(filenames, x_axis, y_axis, y2_axis, window, show, res, location, legend
     # free figure
     plt.close()
 
+
+"""
+Arguments:
+    - files (list): List of input CSV files.
+    - indicator (list): List of indicators (e.g., 'avg', 'median', '1stq', etc.).
+    - x (str): Name of the key for the X-axis.
+    - y (list): List of names of the keys for the Y-axis.
+    - y2 (list, optional): List of names of the keys for Y2-axis (dual axis), default: None.
+    - window (list, optional): Sliding window [start, end] with two integers, default: None.
+    - location (int, optional): Legend location in the graph, default: 1 (upper-right corner).
+    - legend_col (int, optional): Number of columns in the legend, default: 1.
+    - annotate (bool, optional): Whether to add annotations to the points, default: False.
+    - show (bool, optional): Whether to display the graph after generation, default: False.
+Returns:
+    - None
+"""
+def process_and_plot(settings):
+    filenames = settings.get("files", [])
+    # indicator = settings.get("indicator", [])
+    x_axis = settings.get("x")
+    y_axis = settings.get("y", [])
+    y2_axis = settings.get("y2", [])
+    window = settings.get("window")
+    location = settings.get("location", 1)
+    legend_col = settings.get("leg_col", 1)
+    annotate = settings.get("annotate", False)
+    show = settings.get("show", False)
+    delta = settings.get("delta", False)
+    ylim = settings.get("ylim", False)
+
+    # Valider les axes X et Y (et Y2 si fourni)
+    is_valid = check_args([x_axis, *y_axis, *(y2_axis or [])])
+    if not is_valid:
+        raise ValueError(f"[ERREUR] Specified column not valid : {x_axis}, {y_axis}, {y2_axis}")
+
+    plot(filenames, x_axis, y_axis, y2_axis, window, show, (1024,1024), location, legend_col, ylim, annotate) # ratio 1:1
+
+
 if __name__ == "__main__":
     x_axis = None
     y_axis = []

@@ -1,0 +1,198 @@
+global-settings:
+  out-dir: /home/david/Documents/workspace/medooze-vm-monitor/figure-yaml
+  indicator:
+    - median
+  exp-dir: results
+  format: pdf
+  lang: en
+
+exps:
+
+  steps:
+    description: "Box plot for different metrics while performing in function of the reclaiming size (one reclamation during the exp)"
+    settings:
+      out-dir: steps
+    stages:
+      box:
+        settings:
+          exp-dir: 1ton/ok/one-step-closer
+          out-dir: steps
+        figures:
+          - name: all
+            protocol: stepbox
+            reclamation:
+              - cgroups-reclaim
+              - ballooning
+
+  regulation:
+    description: "Exp to observe behavior of the heuristic during a VM lifetime on a SFU, adding and removing viewers"
+    settings:
+      out-dir: regulation
+      exp-dir: 1ton/double
+    stages:
+      cgroups:
+        settings:
+          exp-dir: cgroups-regul-stddev-30-viewer-double-increase-par20
+          out-dir: cgroups
+        figures:
+          - name: cgroup_bitrates_stats
+            protocol: plot
+            files:
+              - cgroups-regul-stddev-30-viewer-double-increase-par20_2025-05-01-18-59-48_average_10.csv
+            x: TIME
+            y:
+              - PUBLISHER_BITRATE
+              - VIEWER_BITRATE
+            y2:
+              - PUBLISHER_RTT
+              - VIEWER_DELAY
+            loc: CENTER_LEFT
+            annotate: false
+          - name: cgroup_memory_stats
+            protocol: plot_cgroup
+            exp-dir: cgroup_stats
+            files:
+              - cgroup_stats_2025-05-01-18-58-18_average_10.csv
+            x: TIME
+            y:
+              - RAM_USAGE
+              - ACTIVE_ANON
+              - SWAP_USAGE
+              - INACTIVE_ANON
+            ylim: 4400
+            loc: LOWER_CENTER
+            leg_col: 3
+            annotate: false
+      ballooning:
+        settings:
+          exp-dir: balloon-pid-viewer-increase-double-longer-par20
+          out-dir: ballooning
+        figures:
+          - name: balloning_bitrates_stats
+            protocol: plot
+            files:
+              - balloon-pid-viewer-increase-double-longer-par20_2025-05-01-19-01-11_average_10.csv
+            x: TIME
+            y:
+              - PUBLISHER_BITRATE
+              - VIEWER_BITRATE
+            y2:
+              - PUBLISHER_RTT
+              - VIEWER_DELAY
+            loc: CENTER_LEFT
+            annotate: false
+          - name: ballooning_memory_stats
+            protocol: plot
+            files:
+              - balloon-pid-viewer-increase-double-longer-par20_2025-05-01-19-01-11_average_10.csv
+            x: TIME
+            y:
+              - VIRSH_AVAILABLE
+              - VIRSH_USABLE
+              - VIRSH_SWAP_OUT
+              - VM_MEMORY_USAGE
+            loc: LOWER_CENTER
+            leg_col: 3
+            annotate: false
+      baseline:
+        settings:
+          exp-dir: noregul-viewer-increase-double-longer-par20
+          out-dir: baseline
+        figures:
+          - name: baseline_bitrates_stats
+            protocol: plot
+            files:
+              - noregul-viewer-increase-double-longer-par20_2025-05-01-19-03-18_average_10.csv
+            x: TIME
+            y:
+              - PUBLISHER_BITRATE
+              - VIEWER_BITRATE
+            y2:
+              - PUBLISHER_RTT
+              - VIEWER_DELAY
+            loc: CENTER_LEFT
+            annotate: true
+          - name: baseline_memory_stats
+            protocol: plot
+            files:
+              - noregul-viewer-increase-double-longer-par20_2025-05-01-19-03-18_average_10.csv
+            x: TIME
+            y:
+              - VIRSH_AVAILABLE
+              - VIRSH_USABLE
+              - VIRSH_SWAP_OUT
+              - VM_MEMORY_USAGE
+            loc: LOWER_CENTER
+            leg_col: 3
+            annotate: true
+          - name: baseline_cgroups_memory_stats
+            protocol: plot_cgroup
+            exp-dir: cgroup_stats
+            files:
+              - cgroup_stats_2025-11-25-13-33-52_average_10.csv
+            x: TIME
+            y:
+              - RAM_USAGE
+              - ACTIVE_ANON
+              - SWAP_USAGE
+              - INACTIVE_ANON
+            ylim: 4400
+            loc: LOWER_CENTER
+            leg_col: 3
+            annotate: true
+
+  db:
+    description: "Exp to observe the behavior of the heuristics on an in-memory redis server"
+    settings:
+      out-dir: db
+    stages:
+      baseline:
+        description: "This is the baseline scenario"
+        settings:
+          exp-dir: baseline-pid-mongodb-latest
+          out-dir: baseline
+        figures:
+          - name: redis_baseline
+            protocol: plot
+            files:
+              - baseline-pid-mongodb-latest_2025-10-31-17-30-58_average_11.csv
+            x: TIME
+            y:
+              - MEMORY_USED
+              - VM_MEMORY_USAGE
+              - SWAP
+              - VIRSH_AVAILABLE
+            loc: LOWER_CENTER
+            leg_col: 2
+      cgroups:
+        description: "This is the cgroup scenario"
+        settings:
+          exp-dir: cgroups-pid-mongodb-latest
+          out-dir: cgroups
+        figures:
+          - name: redis_cgroups
+            protocol: plot
+            files:
+              - cgroups-pid-mongodb-latest_2025-10-31-11-11-35_average_11.csv
+            x: TIME
+            y:
+              - MEMORY_USED
+              - VM_MEMORY_USAGE
+              - SWAP
+            loc: LOWER_LEFT
+      ballooning:
+        description: "This is the ballooning scenario"
+        settings:
+          exp-dir: balloon-pid-mongodb-latest
+          out-dir: ballooning
+        figures:
+          - name: redis_ballooning
+            protocol: plot
+            files:
+              - balloon-pid-mongodb-latest_2025-10-31-11-18-20_average_11.csv
+            x: TIME
+            y:
+              - VIRSH_AVAILABLE
+              - VM_MEMORY_USAGE
+              - SWAP
+            loc: LOWER_LEFT
