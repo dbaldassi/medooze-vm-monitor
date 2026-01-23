@@ -249,16 +249,19 @@ def check_args(axis, headers):
     return True
 
 def open_csv(filename):
-    """Open CSV file using Polars and return as list of lists for compatibility."""
-    df = pl.read_csv(filename)
-    # Convert to list of lists (excluding headers)
-    return df.to_numpy().tolist()
+    """Open CSV file using Polars and return DataFrame."""
+    return pl.read_csv(filename)
 
-def get_index(idx, indicator):
-    # Average has 6 columns for the same stat, one per indicator, which average, median, quartile ...
-    # tis function returns the correct index in the file
-    indicator_idx = indicators.index(indicator)
-    return idx * len(indicators) + indicator_idx
+def get_column_name_with_indicator(column_name, indicator):
+    """Get the actual column name in the CSV with indicator suffix."""
+    return f"{column_name}_{indicator}"
+
+def apply_column_transform(df, column_name, indicator, process_func):
+    """Apply transformation function to a column using Polars operations."""
+    col_name = get_column_name_with_indicator(column_name, indicator)
+    if col_name in df.columns:
+        return df.select(pl.col(col_name).map_elements(process_func, return_dtype=pl.Float64)).to_series()
+    return None
 
 def get_method(filename):
     name = filename.split('/')[-1]
@@ -323,27 +326,33 @@ def go_annotate(ax, lang='fr'):
         )
     
 
-def plot_yy(ax, lines, header, indicator, x_axis_values, w, style, color, label):
-    if len(indicator) == 1: # only one indicator asked, for instance only the average
-        # get the correct index in the csv array
-        y_idx = get_index(header[INDEX], indicator[0])
-        # get corresponding values
-        y_axis_value = [ header[PROCESS](line[y_idx]) if len(line) > y_idx else 0 for line in lines ]
-        # plot y values in function of x values on the plot
-        if y_axis_value[w[0]] == 0:
-            w[0] += 1
+def plot_yy(ax, df, column_name, header, indicator, x_axis_values, w, style, color, label):
+    """Plot Y values using Polars DataFrame operations."""
+    if len(indicator) == 1:
+        # Get the transformed column data using Polars
+        y_series = apply_column_transform(df, column_name, indicator[0], header[PROCESS])
+        if y_series is not None:
+            y_axis_value = y_series.to_list()
+            
+            # Handle edge case where first value is 0
+            if len(y_axis_value) > w[0] and y_axis_value[w[0]] == 0:
+                w[0] += 1
 
-        ax.plot(x_axis_values[w[0]:w[1]], y_axis_value[w[0]:w[1]], color=color, label=label, linestyle=style, linewidth=LINEWIDTH)
-        
+            ax.plot(x_axis_values[w[0]:w[1]], y_axis_value[w[0]:w[1]], 
+                   color=color, label=label, linestyle=style, linewidth=LINEWIDTH)
     else:
+        # Plot multiple indicators
         for ind in indicator:
-            y_idx = get_index(header[INDEX], ind)
-            y_axis_value = [ header[PROCESS](line[y_idx]) if len(line) > y_idx else 0 for line in lines ]
-            ax.plot(x_axis_values[w[0]:w[1]], y_axis_value[w[0]:w[1]], label=ind)
+            y_series = apply_column_transform(df, column_name, ind, header[PROCESS])
+            if y_series is not None:
+                y_axis_value = y_series.to_list()
+                ax.plot(x_axis_values[w[0]:w[1]], y_axis_value[w[0]:w[1]], label=ind)
 
 colors = matplotlib.cm.get_cmap('tab10').colors
 c = [1,0]
-def plot_y(ax, lines, header, indicator, x_axis_values, window, style, filename, multiple_on_y, twin, lang):
+
+def plot_y(ax, df, column_name, header, indicator, x_axis_values, window, style, filename, multiple_on_y, twin, lang):
+    """Plot Y axis using Polars DataFrame."""
     color = header[COLOR]
     label = get_column_name(None, header, lang)
 
@@ -360,9 +369,8 @@ def plot_y(ax, lines, header, indicator, x_axis_values, window, style, filename,
                 label = "{} ({})".format(label, method)
             else:
                 label = method
-        
 
-    plot_yy(ax, lines, header, indicator, x_axis_values, window, style, color, label)
+    plot_yy(ax, df, column_name, header, indicator, x_axis_values, window, style, color, label)
 
 def save(settings, x_axis, y_axis, y2_axis, indicator):
     """Save the figure using settings configuration."""
@@ -417,7 +425,7 @@ def find_window_index(values, window):
     return window_index
 
 def plot(settings, x_axis, y_axis, y2_axis, window, indicator, annotate=False):
-    """Main plotting function using settings object."""
+    """Main plotting function using settings object and Polars DataFrames."""
     filenames = settings.get("files", [])
     location = settings.get("location", settings.get("loc", 1))
     legend_col = settings.get("leg_col", 1)
@@ -465,16 +473,18 @@ def plot(settings, x_axis, y_axis, y2_axis, window, indicator, annotate=False):
 
     # iterate through all specified files to combine them on one fig
     for filename in filenames:
-        # open the csv average file
-        lines = open_csv(filename) 
-
-        # get x axis values
-        x_axis_idx = get_index(headers[x_axis][INDEX], indicator[0])
-        x_axis_values = [ headers[x_axis][PROCESS](line[x_axis_idx]) for line in lines ]
+        # open the csv file as Polars DataFrame
+        df = open_csv(filename)
+        
+        # get x axis values using Polars operations
+        x_series = apply_column_transform(df, x_axis, indicator[0], headers[x_axis][PROCESS])
+        if x_series is None:
+            continue
+        x_axis_values = x_series.to_list()
 
         # find start and end index of the specified window
         window_index = find_window_index(x_axis_values, window)
-        # Substract the start window value to all values to start at 0
+        # Subtract the start window value to all values to start at 0
         x_axis_values = [ x - x_axis_values[window_index[0]] for x in x_axis_values ]
  
         style = None
@@ -483,11 +493,13 @@ def plot(settings, x_axis, y_axis, y2_axis, window, indicator, annotate=False):
 
         # plot on primary vertical axis
         for y in y_axis:
-            plot_y(ax, lines, headers[y], indicator, x_axis_values, window_index, None, filename if len(filenames) > 1 else None, multiple_on_y, twin, lang)
+            plot_y(ax, df, y, headers[y], indicator, x_axis_values, window_index, None, 
+                  filename if len(filenames) > 1 else None, multiple_on_y, twin, lang)
 
         # plot on secondary vertical axis
         for y in y2_axis:
-            plot_y(bx, lines, headers[y], indicator, x_axis_values, window_index, None, filename if len(filenames) > 1 else None, multiple_on_y, twin, lang)
+            plot_y(bx, df, y, headers[y], indicator, x_axis_values, window_index, None, 
+                  filename if len(filenames) > 1 else None, multiple_on_y, twin, lang)
 
     if annotate:
         go_annotate(ax, lang)
@@ -511,7 +523,7 @@ import math
 def plot_delta(settings, x_axis, y_axis, window, indicator, annotate=False):
     """
     Crée une figure 16:9 avec un sous-plot par métrique de y_axis.
-    Le premier fichier sert de baseline. On trace (fichier_i - baseline).
+    Le premier fichier sert de baseline. On trace (fichier_i - baseline) en utilisant Polars.
     """
     filenames = settings.get("files", [])
     show = settings.get("show", False)
@@ -530,13 +542,16 @@ def plot_delta(settings, x_axis, y_axis, window, indicator, annotate=False):
         print("plot_delta: seul indicator[0] est utilisé.")
     ind = indicator[0]
 
-    # Lecture de tous les fichiers
-    all_lines = [open_csv(f) for f in filenames]
+    # Lecture de tous les fichiers avec Polars
+    all_dfs = [open_csv(f) for f in filenames]
 
     # Préparation axe X depuis le baseline
-    baseline_lines = all_lines[0]
-    x_axis_idx = get_index(headers[x_axis][INDEX], ind)
-    x_axis_values_full = [headers[x_axis][PROCESS](line[x_axis_idx]) for line in baseline_lines]
+    baseline_df = all_dfs[0]
+    x_series = apply_column_transform(baseline_df, x_axis, ind, headers[x_axis][PROCESS])
+    if x_series is None:
+        print(f"Erreur: colonne {x_axis}_{ind} introuvable")
+        return
+    x_axis_values_full = x_series.to_list()
 
     # Fenêtre
     window_index = find_window_index(x_axis_values_full, window)
@@ -567,24 +582,29 @@ def plot_delta(settings, x_axis, y_axis, window, indicator, annotate=False):
         ax = axes[mi]
         ax.set_xlim([0,1200])
         header = headers[metric]
-        y_idx_base = get_index(header[INDEX], ind)
-        baseline_series_full = [
-            header[PROCESS](line[y_idx_base]) if len(line) > y_idx_base else 0
-            for line in baseline_lines
-        ]
+        
+        # Get baseline series using Polars
+        baseline_series_obj = apply_column_transform(baseline_df, metric, ind, header[PROCESS])
+        if baseline_series_obj is None:
+            continue
+        baseline_series_full = baseline_series_obj.to_list()
         baseline_series = baseline_series_full[window_index[0]:window_index[1]]
 
-        # Plot delta pour chaque fichier (saut baseline)
-        for fi, lines in enumerate(all_lines[1:], start=1):
-            y_idx = get_index(header[INDEX], ind)
-            series_full = [
-                header[PROCESS](line[y_idx]) if len(line) > y_idx else 0
-                for line in lines
-            ]
+        # Plot delta pour chaque fichier (sauf baseline)
+        for fi, df in enumerate(all_dfs[1:], start=1):
+            # Get series using Polars
+            series_obj = apply_column_transform(df, metric, ind, header[PROCESS])
+            if series_obj is None:
+                continue
+            series_full = series_obj.to_list()
             series = series_full[window_index[0]:window_index[1]]
-            # Alignement longueur min
+            
+            # Alignement longueur min et calcul delta avec Polars
             mlen = min(len(series), len(baseline_series), len(x_axis_values))
-            delta = [series[i] - baseline_series[i] for i in range(mlen)]
+            # Use Polars for efficient delta calculation
+            delta_series = pl.Series(series[:mlen]) - pl.Series(baseline_series[:mlen])
+            delta = delta_series.to_list()
+            
             method = methods[fi - 1]
             color = method_color.get(method, palette[(fi - 1) % len(palette)])
             label = filenames[fi].split('/')[-1]
