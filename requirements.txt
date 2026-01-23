@@ -1,0 +1,4 @@
+polars>=0.19.0
+matplotlib>=3.5.0
+scienceplots>=2.0.0
+pyyaml>=6.0
