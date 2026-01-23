@@ -2,14 +2,33 @@
 
 ## Overview
 
-The `scripts/plot.py` script has been refactored to provide a cleaner, more maintainable, and more flexible plotting system.
+The `scripts/plot.py` script has been refactored to provide a cleaner, more maintainable, and more flexible plotting system with extensive Polars integration.
 
 ## Key Improvements
 
-### 1. Polars Integration
-- **Before**: Manual CSV parsing using Python's csv module
-- **After**: Using Polars library for efficient CSV processing
-- **Benefit**: Faster, more reliable CSV reading with better memory management
+### 1. Extensive Polars Integration
+- **Before**: Manual CSV parsing, immediate conversion to lists, manual list comprehensions
+- **After**: Polars DataFrames used throughout the entire pipeline with native column operations
+- **Benefit**: Faster, more efficient data processing with cleaner code
+
+**Details**:
+- CSV files are loaded as Polars DataFrames and kept as DataFrames
+- Column operations use Polars' optimized functions instead of Python loops
+- Data transformations leverage Polars' `select()` and `map_elements()` capabilities
+- No more manual index calculations - use column names directly
+
+**Example**:
+```python
+# Before: Manual indexing and list comprehensions
+lines = open_csv(filename)  # Returns list of lists
+y_idx = get_index(header[INDEX], indicator[0])
+y_values = [header[PROCESS](line[y_idx]) if len(line) > y_idx else 0 for line in lines]
+
+# After: Polars column operations
+df = open_csv(filename)  # Returns Polars DataFrame
+y_series = apply_column_transform(df, column_name, indicator[0], header[PROCESS])
+y_values = y_series.to_list()
+```
 
 ### 2. Language Support
 The script now supports multilingual labels (French and English).
@@ -50,15 +69,49 @@ All plotting functions now use a unified `settings` dictionary instead of multip
 | `leg_col` | int | `1` | Number of legend columns |
 | `delta` | bool | `False` | Plot delta between files |
 
-### 4. Dynamic Column Detection
+### 4. Dynamic Column Detection with Polars
 - **Before**: Hardcoded column names and indices in large dictionary
-- **After**: Column metadata generated dynamically with language support
-- **Benefit**: Easier to maintain and extend
+- **After**: Column metadata generated dynamically, accessed by name via Polars
+- **Benefit**: Easier to maintain, extend, and understand
+
+**Column Naming Convention**:
+The script expects CSV columns to follow the pattern: `{METRIC}_{indicator}`
+- Example: `TIME_median`, `VM_CPU_USAGE_avg`, `MEMORY_USED_1stq`
+- Indicators: `avg`, `median`, `1stq`, `3rdq`, `min`, `max`
+
+### 5. Simplified Plotting Functions
+New helper functions for cleaner code:
+- `get_column_name_with_indicator()`: Build column names from metric + indicator
+- `apply_column_transform()`: Apply transformations using Polars operations
+- Functions work directly with DataFrames instead of lists
 
 ### 5. Figure Creation Function
 New `create_figure(settings)` function handles figure creation with:
 - Custom size from `settings.figsize`
 - Transparency from `settings.transparency`
+
+## Internal Architecture
+
+### Data Flow
+
+```
+CSV File → Polars DataFrame → Column Selection → Transformation → Plotting
+```
+
+**Key Functions**:
+
+1. **`open_csv(filename)`**: Loads CSV as Polars DataFrame
+2. **`get_column_name_with_indicator(column, indicator)`**: Builds column name (e.g., "TIME_median")
+3. **`apply_column_transform(df, column, indicator, transform_func)`**: Applies transformation to a column using Polars
+4. **`plot_yy(ax, df, column_name, header, ...)`**: Plots data using Polars Series
+5. **`plot(settings, ...)`**: Main plotting orchestration with DataFrames
+
+### Polars Operations Used
+
+- `pl.read_csv()`: Fast CSV loading
+- `pl.col().map_elements()`: Apply custom transformations
+- `pl.Series()`: Efficient series operations for deltas
+- `.to_list()`: Convert to list only when needed for matplotlib
 
 ## Usage Examples
 
@@ -156,45 +209,29 @@ exps:
 
 ## Migration Guide
 
-### Old Code
+### From Previous Version
+
+**Old Code (list-based)**:
 ```python
-plot(
-    filenames,
-    x_axis,
-    y_axis,
-    y2_axis,
-    window,
-    indicator,
-    show,
-    (1024, 1024),  # resolution
-    location,
-    legend_col,
-    annotate
-)
+lines = open_csv(filename)  # Returns list of lists
+x_axis_idx = get_index(headers[x_axis][INDEX], indicator[0])
+x_values = [headers[x_axis][PROCESS](line[x_axis_idx]) for line in lines]
 ```
 
-### New Code
+**New Code (Polars-based)**:
 ```python
-settings = {
-    "files": filenames,
-    "x": x_axis,
-    "y": y_axis,
-    "y2": y2_axis,
-    "window": window,
-    "indicator": indicator,
-    "show": show,
-    "figsize": (10, 10),  # size instead of resolution
-    "location": location,
-    "leg_col": legend_col,
-    "annotate": annotate,
-    "lang": "fr",  # NEW: choose language
-    "format": "pdf",  # NEW: choose format
-    "name": "output",  # NEW: custom name
-    "transparency": True,  # NEW: transparency
-}
-
-process_and_plot(settings)
+df = open_csv(filename)  # Returns Polars DataFrame
+x_series = apply_column_transform(df, x_axis, indicator[0], headers[x_axis][PROCESS])
+x_values = x_series.to_list()
 ```
+
+### Benefits of Refactoring
+
+1. **Cleaner Code**: No more manual indexing with `get_index()`
+2. **Better Performance**: Polars optimized operations instead of Python loops
+3. **Easier Debugging**: Column names instead of numeric indices
+4. **More Maintainable**: Clear data flow with DataFrames
+5. **Extensible**: Easy to add new transformations using Polars expressions
 
 ## Dependencies
 
