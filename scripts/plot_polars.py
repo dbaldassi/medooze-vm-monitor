@@ -1,37 +1,43 @@
 #!/usr/bin/python3
 
 """
-Script de visualisation avec Polars et Matplotlib
-Remplacement complet du script plot.py original sans backward compatibility
+Visualization script with Polars and Matplotlib
+Complete rewrite of plot.py without backward compatibility
+
+CSV Structure:
+- No header row
+- Each metric has 6 consecutive columns (one per indicator):
+  Column order: avg, 1stq, median, 3rdq, min, max
+- Example: TIME columns are at indices 0-5, MEMORY_USED at indices 6-11, etc.
 """
 
 import sys
 import polars as pl
 import matplotlib
-matplotlib.use('Agg')  # Backend sans interface graphique
+matplotlib.use('Agg')  # Non-interactive backend
 import matplotlib.pyplot as plt
 
-# Configuration matplotlib - utiliser scienceplots si disponible et LaTeX aussi
+# Matplotlib configuration - use scienceplots if available
 try:
     import scienceplots
     plt.style.use(['science', 'ieee'])
 except (ImportError, OSError, RuntimeError):
-    # Fallback si scienceplots ou LaTeX n'est pas disponible
-    print("Note: scienceplots ou LaTeX non disponible, utilisation du style par défaut")
+    # Fallback if scienceplots or LaTeX is not available
+    print("Note: scienceplots or LaTeX not available, using default style")
     plt.rcParams.update({
-        'text.usetex': False,  # Désactiver LaTeX
+        'text.usetex': False,  # Disable LaTeX
         'font.family': 'sans-serif',
     })
     
 plt.rcParams.update({
     "font.size": 18,
-    'text.usetex': False,  # S'assurer que LaTeX est désactivé
+    'text.usetex': False,  # Ensure LaTeX is disabled
 })
 plt.rcParams['axes.prop_cycle'] = matplotlib.cycler('linestyle', ['-', '--', ':', '-.'])
 
 LINEWIDTH = 3
 
-# Configuration des couleurs et styles par méthode
+# Color and style configuration per method
 method_color = {
     "ballooning": 'b',
     "cgroup-max": 'r',
@@ -44,172 +50,225 @@ method_style = {
     "cgroup-reclaim": 'dotted'
 }
 
-# Configuration des métriques avec leurs propriétés
-# Format: nom_colonne -> (couleur, label, unité, nom_complet, transformation)
+# Metric configuration with properties
+# Index is the base column index (each metric has 6 columns for 6 indicators)
 METRICS_CONFIG = {
-    'TIME': {'color': None, 'label': 'Temps', 'unit': '(s)', 'name': 'Temps', 'transform': lambda x: x / 1000.0},
-    'MEMORY_USED': {'color': 'b', 'label': 'Mémoire', 'unit': '(MiB)', 'name': 'Mémoire allouée à la VM', 'transform': lambda x: x},
-    'MEMORY_FREE': {'color': 'm', 'label': 'Memory', 'unit': '(MiB)', 'name': 'cgroup mémoire libre', 'transform': lambda x: x},
-    'MEMORY_MAX': {'color': 'k', 'label': 'Memory', 'unit': '(MiB)', 'name': 'cgroup memory.max', 'transform': lambda x: x},
-    'SWAP': {'color': 'r', 'label': 'Mémoire', 'unit': '(MiB)', 'name': 'Swap hôte', 'transform': lambda x: x},
-    'CGROUP_CACHE': {'color': 'y', 'label': 'Memory', 'unit': '(MiB)', 'name': 'cgroup cache', 'transform': lambda x: x / 1024 / 1024},
-    'CGROUP_SWAPPABLE': {'color': 'c', 'label': 'Memory', 'unit': '(MiB)', 'name': 'cgroup swappable', 'transform': lambda x: x / 1024 / 1024},
-    'MEMORY_PRESSURE_AVG10': {'color': 'darkRed', 'label': 'Pressure Stall Information', 'unit': '(PSI)', 'name': 'Memory pressure', 'transform': lambda x: x},
-    'VIRSH_ACTUAL': {'color': 'k', 'label': 'Memory', 'unit': '(MiB)', 'name': 'Mémoire allouée à la VM', 'transform': lambda x: x / 1024.0},
-    'VIRSH_UNUSED': {'color': 'tomato', 'label': 'Memory', 'unit': '(MiB)', 'name': 'Mémoire inutilisée de la VM', 'transform': lambda x: x / 1024.0},
-    'VIRSH_USABLE': {'color': 'm', 'label': 'Memory', 'unit': '(MiB)', 'name': 'Mémoire libre de l\'invité', 'transform': lambda x: x / 1024.0},
-    'VIRSH_AVAILABLE': {'color': 'g', 'label': 'Mémoire', 'unit': '(MiB)', 'name': 'Capacité de l\'invité', 'transform': lambda x: x / 1024.0},
-    'VIRSH_SWAP_IN': {'color': '', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM swap in', 'transform': lambda x: x / 1024.0},
-    'VIRSH_SWAP_OUT': {'color': 'r', 'label': 'Mémoire', 'unit': '(MiB)', 'name': 'Swap de l\'invité', 'transform': lambda x: x / 1024.0},
-    'PUBLISHER_BITRATE': {'color': 'b', 'label': 'Débit', 'unit': '(kbps)', 'name': 'Débit émetteur', 'transform': lambda x: x},
-    'PUBLISHER_FPS': {'color': 'r', 'label': 'FPS', 'unit': '', 'name': 'FPS émetteur', 'transform': lambda x: x},
-    'PUBLISHER_RTT': {'color': 'r', 'label': 'Délai', 'unit': '(ms)', 'name': 'RTT émetteur', 'transform': lambda x: x},
-    'VIEWER_COUNT': {'color': 'y', 'label': 'Viewer Count', 'unit': '', 'name': 'Nombre de récepteurs', 'transform': lambda x: x},
-    'VM_MEMORY_USAGE': {'color': 'midnightBlue', 'label': 'Mémoire', 'unit': '(MiB)', 'name': 'Mémoire utilisée par l\'invité', 'transform': lambda x: x},
-    'VM_MEMORY_FREE': {'color': 'tomato', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM current free memory', 'transform': lambda x: x},
-    'VM_CPU_USAGE': {'color': 'b', 'label': 'CPU', 'unit': '(%)', 'name': 'Utilisation CPU (VM)', 'transform': lambda x: pl.when(x * 100 > 0).then(x * 100).otherwise(0)},
-    'VM_FREE_TOTAL': {'color': 'purple', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM free total', 'transform': lambda x: x},
-    'VM_FREE_USED': {'color': 'orange', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM free used', 'transform': lambda x: x},
-    'VM_FREE_BUFCACHE': {'color': 'cyan', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM free buff/cache', 'transform': lambda x: x},
-    'VIEWER_TARGET': {'color': 'k', 'label': 'Débit', 'unit': '(kbps)', 'name': 'viewer encoder target', 'transform': lambda x: x},
-    'VIEWER_BITRATE': {'color': 'g', 'label': 'Débit', 'unit': '(kbps)', 'name': 'Débit récepteurs', 'transform': lambda x: x},
-    'VIEWER_DELAY': {'color': 'm', 'label': 'Délai', 'unit': '(ms)', 'name': 'Délai bout à bout', 'transform': lambda x: x},
-    'VIEWER_FPS': {'color': 'm', 'label': 'FPS', 'unit': '', 'name': 'FPS récepteurs', 'transform': lambda x: x},
-    'VIEWER_RID_H': {'color': 'g', 'label': 'RID Count', 'unit': '', 'name': 'simulcast couche haute', 'transform': lambda x: x},
-    'VIEWER_RID_M': {'color': 'b', 'label': 'RID Count', 'unit': '', 'name': 'simulcast couche moyenne', 'transform': lambda x: x},
-    'VIEWER_RID_L': {'color': 'r', 'label': 'RID Count', 'unit': '', 'name': 'simulcast couche basse', 'transform': lambda x: x},
+    'TIME': {'index': 0, 'color': None, 'label': 'Time', 'unit': '(s)', 'name': 'Time', 'transform': lambda x: x / 1000.0},
+    'MEMORY_USED': {'index': 1, 'color': 'b', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM allocated memory', 'transform': lambda x: x},
+    'MEMORY_FREE': {'index': 2, 'color': 'm', 'label': 'Memory', 'unit': '(MiB)', 'name': 'cgroup free memory', 'transform': lambda x: x},
+    'MEMORY_MAX': {'index': 3, 'color': 'k', 'label': 'Memory', 'unit': '(MiB)', 'name': 'cgroup memory.max', 'transform': lambda x: x},
+    'SWAP': {'index': 4, 'color': 'r', 'label': 'Memory', 'unit': '(MiB)', 'name': 'Host swap', 'transform': lambda x: x},
+    'CGROUP_CACHE': {'index': 5, 'color': 'y', 'label': 'Memory', 'unit': '(MiB)', 'name': 'cgroup cache', 'transform': lambda x: x / 1024 / 1024},
+    'CGROUP_SWAPPABLE': {'index': 6, 'color': 'c', 'label': 'Memory', 'unit': '(MiB)', 'name': 'cgroup swappable', 'transform': lambda x: x / 1024 / 1024},
+    'MEMORY_PRESSURE_AVG10': {'index': 7, 'color': 'darkRed', 'label': 'Pressure Stall Information', 'unit': '(PSI)', 'name': 'Memory pressure', 'transform': lambda x: x},
+    'VIRSH_ACTUAL': {'index': 11, 'color': 'k', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM allocated memory', 'transform': lambda x: x / 1024.0},
+    'VIRSH_UNUSED': {'index': 12, 'color': 'tomato', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM unused memory', 'transform': lambda x: x / 1024.0},
+    'VIRSH_USABLE': {'index': 13, 'color': 'm', 'label': 'Memory', 'unit': '(MiB)', 'name': 'Guest free memory', 'transform': lambda x: x / 1024.0},
+    'VIRSH_AVAILABLE': {'index': 14, 'color': 'g', 'label': 'Memory', 'unit': '(MiB)', 'name': 'Guest capacity', 'transform': lambda x: x / 1024.0},
+    'VIRSH_SWAP_IN': {'index': 15, 'color': '', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM swap in', 'transform': lambda x: x / 1024.0},
+    'VIRSH_SWAP_OUT': {'index': 16, 'color': 'r', 'label': 'Memory', 'unit': '(MiB)', 'name': 'Guest swap', 'transform': lambda x: x / 1024.0},
+    'PUBLISHER_BITRATE': {'index': 19, 'color': 'b', 'label': 'Bitrate', 'unit': '(kbps)', 'name': 'Publisher bitrate', 'transform': lambda x: x},
+    'PUBLISHER_FPS': {'index': 20, 'color': 'r', 'label': 'FPS', 'unit': '', 'name': 'Publisher FPS', 'transform': lambda x: x},
+    'PUBLISHER_RTT': {'index': 22, 'color': 'r', 'label': 'Delay', 'unit': '(ms)', 'name': 'Publisher RTT', 'transform': lambda x: x},
+    'VIEWER_COUNT': {'index': 24, 'color': 'y', 'label': 'Viewer Count', 'unit': '', 'name': 'Viewer count', 'transform': lambda x: x},
+    'VM_MEMORY_USAGE': {'index': 25, 'color': 'midnightBlue', 'label': 'Memory', 'unit': '(MiB)', 'name': 'Guest memory', 'transform': lambda x: x},
+    'VM_MEMORY_FREE': {'index': 26, 'color': 'tomato', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM current free memory', 'transform': lambda x: x},
+    'VM_CPU_USAGE': {'index': 27, 'color': 'b', 'label': 'CPU', 'unit': '(%)', 'name': 'VM cpu usage', 'transform': lambda x: x * 100},
+    'VM_FREE_TOTAL': {'index': 28, 'color': 'purple', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM free total', 'transform': lambda x: x},
+    'VM_FREE_USED': {'index': 29, 'color': 'orange', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM free used', 'transform': lambda x: x},
+    'VM_FREE_BUFCACHE': {'index': 30, 'color': 'cyan', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM free buff/cache', 'transform': lambda x: x},
+    'VIEWER_TARGET': {'index': 44, 'color': 'k', 'label': 'Bitrate', 'unit': '(kbps)', 'name': 'viewer encoder target', 'transform': lambda x: x},
+    'VIEWER_BITRATE': {'index': 45, 'color': 'g', 'label': 'Bitrate', 'unit': '(kbps)', 'name': 'Viewer received bitrate', 'transform': lambda x: x},
+    'VIEWER_DELAY': {'index': 47, 'color': 'm', 'label': 'Delay', 'unit': '(ms)', 'name': 'End to end delay', 'transform': lambda x: x},
+    'VIEWER_FPS': {'index': 48, 'color': 'm', 'label': 'FPS', 'unit': '', 'name': 'Viewer received FPS', 'transform': lambda x: x},
+    'VIEWER_RID_H': {'index': 49, 'color': 'g', 'label': 'RID Count', 'unit': '', 'name': 'simulcast high layer', 'transform': lambda x: x},
+    'VIEWER_RID_M': {'index': 50, 'color': 'b', 'label': 'RID Count', 'unit': '', 'name': 'simulcast medium layer', 'transform': lambda x: x},
+    'VIEWER_RID_L': {'index': 51, 'color': 'r', 'label': 'RID Count', 'unit': '', 'name': 'simulcast low layer', 'transform': lambda x: x},
 }
 
-# Indicateurs disponibles pour les statistiques agrégées
+# Available indicators for aggregated statistics
 INDICATORS = ["avg", "1stq", "median", "3rdq", "min", "max"]
+INDICATORS_COLOR = ['b', 'y', 'r', 'c', 'g', 'k']
 
 
-def load_csv_data(filename: str, indicator: str = "avg") -> pl.DataFrame:
+def get_column_index(metric_index: int, indicator: str) -> int:
     """
-    Charge un fichier CSV avec gestion des indicateurs multiples
+    Calculate the column index for a metric and indicator combination
+    
+    CSV structure: Each metric has 6 consecutive columns (one per indicator)
+    Column order: avg, 1stq, median, 3rdq, min, max
     
     Args:
-        filename: Chemin vers le fichier CSV
-        indicator: Indicateur à sélectionner (avg, median, etc.)
+        metric_index: Base index of the metric in METRICS_CONFIG
+        indicator: Indicator name (avg, 1stq, median, 3rdq, min, max)
         
     Returns:
-        DataFrame Polars avec les colonnes sélectionnées
+        Actual column index in the CSV file
     """
-    # Lire le fichier CSV
-    df = pl.read_csv(filename)
+    indicator_offset = INDICATORS.index(indicator)
+    return metric_index * len(INDICATORS) + indicator_offset
+
+
+def load_csv_data(filename: str, indicators: list[str]) -> pl.DataFrame:
+    """
+    Load CSV file with multiple indicator handling
     
-    # Si le fichier contient des colonnes avec indicateurs (ex: TIME_avg, TIME_median)
-    # on sélectionne uniquement celles qui correspondent à l'indicateur demandé
-    if any('_' in col for col in df.columns):
-        # Extraire les colonnes qui correspondent à l'indicateur
-        selected_cols = []
-        col_mapping = {}
+    CSV structure: The file has no headers. Each metric has 6 consecutive columns,
+    one for each indicator (avg, 1stq, median, 3rdq, min, max).
+    
+    Args:
+        filename: Path to CSV file
+        indicators: List of indicators to load (e.g., ['avg', 'median'])
         
-        for col in df.columns:
-            if '_' in col:
-                base_name, ind = col.rsplit('_', 1)
-                if ind == indicator:
-                    selected_cols.append(col)
-                    col_mapping[col] = base_name
-            else:
-                selected_cols.append(col)
-                col_mapping[col] = col
-        
-        df = df.select(selected_cols).rename(col_mapping)
+    Returns:
+        Polars DataFrame with columns named like METRIC_NAME_indicator
+    """
+    # Read CSV without headers
+    df = pl.read_csv(filename, has_header=False)
+    
+    # Build a mapping of new column names to their source column indices
+    column_mapping = {}
+    
+    for metric_name, config in METRICS_CONFIG.items():
+        metric_idx = config['index']
+        for indicator in indicators:
+            col_idx = get_column_index(metric_idx, indicator)
+            # Check if this column exists in the dataframe
+            if col_idx < len(df.columns):
+                old_col_name = df.columns[col_idx]
+                new_col_name = f"{metric_name}_{indicator}"
+                column_mapping[old_col_name] = new_col_name
+    
+    # Rename columns
+    df = df.rename(column_mapping)
+    
+    # Select only the renamed columns
+    selected_cols = list(column_mapping.values())
+    df = df.select(selected_cols)
     
     return df
 
 
-def apply_transformations(df: pl.DataFrame, metrics: list[str]) -> pl.DataFrame:
+def apply_transformations(df: pl.DataFrame, metrics: list[str], indicators: list[str]) -> pl.DataFrame:
     """
-    Applique les transformations définies pour chaque métrique
+    Apply transformations defined for each metric
     
     Args:
-        df: DataFrame Polars
-        metrics: Liste des métriques à transformer
+        df: Polars DataFrame
+        metrics: List of metrics to transform
+        indicators: List of indicators being used
         
     Returns:
-        DataFrame avec les transformations appliquées
+        DataFrame with transformations applied
     """
     for metric in metrics:
-        if metric in df.columns and metric in METRICS_CONFIG:
-            transform = METRICS_CONFIG[metric]['transform']
-            if callable(transform):
-                try:
-                    # Vérifier si c'est une expression Polars ou une fonction Python
-                    df = df.with_columns(transform(pl.col(metric)).alias(metric))
-                except (TypeError, AttributeError):
-                    # Si c'est une fonction Python simple, utiliser map_elements
-                    df = df.with_columns(pl.col(metric).map_elements(transform, return_dtype=pl.Float64).alias(metric))
+        if metric not in METRICS_CONFIG:
+            continue
+            
+        config = METRICS_CONFIG[metric]
+        if 'transform' not in config:
+            continue
+        
+        # Apply transformation to each indicator column for this metric
+        for indicator in indicators:
+            col_name = f"{metric}_{indicator}"
+            if col_name not in df.columns:
+                continue
+            
+            # Apply transformation based on metric type
+            # Handle common transformations directly with Polars expressions
+            if metric == 'TIME':
+                df = df.with_columns((pl.col(col_name) / 1000.0).alias(col_name))
+            elif metric in ['VIRSH_ACTUAL', 'VIRSH_UNUSED', 'VIRSH_USABLE', 'VIRSH_AVAILABLE', 'VIRSH_SWAP_IN', 'VIRSH_SWAP_OUT']:
+                df = df.with_columns((pl.col(col_name) / 1024.0).alias(col_name))
+            elif metric in ['CGROUP_CACHE', 'CGROUP_SWAPPABLE']:
+                df = df.with_columns((pl.col(col_name) / 1024.0 / 1024.0).alias(col_name))
+            elif metric == 'VM_CPU_USAGE':
+                df = df.with_columns((pl.col(col_name) * 100.0).alias(col_name))
+            # For other metrics, no transformation needed (identity transform)
     
     return df
 
 
-def apply_rolling_window(df: pl.DataFrame, column: str, window_size: int = 10) -> pl.DataFrame:
+def apply_rolling_window(df: pl.DataFrame, column: str, indicators: list[str], window_size: int = 10) -> pl.DataFrame:
     """
-    Applique une fenêtre glissante (moyenne mobile) sur une colonne
+    Apply rolling window (moving average) to column(s)
     
     Args:
-        df: DataFrame Polars
-        column: Nom de la colonne
-        window_size: Taille de la fenêtre
+        df: Polars DataFrame
+        column: Base column name (without indicator suffix)
+        indicators: List of indicators being used
+        window_size: Window size
         
     Returns:
-        DataFrame avec la colonne transformée
+        DataFrame with transformed column(s)
     """
-    if column in df.columns:
-        # Utiliser min_samples au lieu de min_periods (version récente de Polars)
+    for indicator in indicators:
+        col_name = f"{column}_{indicator}"
+        if col_name not in df.columns:
+            continue
+            
+        # Use min_samples instead of min_periods (recent Polars version)
         try:
             df = df.with_columns(
-                pl.col(column).rolling_mean(window_size=window_size, min_samples=1).alias(column)
+                pl.col(col_name).rolling_mean(window_size=window_size, min_samples=1).alias(col_name)
             )
         except TypeError:
-            # Fallback pour les anciennes versions de Polars
+            # Fallback for older Polars versions
             df = df.with_columns(
-                pl.col(column).rolling_mean(window_size=window_size, min_periods=1).alias(column)
+                pl.col(col_name).rolling_mean(window_size=window_size, min_periods=1).alias(col_name)
             )
     return df
 
 
-def filter_time_window(df: pl.DataFrame, time_col: str, window: list[float] = None) -> pl.DataFrame:
+def filter_time_window(df: pl.DataFrame, time_col: str, indicators: list[str], window: list[float] = None) -> pl.DataFrame:
     """
-    Filtre le DataFrame selon une fenêtre temporelle
+    Filter DataFrame by time window
     
     Args:
-        df: DataFrame Polars
-        time_col: Nom de la colonne temporelle
-        window: [début, fin] en secondes
+        df: Polars DataFrame
+        time_col: Name of time column (without indicator suffix)
+        indicators: List of indicators being used
+        window: [start, end] in seconds
         
     Returns:
-        DataFrame filtré et avec temps normalisé à 0
+        Filtered DataFrame with time normalized to 0
     """
-    if window is None or time_col not in df.columns:
+    if window is None:
         return df
     
-    # Filtrer selon la fenêtre
+    # Use the first indicator's time column for filtering
+    time_col_with_ind = f"{time_col}_{indicators[0]}"
+    if time_col_with_ind not in df.columns:
+        return df
+    
+    # Filter by window
     df_filtered = df.filter(
-        (pl.col(time_col) >= window[0]) & (pl.col(time_col) <= window[1])
+        (pl.col(time_col_with_ind) >= window[0]) & (pl.col(time_col_with_ind) <= window[1])
     )
     
-    # Normaliser le temps pour commencer à 0
+    # Normalize time to start at 0 for all indicator columns
     if len(df_filtered) > 0:
-        time_start = df_filtered[time_col][0]
-        df_filtered = df_filtered.with_columns(
-            (pl.col(time_col) - time_start).alias(time_col)
-        )
+        time_start = df_filtered[time_col_with_ind][0]
+        for indicator in indicators:
+            col_name = f"{time_col}_{indicator}"
+            if col_name in df_filtered.columns:
+                df_filtered = df_filtered.with_columns(
+                    (pl.col(col_name) - time_start).alias(col_name)
+                )
     
     return df_filtered
 
 
 def get_method_from_filename(filename: str) -> str:
     """
-    Extrait le nom de la méthode depuis le nom du fichier
+    Extract method name from filename
     
     Args:
-        filename: Chemin du fichier
+        filename: File path
         
     Returns:
-        Nom de la méthode ('ballooning', 'cgroup-max', 'cgroup-reclaim')
+        Method name ('ballooning', 'cgroup-max', 'cgroup-reclaim')
     """
     name = filename.split('/')[-1]
     
@@ -225,17 +284,17 @@ def get_method_from_filename(filename: str) -> str:
 
 def add_phase_annotations(ax):
     """
-    Ajoute des annotations colorées pour les différentes phases de l'expérience
+    Add colored annotations for different phases of the experiment
     
     Args:
-        ax: Axes matplotlib
+        ax: Matplotlib axes
     """
     phases = [
-        {"start": 0, "end": 60, "color": "lightgray", "label": "Pas de récepteurs"},
-        {"start": 60, "end": 120, "color": "lightblue", "label": "20 récepteurs"},
-        {"start": 120, "end": 180, "color": "lightgreen", "label": "40 récepteurs"},
-        {"start": 180, "end": 240, "color": "yellow", "label": "60 récepteurs"},
-        {"start": 240, "end": 720, "color": "orange", "label": "80 récepteurs"},
+        {"start": 0, "end": 60, "color": "lightgray", "label": "No viewers"},
+        {"start": 60, "end": 120, "color": "lightblue", "label": "20 viewers"},
+        {"start": 120, "end": 180, "color": "lightgreen", "label": "40 viewers"},
+        {"start": 180, "end": 240, "color": "yellow", "label": "60 viewers"},
+        {"start": 240, "end": 720, "color": "orange", "label": "80 viewers"},
         {"start": 720, "end": 920, "color": "lightgray", "label": None},
         {"start": 920, "end": 980, "color": "lightgreen", "label": None},
         {"start": 980, "end": None, "color": "orange", "label": None},
@@ -257,151 +316,182 @@ def plot_standard(
     y_axis: list[str],
     y2_axis: list[str] = None,
     window: list[float] = None,
-    indicator: str = "avg",
+    indicators: list[str] = None,
     show: bool = False,
     annotate: bool = False,
     rolling_cols: list[str] = None
 ):
     """
-    Crée un graphique standard avec un ou plusieurs fichiers CSV
+    Create a standard plot with one or more CSV files
     
     Args:
-        filenames: Liste des fichiers CSV à tracer
-        x_axis: Nom de la colonne pour l'axe X
-        y_axis: Liste des colonnes pour l'axe Y primaire
-        y2_axis: Liste des colonnes pour l'axe Y secondaire (optionnel)
-        window: Fenêtre temporelle [début, fin]
-        indicator: Indicateur statistique à utiliser
-        show: Afficher le graphique au lieu de le sauvegarder
-        annotate: Ajouter les annotations de phases
-        rolling_cols: Colonnes sur lesquelles appliquer une fenêtre glissante
+        filenames: List of CSV files to plot
+        x_axis: Column name for X axis
+        y_axis: List of columns for primary Y axis
+        y2_axis: List of columns for secondary Y axis (optional)
+        window: Time window [start, end]
+        indicators: List of statistical indicators to use
+        show: Show plot instead of saving
+        annotate: Add phase annotations
+        rolling_cols: Columns to apply rolling window
     """
     if y2_axis is None:
         y2_axis = []
     if rolling_cols is None:
         rolling_cols = []
+    if indicators is None:
+        indicators = ["avg"]
     
-    # Créer la figure
+    # Create figure
     fig, ax = plt.subplots(figsize=(5, 5))
     fig.patch.set_alpha(0.0)
     ax.set_facecolor('none')
     
-    # Configurer l'axe Y secondaire si nécessaire
+    # Configure secondary Y axis if needed
     bx = None
     if len(y2_axis) > 0:
         bx = ax.twinx()
         bx.set_facecolor('none')
     
-    # Déterminer si on compare plusieurs fichiers ou plusieurs métriques
+    # Determine if comparing multiple files or metrics
     multiple_files = len(filenames) > 1
     multiple_metrics = len(y_axis) > 1 or len(y2_axis) > 1
+    multiple_indicators = len(indicators) > 1
     
-    # Tracer les données pour chaque fichier
+    # Plot data for each file
     for filename in filenames:
-        # Charger et préparer les données
-        df = load_csv_data(filename, indicator)
+        # Load and prepare data
+        df = load_csv_data(filename, indicators)
         
-        # Appliquer les transformations
+        # Apply transformations
         all_metrics = [x_axis] + y_axis + y2_axis
-        df = apply_transformations(df, all_metrics)
+        df = apply_transformations(df, all_metrics, indicators)
         
-        # Appliquer les fenêtres glissantes
+        # Apply rolling windows
         for col in rolling_cols:
-            if col in df.columns:
-                df = apply_rolling_window(df, col)
+            df = apply_rolling_window(df, col, indicators)
         
-        # Filtrer selon la fenêtre temporelle
-        df = filter_time_window(df, x_axis, window)
+        # Filter by time window
+        df = filter_time_window(df, x_axis, indicators, window)
         
-        # Extraire la méthode depuis le nom du fichier
+        # Extract method from filename for multi-file comparison
         method = get_method_from_filename(filename) if multiple_files else None
         
-        # Tracer les métriques Y primaires
+        # Plot primary Y metrics
         for y_metric in y_axis:
-            if y_metric not in df.columns:
-                continue
-            
             config = METRICS_CONFIG.get(y_metric, {})
             color = config.get('color', 'b')
-            label = config.get('name', y_metric)
+            base_label = config.get('name', y_metric)
             
-            # Ajuster le style/couleur selon le contexte
-            linestyle = '-'
-            if multiple_files and method:
-                if multiple_metrics:
-                    linestyle = method_style.get(method, '-')
-                    label = f"{label} ({method})"
-                else:
-                    color = method_color.get(method, color)
-                    label = method
-            
-            # Tracer la courbe
-            ax.plot(
-                df[x_axis].to_numpy(),
-                df[y_metric].to_numpy(),
-                color=color,
-                linestyle=linestyle,
-                linewidth=LINEWIDTH,
-                label=label
-            )
-        
-        # Tracer les métriques Y secondaires
-        if bx:
-            for y_metric in y2_axis:
-                if y_metric not in df.columns:
+            # Plot each indicator
+            for ind_idx, indicator in enumerate(indicators):
+                col_name = f"{y_metric}_{indicator}"
+                if col_name not in df.columns:
                     continue
                 
-                config = METRICS_CONFIG.get(y_metric, {})
-                color = config.get('color', 'g')
-                label = config.get('name', y_metric)
-                
-                # Ajuster selon le contexte
+                # Adjust style/color based on context
                 linestyle = '-'
-                if multiple_files and method:
+                plot_color = color
+                
+                if multiple_indicators:
+                    # When showing multiple indicators, use different colors per indicator
+                    plot_color = INDICATORS_COLOR[INDICATORS.index(indicator)]
+                    label = indicator if len(y_axis) == 1 else f"{base_label} ({indicator})"
+                elif multiple_files and method:
                     if multiple_metrics:
                         linestyle = method_style.get(method, '-')
-                        label = f"{label} ({method})"
+                        label = f"{base_label} ({method})"
                     else:
-                        color = method_color.get(method, color)
+                        plot_color = method_color.get(method, color)
                         label = method
+                else:
+                    label = base_label
                 
-                bx.plot(
-                    df[x_axis].to_numpy(),
-                    df[y_metric].to_numpy(),
-                    color=color,
+                # Get x values for this indicator
+                x_col_name = f"{x_axis}_{indicator}"
+                if x_col_name not in df.columns:
+                    continue
+                
+                # Plot the curve
+                ax.plot(
+                    df[x_col_name].to_numpy(),
+                    df[col_name].to_numpy(),
+                    color=plot_color,
                     linestyle=linestyle,
                     linewidth=LINEWIDTH,
                     label=label
                 )
+        
+        # Plot secondary Y metrics
+        if bx:
+            for y_metric in y2_axis:
+                config = METRICS_CONFIG.get(y_metric, {})
+                color = config.get('color', 'g')
+                base_label = config.get('name', y_metric)
+                
+                # Plot each indicator
+                for indicator in indicators:
+                    col_name = f"{y_metric}_{indicator}"
+                    if col_name not in df.columns:
+                        continue
+                    
+                    # Adjust based on context
+                    linestyle = '-'
+                    plot_color = color
+                    
+                    if multiple_indicators:
+                        plot_color = INDICATORS_COLOR[INDICATORS.index(indicator)]
+                        label = indicator if len(y2_axis) == 1 else f"{base_label} ({indicator})"
+                    elif multiple_files and method:
+                        if multiple_metrics:
+                            linestyle = method_style.get(method, '-')
+                            label = f"{base_label} ({method})"
+                        else:
+                            plot_color = method_color.get(method, color)
+                            label = method
+                    else:
+                        label = base_label
+                    
+                    x_col_name = f"{x_axis}_{indicator}"
+                    if x_col_name not in df.columns:
+                        continue
+                    
+                    bx.plot(
+                        df[x_col_name].to_numpy(),
+                        df[col_name].to_numpy(),
+                        color=plot_color,
+                        linestyle=linestyle,
+                        linewidth=LINEWIDTH,
+                        label=label
+                    )
     
-    # Configurer les labels
+    # Configure labels
     x_config = METRICS_CONFIG.get(x_axis, {})
     ax.set_xlabel(f"{x_config.get('label', x_axis)} {x_config.get('unit', '')}")
     
     y_config = METRICS_CONFIG.get(y_axis[0], {})
-    label_type = 'name' if (not multiple_files or multiple_metrics) else 'label'
+    label_type = 'name' if (not multiple_files or multiple_metrics or multiple_indicators) else 'label'
     ax.set_ylabel(f"{y_config.get(label_type, y_axis[0])} {y_config.get('unit', '')}")
     
     if bx and len(y2_axis) > 0:
         y2_config = METRICS_CONFIG.get(y2_axis[0], {})
         bx.set_ylabel(f"{y2_config.get(label_type, y2_axis[0])} {y2_config.get('unit', '')}")
     
-    # Ajouter les annotations si demandé
+    # Add annotations if requested
     if annotate:
         add_phase_annotations(ax)
     
-    # Configurer les limites des axes (peut être personnalisé si nécessaire)
-    # Ces valeurs sont des valeurs par défaut raisonnables pour les expériences typiques
-    # TODO: Rendre ces limites configurables ou les calculer dynamiquement
+    # Configure axis limits (can be customized if needed)
+    # TODO: Make these configurable or calculate dynamically
     ax.set_xlim([0, 400])
     ax.set_ylim([0, 2500])
     
-    # Ajouter la légende
+    # Add legend
     leg = fig.legend(loc='center left', bbox_to_anchor=(1., 0.5), bbox_transform=ax.transAxes, frameon=True)
     if leg:
         leg.get_frame().set_alpha(0.0)
     
-    # Sauvegarder ou afficher
+    # Save or show
     if show:
         plt.show()
     else:
@@ -412,9 +502,9 @@ def plot_standard(
             dest_path.pop()
         
         if len(y2_axis) > 0:
-            dest_path[-1] = f"plot_{x_axis}x{y_axis[0]}x{y2_axis[0]}_{indicator}.{ext}"
+            dest_path[-1] = f"plot_{x_axis}x{y_axis[0]}x{y2_axis[0]}_{'-'.join(indicators)}.{ext}"
         else:
-            dest_path[-1] = f"plot_{x_axis}x{y_axis[0]}_{indicator}.{ext}"
+            dest_path[-1] = f"plot_{x_axis}x{y_axis[0]}_{'-'.join(indicators)}.{ext}"
         
         plt.savefig("/".join(dest_path), format=ext, transparent=True)
     
@@ -426,34 +516,37 @@ def plot_delta(
     x_axis: str,
     y_axis: list[str],
     window: list[float] = None,
-    indicator: str = "avg",
+    indicators: list[str] = None,
     show: bool = False,
     annotate: bool = False
 ):
     """
-    Crée un graphique de différence (delta) entre fichiers
-    Le premier fichier sert de baseline, les autres sont comparés à lui
+    Create a delta plot comparing files to a baseline
+    The first file serves as baseline, others are compared to it
     
     Args:
-        filenames: Liste des fichiers CSV (le premier est la baseline)
-        x_axis: Nom de la colonne pour l'axe X
-        y_axis: Liste des colonnes pour les métriques à comparer
-        window: Fenêtre temporelle [début, fin]
-        indicator: Indicateur statistique à utiliser
-        show: Afficher le graphique au lieu de le sauvegarder
-        annotate: Ajouter les annotations de phases
+        filenames: List of CSV files (first is baseline)
+        x_axis: Column name for X axis
+        y_axis: List of columns for metrics to compare
+        window: Time window [start, end]
+        indicators: List of statistical indicators to use
+        show: Show plot instead of saving
+        annotate: Add phase annotations
     """
     if len(filenames) < 2:
-        print("Erreur: plot_delta nécessite au moins 2 fichiers (baseline + comparaison)")
+        print("Error: plot_delta requires at least 2 files (baseline + comparison)")
         return
     
-    # Charger la baseline
-    df_baseline = load_csv_data(filenames[0], indicator)
-    all_metrics = [x_axis] + y_axis
-    df_baseline = apply_transformations(df_baseline, all_metrics)
-    df_baseline = filter_time_window(df_baseline, x_axis, window)
+    if indicators is None:
+        indicators = ["avg"]
     
-    # Créer la figure avec un subplot par métrique
+    # Load baseline
+    df_baseline = load_csv_data(filenames[0], indicators)
+    all_metrics = [x_axis] + y_axis
+    df_baseline = apply_transformations(df_baseline, all_metrics, indicators)
+    df_baseline = filter_time_window(df_baseline, x_axis, indicators, window)
+    
+    # Create figure with one subplot per metric
     fig, axes = plt.subplots(len(y_axis), 1, figsize=(16, 9), sharex=True)
     fig.patch.set_alpha(0.0)
     
@@ -463,45 +556,55 @@ def plot_delta(
     for ax in axes:
         ax.set_facecolor('none')
     
-    # Tracer le delta pour chaque fichier comparé à la baseline
+    # Plot delta for each comparison file
     for fi, filename in enumerate(filenames[1:], start=1):
-        # Charger le fichier de comparaison
-        df_compare = load_csv_data(filename, indicator)
-        df_compare = apply_transformations(df_compare, all_metrics)
-        df_compare = filter_time_window(df_compare, x_axis, window)
+        # Load comparison file
+        df_compare = load_csv_data(filename, indicators)
+        df_compare = apply_transformations(df_compare, all_metrics, indicators)
+        df_compare = filter_time_window(df_compare, x_axis, indicators, window)
         
-        # Obtenir la méthode pour le style
+        # Get method for styling
         method = get_method_from_filename(filename)
         color = method_color.get(method, 'b')
         
-        # Label simplifié
+        # Simplified label
         label = filename.split('/')[-1]
         if 'balloon' in label:
             label = 'ballooning'
         elif 'cgroup' in label:
             label = 'cgroups'
         
-        # Tracer le delta pour chaque métrique
+        # Plot delta for each metric
         for mi, metric in enumerate(y_axis):
             ax = axes[mi]
             
-            if metric not in df_baseline.columns or metric not in df_compare.columns:
-                continue
+            # Plot delta for each indicator
+            for indicator in indicators:
+                col_name = f"{metric}_{indicator}"
+                x_col_name = f"{x_axis}_{indicator}"
+                
+                if col_name not in df_baseline.columns or col_name not in df_compare.columns:
+                    continue
+                if x_col_name not in df_baseline.columns:
+                    continue
+                
+                # Calculate delta
+                min_len = min(len(df_baseline), len(df_compare))
+                
+                baseline_values = df_baseline[col_name].head(min_len).to_numpy()
+                compare_values = df_compare[col_name].head(min_len).to_numpy()
+                x_values = df_baseline[x_col_name].head(min_len).to_numpy()
+                
+                delta = compare_values - baseline_values
+                
+                # Create label
+                plot_label = label if len(indicators) == 1 else f"{label} ({indicator})"
+                plot_color = color if len(indicators) == 1 else INDICATORS_COLOR[INDICATORS.index(indicator)]
+                
+                # Plot delta
+                ax.plot(x_values, delta, color=plot_color, alpha=0.7, label=plot_label)
             
-            # Calculer le delta avec Polars
-            # Assurer que les DataFrames ont la même longueur
-            min_len = min(len(df_baseline), len(df_compare))
-            
-            baseline_values = df_baseline[metric].head(min_len).to_numpy()
-            compare_values = df_compare[metric].head(min_len).to_numpy()
-            x_values = df_baseline[x_axis].head(min_len).to_numpy()
-            
-            delta = compare_values - baseline_values
-            
-            # Tracer le delta
-            ax.plot(x_values, delta, color=color, alpha=0.7, label=label)
-            
-            # Ligne de référence zéro
+            # Zero reference line
             ax.axhline(0, color='black', linestyle='--', linewidth=1)
             
             # Labels
@@ -512,31 +615,30 @@ def plot_delta(
             if annotate:
                 add_phase_annotations(ax)
             
-            # Limite de l'axe X (peut être personnalisé si nécessaire)
-            # TODO: Rendre configurable ou calculer dynamiquement
+            # X-axis limit (TODO: make configurable)
             ax.set_xlim([0, 1200])
     
-    # Label de l'axe X sur le dernier subplot
+    # X axis label on last subplot
     x_config = METRICS_CONFIG.get(x_axis, {})
     axes[-1].set_xlabel(f"{x_config.get('label', x_axis)} {x_config.get('unit', '')}")
     
-    # Aligner les labels Y
+    # Align Y labels
     fig.align_ylabels(axes)
     
-    # Légende consolidée
+    # Consolidated legend
     handles, labels = axes[0].get_legend_handles_labels()
     if handles:
         leg = fig.legend(handles, labels, loc='center left', bbox_to_anchor=(1.02, 0.5), frameon=True)
         if leg:
             leg.get_frame().set_alpha(0.0)
     
-    # Sauvegarder ou afficher
+    # Save or show
     ext = "pdf"
     if show:
         plt.show()
     else:
         dest_path = filenames[0].split('/')
-        dest_path[-1] = f"delta_{x_axis}x{'-'.join(y_axis)}_{indicator}.{ext}"
+        dest_path[-1] = f"delta_{x_axis}x{'-'.join(y_axis)}_{'-'.join(indicators)}.{ext}"
         plt.savefig("/".join(dest_path), format=ext, bbox_inches='tight', transparent=True)
     
     plt.close(fig)
@@ -544,25 +646,25 @@ def plot_delta(
 
 def process_and_plot(settings: dict):
     """
-    Point d'entrée principal pour générer les graphiques
+    Main entry point for generating plots
     
     Args:
-        settings: Dictionnaire avec les paramètres de configuration:
-            - files: Liste des fichiers CSV
-            - indicator: Indicateur statistique ('avg', 'median', etc.)
-            - x: Colonne pour l'axe X
-            - y: Liste de colonnes pour l'axe Y
-            - y2: Liste de colonnes pour l'axe Y secondaire (optionnel)
-            - window: Fenêtre temporelle [début, fin] (optionnel)
-            - location: Position de la légende (optionnel)
-            - leg_col: Nombre de colonnes dans la légende (optionnel)
-            - annotate: Ajouter les annotations (optionnel)
-            - show: Afficher au lieu de sauvegarder (optionnel)
-            - delta: Mode delta (optionnel)
-            - rolling: Colonnes avec fenêtre glissante (optionnel)
+        settings: Configuration dictionary with parameters:
+            - files: List of CSV files
+            - indicator: List of statistical indicators (e.g., ['avg', 'median'])
+            - x: Column for X axis
+            - y: List of columns for Y axis
+            - y2: List of columns for secondary Y axis (optional)
+            - window: Time window [start, end] (optional)
+            - location: Legend position (optional)
+            - leg_col: Number of legend columns (optional)
+            - annotate: Add annotations (optional)
+            - show: Display instead of saving (optional)
+            - delta: Delta mode (optional)
+            - rolling: Columns with rolling window (optional)
     """
     filenames = settings.get("files", [])
-    indicator = settings.get("indicator", "avg")
+    indicators = settings.get("indicator", ["avg"])
     x_axis = settings.get("x")
     y_axis = settings.get("y", [])
     y2_axis = settings.get("y2", [])
@@ -574,44 +676,49 @@ def process_and_plot(settings: dict):
     
     # Validation
     if not filenames:
-        raise ValueError("Aucun fichier spécifié")
+        raise ValueError("No files specified")
     
-    if indicator not in INDICATORS:
-        raise ValueError(f"Indicateur invalide: {indicator}. Valeurs possibles: {INDICATORS}")
+    # Ensure indicators is a list
+    if isinstance(indicators, str):
+        indicators = [indicators]
+    
+    for ind in indicators:
+        if ind not in INDICATORS:
+            raise ValueError(f"Invalid indicator: {ind}. Valid values: {INDICATORS}")
     
     all_metrics = [x_axis] + y_axis + (y2_axis or [])
     for metric in all_metrics:
         if metric not in METRICS_CONFIG:
-            print(f"Avertissement: métrique inconnue '{metric}'")
+            print(f"Warning: unknown metric '{metric}'")
     
-    # Générer le graphique approprié
+    # Generate appropriate plot
     if delta:
-        plot_delta(filenames, x_axis, y_axis, window, indicator, show, annotate)
+        plot_delta(filenames, x_axis, y_axis, window, indicators, show, annotate)
     else:
-        plot_standard(filenames, x_axis, y_axis, y2_axis, window, indicator, show, annotate, rolling_cols)
+        plot_standard(filenames, x_axis, y_axis, y2_axis, window, indicators, show, annotate, rolling_cols)
 
 
 if __name__ == "__main__":
-    # Analyse des arguments en ligne de commande
+    # Parse command line arguments
     if len(sys.argv) < 5:
-        print("Usage: {} <file1[,file2,...]> <indicator> <x_axis> <y_axis1[,y_axis2,...]> [y2_axis1[,y2_axis2,...]] [options]".format(sys.argv[0]))
-        print("\nIndicateurs disponibles: " + ", ".join(INDICATORS))
+        print("Usage: {} <file1[,file2,...]> <indicator1[,indicator2,...]> <x_axis> <y_axis1[,y_axis2,...]> [y2_axis1[,y2_axis2,...]] [options]".format(sys.argv[0]))
+        print("\nAvailable indicators: " + ", ".join(INDICATORS))
         print("\nOptions:")
-        print("  show              - Afficher le graphique au lieu de le sauvegarder")
-        print("  [start,end]       - Fenêtre temporelle")
-        print("  loc=N             - Position de la légende")
-        print("  leg_col=N         - Nombre de colonnes dans la légende")
-        print("  annotate          - Ajouter les annotations de phases")
-        print("  delta             - Mode delta (comparaison à baseline)")
+        print("  show              - Display plot instead of saving")
+        print("  [start,end]       - Time window")
+        print("  loc=N             - Legend position")
+        print("  leg_col=N         - Number of legend columns")
+        print("  annotate          - Add phase annotations")
+        print("  delta             - Delta mode (compare to baseline)")
         sys.exit(1)
     
-    # Parser les arguments
+    # Parse arguments
     filenames = sys.argv[1].split(',')
-    indicator = sys.argv[2]
+    indicators = sys.argv[2].split(',')
     x_axis = sys.argv[3]
     y_axis = sys.argv[4].split(',')
     
-    # Options par défaut
+    # Default options
     y2_axis = []
     show = False
     window = None
@@ -620,7 +727,7 @@ if __name__ == "__main__":
     annotate = False
     delta_mode = False
     
-    # Parser les options supplémentaires
+    # Parse additional options
     for i in range(5, len(sys.argv)):
         arg = sys.argv[i]
         
@@ -638,16 +745,16 @@ if __name__ == "__main__":
         elif arg.startswith("leg_col="):
             legend_col = int(arg.split('=')[1])
         elif ',' in arg:
-            # Si ce n'est pas une option reconnue et contient des virgules, c'est probablement y2_axis
+            # If not a recognized option and contains commas, it's probably y2_axis
             y2_axis = arg.split(',')
     
-    # Colonnes avec fenêtre glissante (bitrates et FPS)
+    # Columns with rolling window (bitrates and FPS)
     rolling_cols = ['PUBLISHER_BITRATE', 'VIEWER_BITRATE', 'PUBLISHER_FPS', 'VIEWER_FPS']
     
-    # Appeler la fonction principale
+    # Call main function
     settings = {
         "files": filenames,
-        "indicator": indicator,
+        "indicator": indicators,
         "x": x_axis,
         "y": y_axis,
         "y2": y2_axis,
