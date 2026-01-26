@@ -53,37 +53,37 @@ method_style = {
 # Metric configuration with properties
 # Index is the base column index (each metric has 6 columns for 6 indicators)
 METRICS_CONFIG = {
-    'TIME': {'index': 0, 'color': None, 'label': 'Time', 'unit': '(s)', 'name': 'Time', 'transform': lambda x: x / 1000.0},
-    'MEMORY_USED': {'index': 1, 'color': 'b', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM allocated memory', 'transform': lambda x: x},
-    'MEMORY_FREE': {'index': 2, 'color': 'm', 'label': 'Memory', 'unit': '(MiB)', 'name': 'cgroup free memory', 'transform': lambda x: x},
-    'MEMORY_MAX': {'index': 3, 'color': 'k', 'label': 'Memory', 'unit': '(MiB)', 'name': 'cgroup memory.max', 'transform': lambda x: x},
-    'SWAP': {'index': 4, 'color': 'r', 'label': 'Memory', 'unit': '(MiB)', 'name': 'Host swap', 'transform': lambda x: x},
-    'CGROUP_CACHE': {'index': 5, 'color': 'y', 'label': 'Memory', 'unit': '(MiB)', 'name': 'cgroup cache', 'transform': lambda x: x / 1024 / 1024},
-    'CGROUP_SWAPPABLE': {'index': 6, 'color': 'c', 'label': 'Memory', 'unit': '(MiB)', 'name': 'cgroup swappable', 'transform': lambda x: x / 1024 / 1024},
-    'MEMORY_PRESSURE_AVG10': {'index': 7, 'color': 'darkRed', 'label': 'Pressure Stall Information', 'unit': '(PSI)', 'name': 'Memory pressure', 'transform': lambda x: x},
-    'VIRSH_ACTUAL': {'index': 11, 'color': 'k', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM allocated memory', 'transform': lambda x: x / 1024.0},
-    'VIRSH_UNUSED': {'index': 12, 'color': 'tomato', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM unused memory', 'transform': lambda x: x / 1024.0},
-    'VIRSH_USABLE': {'index': 13, 'color': 'm', 'label': 'Memory', 'unit': '(MiB)', 'name': 'Guest free memory', 'transform': lambda x: x / 1024.0},
-    'VIRSH_AVAILABLE': {'index': 14, 'color': 'g', 'label': 'Memory', 'unit': '(MiB)', 'name': 'Guest capacity', 'transform': lambda x: x / 1024.0},
-    'VIRSH_SWAP_IN': {'index': 15, 'color': '', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM swap in', 'transform': lambda x: x / 1024.0},
-    'VIRSH_SWAP_OUT': {'index': 16, 'color': 'r', 'label': 'Memory', 'unit': '(MiB)', 'name': 'Guest swap', 'transform': lambda x: x / 1024.0},
-    'PUBLISHER_BITRATE': {'index': 19, 'color': 'b', 'label': 'Bitrate', 'unit': '(kbps)', 'name': 'Publisher bitrate', 'transform': lambda x: x},
-    'PUBLISHER_FPS': {'index': 20, 'color': 'r', 'label': 'FPS', 'unit': '', 'name': 'Publisher FPS', 'transform': lambda x: x},
-    'PUBLISHER_RTT': {'index': 22, 'color': 'r', 'label': 'Delay', 'unit': '(ms)', 'name': 'Publisher RTT', 'transform': lambda x: x},
-    'VIEWER_COUNT': {'index': 24, 'color': 'y', 'label': 'Viewer Count', 'unit': '', 'name': 'Viewer count', 'transform': lambda x: x},
-    'VM_MEMORY_USAGE': {'index': 25, 'color': 'midnightBlue', 'label': 'Memory', 'unit': '(MiB)', 'name': 'Guest memory', 'transform': lambda x: x},
-    'VM_MEMORY_FREE': {'index': 26, 'color': 'tomato', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM current free memory', 'transform': lambda x: x},
-    'VM_CPU_USAGE': {'index': 27, 'color': 'b', 'label': 'CPU', 'unit': '(%)', 'name': 'VM cpu usage', 'transform': lambda x: x * 100},
-    'VM_FREE_TOTAL': {'index': 28, 'color': 'purple', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM free total', 'transform': lambda x: x},
-    'VM_FREE_USED': {'index': 29, 'color': 'orange', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM free used', 'transform': lambda x: x},
-    'VM_FREE_BUFCACHE': {'index': 30, 'color': 'cyan', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM free buff/cache', 'transform': lambda x: x},
-    'VIEWER_TARGET': {'index': 44, 'color': 'k', 'label': 'Bitrate', 'unit': '(kbps)', 'name': 'viewer encoder target', 'transform': lambda x: x},
-    'VIEWER_BITRATE': {'index': 45, 'color': 'g', 'label': 'Bitrate', 'unit': '(kbps)', 'name': 'Viewer received bitrate', 'transform': lambda x: x},
-    'VIEWER_DELAY': {'index': 47, 'color': 'm', 'label': 'Delay', 'unit': '(ms)', 'name': 'End to end delay', 'transform': lambda x: x},
-    'VIEWER_FPS': {'index': 48, 'color': 'm', 'label': 'FPS', 'unit': '', 'name': 'Viewer received FPS', 'transform': lambda x: x},
-    'VIEWER_RID_H': {'index': 49, 'color': 'g', 'label': 'RID Count', 'unit': '', 'name': 'simulcast high layer', 'transform': lambda x: x},
-    'VIEWER_RID_M': {'index': 50, 'color': 'b', 'label': 'RID Count', 'unit': '', 'name': 'simulcast medium layer', 'transform': lambda x: x},
-    'VIEWER_RID_L': {'index': 51, 'color': 'r', 'label': 'RID Count', 'unit': '', 'name': 'simulcast low layer', 'transform': lambda x: x},
+    'TIME': {'index': 0, 'color': None, 'label': 'Time', 'unit': '(s)', 'name': 'Time'},
+    'MEMORY_USED': {'index': 1, 'color': 'b', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM allocated memory'},
+    'MEMORY_FREE': {'index': 2, 'color': 'm', 'label': 'Memory', 'unit': '(MiB)', 'name': 'cgroup free memory'},
+    'MEMORY_MAX': {'index': 3, 'color': 'k', 'label': 'Memory', 'unit': '(MiB)', 'name': 'cgroup memory.max'},
+    'SWAP': {'index': 4, 'color': 'r', 'label': 'Memory', 'unit': '(MiB)', 'name': 'Host swap'},
+    'CGROUP_CACHE': {'index': 5, 'color': 'y', 'label': 'Memory', 'unit': '(MiB)', 'name': 'cgroup cache'},
+    'CGROUP_SWAPPABLE': {'index': 6, 'color': 'c', 'label': 'Memory', 'unit': '(MiB)', 'name': 'cgroup swappable'},
+    'MEMORY_PRESSURE_AVG10': {'index': 7, 'color': 'darkRed', 'label': 'Pressure Stall Information', 'unit': '(PSI)', 'name': 'Memory pressure'},
+    'VIRSH_ACTUAL': {'index': 11, 'color': 'k', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM allocated memory'},
+    'VIRSH_UNUSED': {'index': 12, 'color': 'tomato', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM unused memory'},
+    'VIRSH_USABLE': {'index': 13, 'color': 'm', 'label': 'Memory', 'unit': '(MiB)', 'name': 'Guest free memory'},
+    'VIRSH_AVAILABLE': {'index': 14, 'color': 'g', 'label': 'Memory', 'unit': '(MiB)', 'name': 'Guest capacity'},
+    'VIRSH_SWAP_IN': {'index': 15, 'color': '', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM swap in'},
+    'VIRSH_SWAP_OUT': {'index': 16, 'color': 'r', 'label': 'Memory', 'unit': '(MiB)', 'name': 'Guest swap'},
+    'PUBLISHER_BITRATE': {'index': 19, 'color': 'b', 'label': 'Bitrate', 'unit': '(kbps)', 'name': 'Publisher bitrate'},
+    'PUBLISHER_FPS': {'index': 20, 'color': 'r', 'label': 'FPS', 'unit': '', 'name': 'Publisher FPS'},
+    'PUBLISHER_RTT': {'index': 22, 'color': 'r', 'label': 'Delay', 'unit': '(ms)', 'name': 'Publisher RTT'},
+    'VIEWER_COUNT': {'index': 24, 'color': 'y', 'label': 'Viewer Count', 'unit': '', 'name': 'Viewer count'},
+    'VM_MEMORY_USAGE': {'index': 25, 'color': 'midnightBlue', 'label': 'Memory', 'unit': '(MiB)', 'name': 'Guest memory'},
+    'VM_MEMORY_FREE': {'index': 26, 'color': 'tomato', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM current free memory'},
+    'VM_CPU_USAGE': {'index': 27, 'color': 'b', 'label': 'CPU', 'unit': '(%)', 'name': 'VM cpu usage'},
+    'VM_FREE_TOTAL': {'index': 28, 'color': 'purple', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM free total'},
+    'VM_FREE_USED': {'index': 29, 'color': 'orange', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM free used'},
+    'VM_FREE_BUFCACHE': {'index': 30, 'color': 'cyan', 'label': 'Memory', 'unit': '(MiB)', 'name': 'VM free buff/cache'},
+    'VIEWER_TARGET': {'index': 44, 'color': 'k', 'label': 'Bitrate', 'unit': '(kbps)', 'name': 'viewer encoder target'},
+    'VIEWER_BITRATE': {'index': 45, 'color': 'g', 'label': 'Bitrate', 'unit': '(kbps)', 'name': 'Viewer received bitrate'},
+    'VIEWER_DELAY': {'index': 47, 'color': 'm', 'label': 'Delay', 'unit': '(ms)', 'name': 'End to end delay'},
+    'VIEWER_FPS': {'index': 48, 'color': 'm', 'label': 'FPS', 'unit': '', 'name': 'Viewer received FPS'},
+    'VIEWER_RID_H': {'index': 49, 'color': 'g', 'label': 'RID Count', 'unit': '', 'name': 'simulcast high layer'},
+    'VIEWER_RID_M': {'index': 50, 'color': 'b', 'label': 'RID Count', 'unit': '', 'name': 'simulcast medium layer'},
+    'VIEWER_RID_L': {'index': 51, 'color': 'r', 'label': 'RID Count', 'unit': '', 'name': 'simulcast low layer'},
 }
 
 # Available indicators for aggregated statistics
@@ -153,6 +153,13 @@ def apply_transformations(df: pl.DataFrame, metrics: list[str], indicators: list
     """
     Apply transformations defined for each metric
     
+    Transformations are hardcoded for performance (using native Polars expressions):
+    - TIME: milliseconds to seconds (/ 1000.0)
+    - VIRSH_*: KiB to MiB (/ 1024.0)
+    - CGROUP_CACHE, CGROUP_SWAPPABLE: bytes to MiB (/ 1024.0 / 1024.0)
+    - VM_CPU_USAGE: fraction to percentage (* 100.0)
+    - Others: no transformation (identity)
+    
     Args:
         df: Polars DataFrame
         metrics: List of metrics to transform
@@ -164,10 +171,6 @@ def apply_transformations(df: pl.DataFrame, metrics: list[str], indicators: list
     for metric in metrics:
         if metric not in METRICS_CONFIG:
             continue
-            
-        config = METRICS_CONFIG[metric]
-        if 'transform' not in config:
-            continue
         
         # Apply transformation to each indicator column for this metric
         for indicator in indicators:
@@ -176,7 +179,7 @@ def apply_transformations(df: pl.DataFrame, metrics: list[str], indicators: list
                 continue
             
             # Apply transformation based on metric type
-            # Handle common transformations directly with Polars expressions
+            # Using native Polars expressions for optimal performance
             if metric == 'TIME':
                 df = df.with_columns((pl.col(col_name) / 1000.0).alias(col_name))
             elif metric in ['VIRSH_ACTUAL', 'VIRSH_UNUSED', 'VIRSH_USABLE', 'VIRSH_AVAILABLE', 'VIRSH_SWAP_IN', 'VIRSH_SWAP_OUT']:
