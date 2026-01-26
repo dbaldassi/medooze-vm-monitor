@@ -53,7 +53,7 @@ METRICS_CONFIG = {
     'MEMORY_MAX': {'color': 'k', 'label': 'Memory', 'unit': '(MiB)', 'name': 'cgroup memory.max', 'transform': lambda x: x},
     'SWAP': {'color': 'r', 'label': 'Mémoire', 'unit': '(MiB)', 'name': 'Swap hôte', 'transform': lambda x: x},
     'CGROUP_CACHE': {'color': 'y', 'label': 'Memory', 'unit': '(MiB)', 'name': 'cgroup cache', 'transform': lambda x: x / 1024 / 1024},
-    'CGROUP_SWAPPABLE': {'color': 'c', 'label': 'Memory', 'unit': '(MiB)', 'name': 'cgroupe swappable', 'transform': lambda x: x / 1024 / 1024},
+    'CGROUP_SWAPPABLE': {'color': 'c', 'label': 'Memory', 'unit': '(MiB)', 'name': 'cgroup swappable', 'transform': lambda x: x / 1024 / 1024},
     'MEMORY_PRESSURE_AVG10': {'color': 'darkRed', 'label': 'Pressure Stall Information', 'unit': '(PSI)', 'name': 'Memory pressure', 'transform': lambda x: x},
     'VIRSH_ACTUAL': {'color': 'k', 'label': 'Memory', 'unit': '(MiB)', 'name': 'Mémoire allouée à la VM', 'transform': lambda x: x / 1024.0},
     'VIRSH_UNUSED': {'color': 'tomato', 'label': 'Memory', 'unit': '(MiB)', 'name': 'Mémoire inutilisée de la VM', 'transform': lambda x: x / 1024.0},
@@ -135,11 +135,11 @@ def apply_transformations(df: pl.DataFrame, metrics: list[str]) -> pl.DataFrame:
         if metric in df.columns and metric in METRICS_CONFIG:
             transform = METRICS_CONFIG[metric]['transform']
             if callable(transform):
-                # Vérifier si c'est une expression Polars ou une fonction Python
                 try:
+                    # Vérifier si c'est une expression Polars ou une fonction Python
                     df = df.with_columns(transform(pl.col(metric)).alias(metric))
-                except:
-                    # Si c'est une fonction Python simple
+                except (TypeError, AttributeError):
+                    # Si c'est une fonction Python simple, utiliser map_elements
                     df = df.with_columns(pl.col(metric).map_elements(transform, return_dtype=pl.Float64).alias(metric))
     
     return df
@@ -390,7 +390,9 @@ def plot_standard(
     if annotate:
         add_phase_annotations(ax)
     
-    # Configurer les limites des axes
+    # Configurer les limites des axes (peut être personnalisé si nécessaire)
+    # Ces valeurs sont des valeurs par défaut raisonnables pour les expériences typiques
+    # TODO: Rendre ces limites configurables ou les calculer dynamiquement
     ax.set_xlim([0, 400])
     ax.set_ylim([0, 2500])
     
@@ -510,6 +512,8 @@ def plot_delta(
             if annotate:
                 add_phase_annotations(ax)
             
+            # Limite de l'axe X (peut être personnalisé si nécessaire)
+            # TODO: Rendre configurable ou calculer dynamiquement
             ax.set_xlim([0, 1200])
     
     # Label de l'axe X sur le dernier subplot
