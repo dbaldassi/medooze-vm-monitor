@@ -5,7 +5,7 @@ import argparse
 import os
 import shutil
 
-import plot
+import plot_polars as plot
 import plot_cgroup
 import line_step
 
@@ -99,7 +99,8 @@ def main():
     config = parse_yaml(args.config)
 
     settings = config.get("global-settings", {})
-    print(args)
+    settings["process"] = config.get("process", {})
+
     if args.exp:
         if args.exp in config.get("exps", {}):
             exp = config["exps"][args.exp]

@@ -1,13 +1,18 @@
 global-settings:
   out-dir: /home/david/Documents/workspace/medooze-vm-monitor/figure-yaml
-  indicator:
+  indicators:
     - median
   exp-dir: results
   format: pdf
   lang: en
 
-exps:
+process:
+  "PUBLISHER BITRATE":
+    - slide-window: 10
+  "VM-VIEWER-0 BITRATE":
+    - slide-window: 10
 
+exps:
   steps:
     description: "Box plot for different metrics while performing in function of the reclaiming size (one reclamation during the exp)"
     settings:
@@ -41,11 +46,11 @@ exps:
               - cgroups-regul-stddev-30-viewer-double-increase-par20_2025-05-01-18-59-48_average_10.csv
             x: TIME
             y:
-              - PUBLISHER_BITRATE
-              - VIEWER_BITRATE
+              - "PUBLISHER BITRATE"
+              - "VM-VIEWER-0 BITRATE"
             y2:
-              - PUBLISHER_RTT
-              - VIEWER_DELAY
+              - "PUBLISHER RTT"
+              - "VM-VIEWER-0 E2E DELAY"
             loc: CENTER_LEFT
             annotate: false
           - name: cgroup_memory_stats
