@@ -133,6 +133,8 @@ cgroup_cols = [
     "LOAD AVERAGE"
 ]
 
+ROOM_FIXED_COLS = [ "TIME","PARTICIPANT_ID","NUM_PARTICIPANTS","SENT_RTT","SENT_BITRATE","SENT_FPS" ]
+
 def process_main_stats(stat_file, conn, exp_name):
     reg_match = re.search(fr'{exp_name}_(\d+-\d+-\d+-\d+-\d+-\d+).csv', stat_file)
     date = reg_match.group(1)
@@ -140,9 +142,9 @@ def process_main_stats(stat_file, conn, exp_name):
     conn.sql(f"CREATE OR REPLACE TEMP TABLE data AS SELECT * FROM read_csv('{stat_file}', header=true, null_padding=true)")
 
     try:
-        conn.sql(f"CREATE TABLE stats AS SELECT '{exp_name}' as name, '{date}' as date, \"{"\",\"".join(main_cols)}\" FROM data")
+        conn.sql(f"CREATE TABLE stats AS SELECT '{exp_name}' as exp_name, '{date}' as date, \"{"\",\"".join(main_cols)}\" FROM data")
     except:
-        conn.sql(f"INSERT INTO stats (SELECT '{exp_name}' as name, '{date}' as date, \"{"\",\"".join(main_cols)}\" FROM data)")
+        conn.sql(f"INSERT INTO stats (SELECT '{exp_name}' as exp_name, '{date}' as date, \"{"\",\"".join(main_cols)}\" FROM data)")
 
     query = """
     CREATE TABLE IF NOT EXISTS viewers (
@@ -198,10 +200,65 @@ def process_cgroup_stats(stat_file, conn, exp_name):
     conn.sql(f"CREATE OR REPLACE TEMP TABLE data AS SELECT * FROM read_csv('{stat_file}', header=true, null_padding=true)")
 
     try:
-        conn.sql(f"CREATE TABLE cgroup_stats AS SELECT '{exp_name}' as name, '{date}' as date, \"{"\",\"".join(cgroup_cols)}\" FROM data")
+        conn.sql(f"CREATE TABLE cgroup_stats AS SELECT '{exp_name}' as exp_name, '{date}' as date, \"{"\",\"".join(cgroup_cols)}\" FROM data")
     except:
-        conn.sql(f"INSERT INTO cgroup_stats (SELECT '{exp_name}' as name, '{date}' as date, \"{"\",\"".join(cgroup_cols)}\" FROM data)")
+        conn.sql(f"INSERT INTO cgroup_stats (SELECT '{exp_name}' as exp_name, '{date}' as date, \"{"\",\"".join(cgroup_cols)}\" FROM data)")
 
+def process_rooms_stats(stat_file, conn, exp_name):
+    reg_match = re.search(fr'room(\d+)_{exp_name}_(\d+-\d+-\d+-\d+-\d+-\d+).csv', stat_file)
+    index = reg_match.group(1)
+    date = reg_match.group(2)
+
+    conn.sql(f"CREATE OR REPLACE TEMP TABLE data AS SELECT * FROM read_csv('{stat_file}', header=true, null_padding=true)")
+
+    properties = ["BITRATE", "RTT", "FPS"]
+
+    df = conn.execute("SELECT DISTINCT ON(PARTICIPANT_ID) TIME,PARTICIPANT_ID FROM data ORDER BY TIME").pl()
+    participants = []
+    headers = ROOM_FIXED_COLS[:]
+
+    for participant in df["PARTICIPANT_ID"]:
+        for prop in properties:
+            participants.append(f"{participant}")
+            headers.append(f"{participant}_{prop}")
+
+    df = conn.execute("SHOW TABLE data").pl()
+
+    for i in range(len(headers)):
+        if df['column_name'][i].startswith('column'):
+            conn.sql(f"ALTER TABLE data RENAME \"{df['column_name'][i]}\" TO \"{headers[i]}\"")
+
+    try:
+        conn.sql(f"CREATE TABLE room_stats AS SELECT '{exp_name}' as exp_name, '{date}' as date, 'room{index}' as room_id, \"{"\",\"".join(ROOM_FIXED_COLS)}\" FROM data")
+    except:
+        conn.sql(f"INSERT INTO room_stats (SELECT '{exp_name}' as exp_name, '{date}' as date, 'room{index}' as room_id, \"{"\",\"".join(ROOM_FIXED_COLS)}\" FROM data)")
+
+    query = """
+    CREATE TABLE IF NOT EXISTS room_receivers(
+    exp_name VARCHAR,
+    date VARCHAR,
+    room_id VARCHAR,
+    time BIGINT,
+    participant_id VARCHAR,
+    receiving_participant_id VARCHAR,
+    BITRATE BIGINT,
+    RTT BIGINT,
+    FPS BIGINT
+    )
+    """
+
+    conn.sql(query)
+
+    for participant in participants:
+        query = f"""
+        INSERT INTO room_receivers
+        SELECT '{exp_name}' as exp_name, '{date}' as date, 'room{index}' as room_id,
+          TIME, participant_id, '{participant}' as sending_participant_id,
+          "{participant}_BITRATE", "{participant}_RTT", "{participant}_FPS"
+        FROM data
+        """
+
+        conn.sql(query)
 
 if __name__ == "__main__":
 
@@ -216,6 +273,8 @@ if __name__ == "__main__":
             process_main_stats(f, conn, exp_name)
         elif f.startswith("cgroups_") and f.endswith('.csv') and not '_average_' in f:
             process_cgroup_stats(f, conn, exp_name)
+        elif f.startswith("room") and f.endswith('.csv') and not '_average_' in f:
+            process_rooms_stats(f, conn, exp_name)
 
     cgroup_dir = ['cgroup_stats', 'cgroups_stat', 'cgroup_stat', 'cgroups_stats']
 
@@ -231,3 +290,19 @@ if __name__ == "__main__":
             process_cgroup_stats(f, conn, exp_name)
 
     os.chdir(back)
+
+    if 'rooms' in os.listdir():
+        os.chdir('rooms')
+
+        room_wd = os.getcwd()
+
+        for d in os.listdir():
+            if d.startswith('room'):
+                os.chdir(d)
+                for f in os.listdir():
+                    if f.startswith("room") and f.endswith('.csv') and not '_average_' in f:
+                        process_rooms_stats(f, conn, exp_name)
+
+                os.chdir(room_wd)
+
+        os.chdir(back)
