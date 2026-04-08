@@ -51,8 +51,92 @@ main_cols = ["TIME",
              "TX MISSED"
              ]
 
-def process_main_stats(stat_file, conn, exp_name, date):
-    conn.sql("SET temp_directory = '/tmp/'")
+cgroup_cols = [
+    "TIME",
+    "ANON",
+    "FILE",
+    "KERNEL",
+    "KERNEL STACK",
+    "PAGETABLES",
+    "SEC PAGETABLES",
+    "PERCPU",
+    "SOCK",
+    "VMALLOC",
+    "SHMEM",
+    "ZSWAP",
+    "ZSWAPPED",
+    "FILE MAPPED",
+    "FILE DIRTY",
+    "FILE WRITEBACK",
+    "SWAPCACHED",
+    "ANON THP",
+    "FILE THP",
+    "SHMEM THP",
+    "INACTIVE ANON",
+    "ACTIVE ANON",
+    "INACTIVE FILE",
+    "ACTIVE FILE",
+    "UNEVICTABLE",
+    "SLAB RECLAIMABLE",
+    "SLAB UNRECLAIMABLE",
+    "SLAB",
+    "WORKINGSET REFAULT ANON",
+    "WORKINGSET REFAULT FILE",
+    "WORKINGSET ACTIVATE ANON",
+    "WORKINGSET ACTIVATE FILE",
+    "WORKINGSET RESTORE ANON",
+    "WORKINGSET RESTORE FILE",
+    "WORKINGSET NODERECLAIM",
+    "PGDEMOTE KSWAPD",
+    "PGDEMOTE DIRECT",
+    "PGDEMOTE KHUGEPAGED",
+    "PGPROMOTE SUCCESS",
+    "PGSCAN",
+    "PGSTEAL",
+    "PGSCAN KSWAPD",
+    "PGSCAN DIRECT",
+    "PGSCAN KHUGEPAGED",
+    "PGSTEAL KSWAPD",
+    "PGSTEAL DIRECT",
+    "PGSTEAL KHUGEPAGED",
+    "PGFAULT",
+    "PGMAJFAULT",
+    "PGREFILL",
+    "PGACTIVATE",
+    "PGDEACTIVATE",
+    "PGLAZYFREE",
+    "PGLAZYFREED",
+    "SWPIN ZERO",
+    "SWPOUT ZERO",
+    "ZSWPIN",
+    "ZSWPOUT",
+    "ZSWPWB",
+    "THP FAULT ALLOC",
+    "THP COLLAPSE ALLOC",
+    "THP SWPOUT",
+    "THP SWPOUT FALLBACK",
+    "NUMA PAGES MIGRATED",
+    "NUMA PTE UPDATES",
+    "NUMA HINT FAULTS",
+    "MEMORY CURRENT",
+    "SWAP CURRENT",
+    "MEMORY MAX",
+    "PRESSURE AVG10",
+    "SUMMED MEMORY",
+    "VM FREE USED",
+    "VM FREE BUFCACHE",
+    "SWAP IN",
+    "SWAP OUT",
+    "PGPG IN",
+    "PGPG OUT",
+    "HOST CPU",
+    "LOAD AVERAGE"
+]
+
+def process_main_stats(stat_file, conn, exp_name):
+    reg_match = re.search(fr'{exp_name}_(\d+-\d+-\d+-\d+-\d+-\d+).csv', stat_file)
+    date = reg_match.group(1)
+
     conn.sql(f"CREATE OR REPLACE TEMP TABLE data AS SELECT * FROM read_csv('{stat_file}', header=true, null_padding=true)")
 
     try:
@@ -107,17 +191,43 @@ def process_main_stats(stat_file, conn, exp_name, date):
         except:
             client_id += 1
 
+def process_cgroup_stats(stat_file, conn, exp_name):
+    reg_match = re.search(fr'cgroups_{exp_name}_(\d+-\d+-\d+-\d+-\d+-\d+).csv', stat_file)
+    date = reg_match.group(1)
+
+    conn.sql(f"CREATE OR REPLACE TEMP TABLE data AS SELECT * FROM read_csv('{stat_file}', header=true, null_padding=true)")
+
+    try:
+        conn.sql(f"CREATE TABLE cgroup_stats AS SELECT '{exp_name}' as name, '{date}' as date, \"{"\",\"".join(cgroup_cols)}\" FROM data")
+    except:
+        conn.sql(f"INSERT INTO cgroup_stats (SELECT '{exp_name}' as name, '{date}' as date, \"{"\",\"".join(cgroup_cols)}\" FROM data)")
+
+
 if __name__ == "__main__":
 
     dbfile='results.db'
     conn = duckdb.connect(dbfile)
+    conn.sql("SET temp_directory = '/tmp/'")
 
     exp_name = os.getcwd().split('/')[-1]
 
     for f in os.listdir():
-        if f.startswith(exp_name) and f.endswith('.csv') and not '_average_' in f:
-            reg_match = re.search(fr'{exp_name}_(\d+-\d+-\d+-\d+-\d+-\d+).csv', f)
-            date = reg_match.group(1)
+        if f.startswith(f"{exp_name}-") and f.endswith('.csv') and not '_average_' in f:
+            process_main_stats(f, conn, exp_name)
+        elif f.startswith("cgroups_") and f.endswith('.csv') and not '_average_' in f:
+            process_cgroup_stats(f, conn, exp_name)
 
-            print(f)
-            process_main_stats(f, conn, exp_name, date)
+    cgroup_dir = ['cgroup_stats', 'cgroups_stat', 'cgroup_stat', 'cgroups_stats']
+
+    back = os.getcwd()
+
+    for d in cgroup_dir:
+        if d in os.listdir():
+            os.chdir(d)
+            break
+
+    for f in os.listdir():
+        if f.startswith("cgroups_") and f.endswith('.csv') and not '_average_' in f:
+            process_cgroup_stats(f, conn, exp_name)
+
+    os.chdir(back)
