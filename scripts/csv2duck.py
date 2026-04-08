@@ -269,7 +269,7 @@ if __name__ == "__main__":
     exp_name = os.getcwd().split('/')[-1]
 
     for f in os.listdir():
-        if f.startswith(f"{exp_name}-") and f.endswith('.csv') and not '_average_' in f:
+        if f.startswith(f"{exp_name}") and f.endswith('.csv') and not '_average_' in f:
             process_main_stats(f, conn, exp_name)
         elif f.startswith("cgroups_") and f.endswith('.csv') and not '_average_' in f:
             process_cgroup_stats(f, conn, exp_name)
