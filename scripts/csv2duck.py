@@ -5,6 +5,17 @@ import sys
 import os
 import re
 
+EXCLUDE_EXPS=[
+    "cgroups-reclaim-swappiness3-simulcast-vp8",
+    "default",
+    "naive-reduction-simulcast-vp8",
+    "network-vp8-l1t1",
+    "spawn-simulcast-vp8",
+    "spawnfill-cgroup-reduction-simulcast-vp8",
+    "traffic-ballooning-1h-2",
+    "traffic-cgroup-reclaim-stdev60s-1h"
+]
+
 main_cols = ["TIME",
              "MEMORY USED",
              "MEMORY FREE",
@@ -135,16 +146,153 @@ cgroup_cols = [
 
 ROOM_FIXED_COLS = [ "TIME","PARTICIPANT_ID","NUM_PARTICIPANTS","SENT_RTT","SENT_BITRATE","SENT_FPS" ]
 
-def process_main_stats(stat_file, conn, exp_name):
-    reg_match = re.search(fr'{exp_name}_(\d+-\d+-\d+-\d+-\d+-\d+).csv', stat_file)
-    date = reg_match.group(1)
+def create_tables(conn):
 
-    conn.sql(f"CREATE OR REPLACE TEMP TABLE data AS SELECT * FROM read_csv('{stat_file}', header=true, null_padding=true)")
+    query = """
+    CREATE TABLE IF NOT EXISTS stats (
+    exp_name                  VARCHAR,
+    date                      VARCHAR,
+    TIME                      BIGINT,
+    "MEMORY USED"               BIGINT,
+    "MEMORY FREE"               BIGINT,
+    "MEMORY MAX"                BIGINT,
+    SWAP                      BIGINT,
+    "CGROUP CACHE FILES"        VARCHAR,
+    "CGROUP SWAPPABLE"          VARCHAR,
+    "MEMORY PRESSURE AVG10"     DOUBLE,
+    "MEMORY PRESSURE AVG60"     DOUBLE,
+    "MEMORY PRESSURE AVG300"    DOUBLE,
+    "MEMORY PRESSURE TOTAL"     BIGINT,
+    "VIRSH ACTUAL"              BIGINT,
+    "VIRSH UNUSED"              BIGINT,
+    "VIRSH USABLE"              BIGINT,
+    "VIRSH AVAILABLE"           BIGINT,
+    "VIRSH SWAP IN"             BIGINT,
+    "VIRSH SWAP OUT"            BIGINT,
+    "VIRSH MINOR FAULT"         BIGINT,
+    "VIRSH MAJOR FAULT"         BIGINT,
+    "PUBLISHER BITRATE"         BIGINT,
+    "PUBLISHER FPS"             BIGINT,
+    "PUBLISHER RESOLUTION"      VARCHAR,
+    "PUBLISHER RTT"             BIGINT,
+    "CONNECTION STATE"          BIGINT,
+    "VIEWER COUNT"              BIGINT,
+    "VM MEMORY USAGE"           BIGINT,
+    "VM MEMORY FREE"            BIGINT,
+    "VM CPU USAGE"              DOUBLE,
+    "VM FREE TOTAL"             DOUBLE,
+    "VM FREE USED"              DOUBLE,
+    "VM FREE BUFCACHE"          DOUBLE,
+    "MEDOOZE INCOMING LOST"     BIGINT,
+    "MEDOOZE INCOMING DROP"     BIGINT,
+    "MEDOOZE INCOMING BITRATE"  BIGINT,
+    "MEDOOZE INCOMING NACK"     BIGINT,
+    "MEDOOZE INCOMING PLI"      BIGINT,
+    "RX PACKET"                 BIGINT,
+    "RX DROPPED"                BIGINT,
+    "RX ERRORS"                 BIGINT,
+    "RX MISSED"                 BIGINT,
+    "TX PACKET"                 BIGINT,
+    "TX DROPPED"                BIGINT,
+    "TX ERRORS"                 BIGINT,
+    "TX MISSED"                 BIGINT,
+    "VIEWERS TARGET AVERAGE"    BIGINT,
+    "VIEWERS BITRATE AVERAGE"   BIGINT,
+    "VIEWERS RTT AVG"           BIGINT,
+    "VIEWERS E2E AVG"           BIGINT,
+    "VIEWERS FPS AVERAGE"       BIGINT
+    )
+    """
 
-    try:
-        conn.sql(f"CREATE TABLE stats AS SELECT '{exp_name}' as exp_name, '{date}' as date, \"{"\",\"".join(main_cols)}\" FROM data")
-    except:
-        conn.sql(f"INSERT INTO stats (SELECT '{exp_name}' as exp_name, '{date}' as date, \"{"\",\"".join(main_cols)}\" FROM data)")
+    conn.sql(query)
+
+    query = """
+    CREATE TABLE IF NOT EXISTS cgroup_stats (
+    exp_name                  VARCHAR,
+    date                      VARCHAR,
+    TIME                      BIGINT,
+    ANON                      BIGINT,
+    FILE                      BIGINT,
+    KERNEL                    BIGINT,
+    "KERNEL STACK"              BIGINT,
+    PAGETABLES                BIGINT,
+    "SEC PAGETABLES"            BIGINT,
+    PERCPU                    BIGINT,
+    SOCK                      BIGINT,
+    VMALLOC                   BIGINT,
+    SHMEM                     BIGINT,
+    ZSWAP                     BIGINT,
+    ZSWAPPED                  BIGINT,
+    "FILE MAPPED"               BIGINT,
+    "FILE DIRTY"                BIGINT,
+    "FILE WRITEBACK"            BIGINT,
+    SWAPCACHED                BIGINT,
+    "ANON THP"                  BIGINT,
+    "FILE THP"                  BIGINT,
+    "SHMEM THP"                 BIGINT,
+    "INACTIVE ANON"             BIGINT,
+    "ACTIVE ANON"               BIGINT,
+    "INACTIVE FILE"             BIGINT,
+    "ACTIVE FILE"               BIGINT,
+    UNEVICTABLE               BIGINT,
+    "SLAB RECLAIMABLE"          BIGINT,
+    "SLAB UNRECLAIMABLE"        BIGINT,
+    SLAB                      BIGINT,
+    "WORKINGSET REFAULT ANON"   BIGINT,
+    "WORKINGSET REFAULT FILE"   BIGINT,
+    "WORKINGSET ACTIVATE ANON"  BIGINT,
+    "WORKINGSET ACTIVATE FILE"  BIGINT,
+    "WORKINGSET RESTORE ANON"   BIGINT,
+    "WORKINGSET RESTORE FILE"   BIGINT,
+    "WORKINGSET NODERECLAIM"    BIGINT,
+    "PGDEMOTE KSWAPD"           BIGINT,
+    "PGDEMOTE DIRECT"           BIGINT,
+    "PGDEMOTE KHUGEPAGED"       BIGINT,
+    "PGPROMOTE SUCCESS"         BIGINT,
+    PGSCAN                    BIGINT,
+    PGSTEAL                   BIGINT,
+    "PGSCAN KSWAPD"             BIGINT,
+    "PGSCAN DIRECT"             BIGINT,
+    "PGSCAN KHUGEPAGED"         BIGINT,
+    "PGSTEAL KSWAPD"            BIGINT,
+    "PGSTEAL DIRECT"            BIGINT,
+    "PGSTEAL KHUGEPAGED"        BIGINT,
+    PGFAULT                   BIGINT,
+    PGMAJFAULT                BIGINT,
+    PGREFILL                  BIGINT,
+    PGACTIVATE                BIGINT,
+    PGDEACTIVATE              BIGINT,
+    PGLAZYFREE                BIGINT,
+    PGLAZYFREED               BIGINT,
+    "SWPIN ZERO"                BIGINT,
+    "SWPOUT ZERO"               BIGINT,
+    ZSWPIN                    BIGINT,
+    ZSWPOUT                   BIGINT,
+    ZSWPWB                    BIGINT,
+    "THP FAULT ALLOC"           BIGINT,
+    "THP COLLAPSE ALLOC"        BIGINT,
+    "THP SWPOUT"                BIGINT,
+    "THP SWPOUT FALLBACK"       BIGINT,
+    "NUMA PAGES MIGRATED"       BIGINT,
+    "NUMA PTE UPDATES"          BIGINT,
+    "NUMA HINT FAULTS"          BIGINT,
+    "MEMORY CURRENT"            BIGINT,
+    "SWAP CURRENT"              BIGINT,
+    "MEMORY MAX"                BIGINT,
+    "PRESSURE AVG10"            DOUBLE,
+    "SUMMED MEMORY"             BIGINT,
+    "VM FREE USED"              DOUBLE,
+    "VM FREE BUFCACHE"          DOUBLE,
+    "SWAP IN"                   BIGINT,
+    "SWAP OUT"                  BIGINT,
+    "PGPG IN"                   BIGINT,
+    "PGPG OUT"                  BIGINT,
+    "HOST CPU"                  VARCHAR,
+    "LOAD AVERAGE"              VARCHAR
+    )
+    """
+
+    conn.sql(query)
 
     query = """
     CREATE TABLE IF NOT EXISTS viewers (
@@ -164,45 +312,85 @@ def process_main_stats(stat_file, conn, exp_name):
 
     conn.sql(query)
 
-    df = conn.execute("SELECT COUNT(*) AS numcols FROM (DESCRIBE data)").pl()
+    query = """
+    CREATE TABLE IF NOT EXISTS room_receivers(
+    exp_name VARCHAR,
+    date VARCHAR,
+    room_id VARCHAR,
+    time BIGINT,
+    participant_id VARCHAR,
+    receiving_participant_id VARCHAR,
+    BITRATE BIGINT,
+    RTT BIGINT,
+    FPS BIGINT
+    )
+    """
 
-    num_viewers = (df["numcols"][0] - len(main_cols)) // 7
+    conn.sql(query)
 
-    client_id = 0
-    i = 0
-    while i < num_viewers:
-        query = f"""INSERT INTO viewers
-        SELECT '{exp_name}' as exp_name,
-        '{date}' as date,
-        '{client_id}' as client_id,
-        TIME as time,
-        "VM-VIEWER-{client_id} TARGET" AS target,
-        "VM-VIEWER-{client_id} BITRATE" AS bitrate,
-        "VM-VIEWER-{client_id} RTT" AS rtt,
-        "VM-VIEWER-{client_id} E2E DELAY" AS delay,
-        "VM-VIEWER-{client_id} FPS" AS fps,
-        "VM-VIEWER-{client_id} RESOLUTION" AS resolution,
-        "VM-VIEWER-{client_id} RID" AS rid,
-        FROM data
-        """
+def process_main_stats(stat_file, conn, exp_name):
+    reg_match = re.search(fr'{exp_name}_(\d+-\d+-\d+-\d+-\d+-\d+)(?:_average)?.csv', stat_file)
+    if not reg_match:
+        return
 
-        try:
-            conn.sql(query)
-            i+= 1
-            client_id += 1
-        except:
-            client_id += 1
-
-def process_cgroup_stats(stat_file, conn, exp_name):
-    reg_match = re.search(fr'cgroups_{exp_name}_(\d+-\d+-\d+-\d+-\d+-\d+).csv', stat_file)
     date = reg_match.group(1)
 
     conn.sql(f"CREATE OR REPLACE TEMP TABLE data AS SELECT * FROM read_csv('{stat_file}', header=true, null_padding=true)")
 
-    try:
-        conn.sql(f"CREATE TABLE cgroup_stats AS SELECT '{exp_name}' as exp_name, '{date}' as date, \"{"\",\"".join(cgroup_cols)}\" FROM data")
-    except:
-        conn.sql(f"INSERT INTO cgroup_stats (SELECT '{exp_name}' as exp_name, '{date}' as date, \"{"\",\"".join(cgroup_cols)}\" FROM data)")
+    # try:
+    #    conn.sql(f"CREATE TABLE stats AS SELECT '{exp_name}' as exp_name, '{date}' as date, \"{"\",\"".join(main_cols)}\" FROM data")
+    # except:
+    # conn.sql(f"INSERT INTO stats (SELECT '{exp_name}' as exp_name, '{date}' as date, \"{"\",\"".join(main_cols)}\" FROM data)")
+    # print(stat_file, exp_name, f"INSERT INTO stats (SELECT '{exp_name}' as exp_name, '{date}' as date, * NOT LIKE 'VM-VIEWER-%' AND NOT LIKE 'VIEWERS%' FROM data)")
+    conn.sql(f"INSERT INTO stats BY NAME (SELECT '{exp_name}' as exp_name, '{date}' as date, COLUMNS(lambda c: c NOT LIKE 'VM-VIEWER-%' AND c NOT IN ['h','m','l']) FROM data)")
+
+    df = conn.execute("SHOW stats").pl()
+    has_viewers = False
+
+    for col in df["column_name"]:
+        if col.startswith('VM-VIEWERS'):
+            has_viewers = True
+            break
+
+    if has_viewers:
+        df = conn.execute("SELECT COUNT(*) AS numcols FROM (DESCRIBE data)").pl()
+
+        num_viewers = (df["numcols"][0] - len(main_cols)) // 7
+
+        client_id = 0
+        i = 0
+        while i < num_viewers:
+            query = f"""INSERT INTO viewers
+            SELECT '{exp_name}' as exp_name,
+            '{date}' as date,
+            '{client_id}' as client_id,
+            TIME as time,
+            "VM-VIEWER-{client_id} TARGET" AS target,
+            "VM-VIEWER-{client_id} BITRATE" AS bitrate,
+            "VM-VIEWER-{client_id} RTT" AS rtt,
+            "VM-VIEWER-{client_id} E2E DELAY" AS delay,
+            "VM-VIEWER-{client_id} FPS" AS fps,
+            "VM-VIEWER-{client_id} RESOLUTION" AS resolution,
+            "VM-VIEWER-{client_id} RID" AS rid,
+            FROM data
+            """
+
+            try:
+                conn.sql(query)
+                i+= 1
+                client_id += 1
+            except:
+                client_id += 1
+
+def process_cgroup_stats(stat_file, conn, exp_name):
+    reg_match = re.search(fr'cgroups_{exp_name}_(\d+-\d+-\d+-\d+-\d+-\d+)(?:_average)?.csv', stat_file)
+    if not reg_match:
+        return
+
+    date = reg_match.group(1)
+
+    conn.sql(f"CREATE OR REPLACE TEMP TABLE data AS SELECT * FROM read_csv('{stat_file}', header=true, null_padding=true)")
+    conn.sql(f"INSERT INTO cgroup_stats BY NAME (SELECT '{exp_name}' as exp_name, '{date}' as date, * FROM data)")
 
 def process_rooms_stats(stat_file, conn, exp_name):
     reg_match = re.search(fr'room(\d+)_{exp_name}_(\d+-\d+-\d+-\d+-\d+-\d+).csv', stat_file)
@@ -233,22 +421,6 @@ def process_rooms_stats(stat_file, conn, exp_name):
     except:
         conn.sql(f"INSERT INTO room_stats (SELECT '{exp_name}' as exp_name, '{date}' as date, 'room{index}' as room_id, \"{"\",\"".join(ROOM_FIXED_COLS)}\" FROM data)")
 
-    query = """
-    CREATE TABLE IF NOT EXISTS room_receivers(
-    exp_name VARCHAR,
-    date VARCHAR,
-    room_id VARCHAR,
-    time BIGINT,
-    participant_id VARCHAR,
-    receiving_participant_id VARCHAR,
-    BITRATE BIGINT,
-    RTT BIGINT,
-    FPS BIGINT
-    )
-    """
-
-    conn.sql(query)
-
     for participant in participants:
         query = f"""
         INSERT INTO room_receivers
@@ -260,14 +432,7 @@ def process_rooms_stats(stat_file, conn, exp_name):
 
         conn.sql(query)
 
-if __name__ == "__main__":
-
-    dbfile='results.db'
-    conn = duckdb.connect(dbfile)
-    conn.sql("SET temp_directory = '/tmp/'")
-
-    exp_name = os.getcwd().split('/')[-1]
-
+def parse_exp(conn, exp_name):
     for f in os.listdir():
         if f.startswith(f"{exp_name}") and f.endswith('.csv') and not '_average_' in f:
             process_main_stats(f, conn, exp_name)
@@ -297,7 +462,7 @@ if __name__ == "__main__":
         room_wd = os.getcwd()
 
         for d in os.listdir():
-            if d.startswith('room'):
+            if d.startswith('room') and os.path.isdir(d):
                 os.chdir(d)
                 for f in os.listdir():
                     if f.startswith("room") and f.endswith('.csv') and not '_average_' in f:
@@ -306,3 +471,36 @@ if __name__ == "__main__":
                 os.chdir(room_wd)
 
         os.chdir(back)
+
+def explore(conn):
+    for d in os.listdir():
+       if os.path.isdir(d):
+           back = os.getcwd()
+           os.chdir(d)
+           exp_name = os.getcwd().split('/')[-1]
+
+           if any([ f.startswith(exp_name) and f.endswith('.csv') for f in os.listdir() ]):
+               #try:
+               parse_exp(conn, exp_name)
+               #except:
+               #    print(exp_name)
+           else:
+               explore(conn)
+
+           os.chdir(back)
+
+if __name__ == "__main__":
+
+    dbfile='results.db'
+    conn = duckdb.connect(dbfile)
+    conn.sql("SET temp_directory = '/tmp/'")
+
+    create_tables(conn)
+
+    os.chdir('results')
+
+    print(os.getcwd())
+    explore(conn)
+    print(os.getcwd())
+
+    # parse_exp(conn, 'cgroups-max-step-100')
