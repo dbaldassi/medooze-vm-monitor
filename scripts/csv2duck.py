@@ -6,6 +6,7 @@ import os
 import re
 
 EXCLUDE_EXPS=[
+    "cgroups-reclaim-swappiness2-simulcast-vp8",
     "cgroups-reclaim-swappiness3-simulcast-vp8",
     "default",
     "naive-reduction-simulcast-vp8",
@@ -13,7 +14,8 @@ EXCLUDE_EXPS=[
     "spawn-simulcast-vp8",
     "spawnfill-cgroup-reduction-simulcast-vp8",
     "traffic-ballooning-1h-2",
-    "traffic-cgroup-reclaim-stdev60s-1h"
+    "traffic-cgroup-reclaim-stdev60s-1h",
+    "cgroups-max-reduction-viewers10-thresh50-increase0"
 ]
 
 main_cols = ["TIME",
@@ -147,7 +149,6 @@ cgroup_cols = [
 ROOM_FIXED_COLS = [ "TIME","PARTICIPANT_ID","NUM_PARTICIPANTS","SENT_RTT","SENT_BITRATE","SENT_FPS" ]
 
 def create_tables(conn):
-
     query = """
     CREATE TABLE IF NOT EXISTS stats (
     exp_name                  VARCHAR,
@@ -335,20 +336,19 @@ def process_main_stats(stat_file, conn, exp_name):
 
     date = reg_match.group(1)
 
-    conn.sql(f"CREATE OR REPLACE TEMP TABLE data AS SELECT * FROM read_csv('{stat_file}', header=true, null_padding=true)")
+    # check if already exists
+    conn.execute(f"SELECT * FROM stats WHERE exp_name='{exp_name}' AND date='{date}'")
+    if conn.fetchone():
+        return
 
-    # try:
-    #    conn.sql(f"CREATE TABLE stats AS SELECT '{exp_name}' as exp_name, '{date}' as date, \"{"\",\"".join(main_cols)}\" FROM data")
-    # except:
-    # conn.sql(f"INSERT INTO stats (SELECT '{exp_name}' as exp_name, '{date}' as date, \"{"\",\"".join(main_cols)}\" FROM data)")
-    # print(stat_file, exp_name, f"INSERT INTO stats (SELECT '{exp_name}' as exp_name, '{date}' as date, * NOT LIKE 'VM-VIEWER-%' AND NOT LIKE 'VIEWERS%' FROM data)")
+    conn.sql(f"CREATE OR REPLACE TEMP TABLE data AS SELECT * FROM read_csv('{stat_file}', header=true, null_padding=true, nullstr=['NaN', 'nan', 'NA', 'NULL', ''])")
     conn.sql(f"INSERT INTO stats BY NAME (SELECT '{exp_name}' as exp_name, '{date}' as date, COLUMNS(lambda c: c NOT LIKE 'VM-VIEWER-%' AND c NOT IN ['h','m','l']) FROM data)")
 
-    df = conn.execute("SHOW stats").pl()
+    df = conn.execute("SHOW data").pl()
     has_viewers = False
 
     for col in df["column_name"]:
-        if col.startswith('VM-VIEWERS'):
+        if col.startswith('VM-VIEWER'):
             has_viewers = True
             break
 
@@ -359,7 +359,7 @@ def process_main_stats(stat_file, conn, exp_name):
 
         client_id = 0
         i = 0
-        while i < num_viewers:
+        while i < num_viewers and (client_id - i) < 50:
             query = f"""INSERT INTO viewers
             SELECT '{exp_name}' as exp_name,
             '{date}' as date,
@@ -389,23 +389,41 @@ def process_cgroup_stats(stat_file, conn, exp_name):
 
     date = reg_match.group(1)
 
-    conn.sql(f"CREATE OR REPLACE TEMP TABLE data AS SELECT * FROM read_csv('{stat_file}', header=true, null_padding=true)")
+    # check if already exists
+    conn.execute(f"SELECT * FROM cgroup_stats WHERE exp_name='{exp_name}' AND date='{date}'")
+    if conn.fetchone():
+        return
+
+    conn.sql(f"CREATE OR REPLACE TEMP TABLE data AS SELECT * FROM read_csv('{stat_file}', header=true, null_padding=true, nullstr=['NaN', 'nan', 'NA', 'NULL', ''])")
     conn.sql(f"INSERT INTO cgroup_stats BY NAME (SELECT '{exp_name}' as exp_name, '{date}' as date, * FROM data)")
 
 def process_rooms_stats(stat_file, conn, exp_name):
     reg_match = re.search(fr'room(\d+)_{exp_name}_(\d+-\d+-\d+-\d+-\d+-\d+).csv', stat_file)
+    if not reg_match:
+        return
+
     index = reg_match.group(1)
     date = reg_match.group(2)
 
-    conn.sql(f"CREATE OR REPLACE TEMP TABLE data AS SELECT * FROM read_csv('{stat_file}', header=true, null_padding=true)")
+    # check if already exists
+    try:
+        conn.execute(f"SELECT * FROM room_stats WHERE exp_name='{exp_name}' AND date='{date}'")
+        if conn.fetchone():
+            return
+    except:
+        pass
+
+    print(stat_file)
+
+    conn.sql(f"CREATE OR REPLACE TEMP TABLE data AS SELECT * FROM read_csv('{stat_file}', header=true, null_padding=true, nullstr=['NaN', 'nan', 'NA', 'NULL', ''],ignore_errors=true)")
 
     properties = ["BITRATE", "RTT", "FPS"]
 
-    df = conn.execute("SELECT DISTINCT ON(PARTICIPANT_ID) TIME,PARTICIPANT_ID FROM data ORDER BY TIME").pl()
+    df = conn.execute("SELECT DISTINCT ON(PARTICIPANT_ID) TIME,PARTICIPANT_ID FROM data ORDER BY TIME,rowid").pl()
     participants = []
     headers = ROOM_FIXED_COLS[:]
 
-    for participant in df["PARTICIPANT_ID"]:
+    for participant in df['PARTICIPANT_ID']:
         for prop in properties:
             participants.append(f"{participant}")
             headers.append(f"{participant}_{prop}")
@@ -433,6 +451,7 @@ def process_rooms_stats(stat_file, conn, exp_name):
         conn.sql(query)
 
 def parse_exp(conn, exp_name):
+    print(os.getcwd())
     for f in os.listdir():
         if f.startswith(f"{exp_name}") and f.endswith('.csv') and not '_average_' in f:
             process_main_stats(f, conn, exp_name)
@@ -441,7 +460,7 @@ def parse_exp(conn, exp_name):
         elif f.startswith("room") and f.endswith('.csv') and not '_average_' in f:
             process_rooms_stats(f, conn, exp_name)
 
-    cgroup_dir = ['cgroup_stats', 'cgroups_stat', 'cgroup_stat', 'cgroups_stats']
+    cgroup_dir = ['cgroup_stats', 'cgroups_stat', 'cgroup_stat', 'cgroups_stats', 'cgroups', 'cgroup']
 
     back = os.getcwd()
 
@@ -479,7 +498,7 @@ def explore(conn):
            os.chdir(d)
            exp_name = os.getcwd().split('/')[-1]
 
-           if any([ f.startswith(exp_name) and f.endswith('.csv') for f in os.listdir() ]):
+           if any([ f.startswith(exp_name) and f.endswith('.csv') for f in os.listdir() ]) and not exp_name in EXCLUDE_EXPS:
                #try:
                parse_exp(conn, exp_name)
                #except:
@@ -503,4 +522,5 @@ if __name__ == "__main__":
     explore(conn)
     print(os.getcwd())
 
-    # parse_exp(conn, 'cgroups-max-step-100')
+    # parse_exp(conn, 'visio-perf-maxroom2')
+    # process_rooms_stats('room4_visio-perf-maxroom_02-06-2025-13-33-49.csv', conn, 'visio-perf-maxroom')
