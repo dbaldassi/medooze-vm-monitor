@@ -119,10 +119,6 @@ sfu_mem_exe=$root_wd/scripts/sfu_memory.py
 # cd cgroups-max-reduction
 # move_files . $root_wd/$DEST/progressive-reduction/all
 
-
-
-
-
 # cd /home/these/Documents/vm-project/medooze-vm-monitor/results/cgroups-heuristic/cgroups-reclaim-prog-new-100/cgroups
 
 # avg_file=cgroups_2025-10-27-13-45-57_average_10.csv
@@ -175,14 +171,15 @@ INDICATOR=median
 # $cgroup_plot_exe $avg_file TIME RAM_USAGE,ACTIVE_ANON,SWAP_USAGE,INACTIVE_ANON ylim=4400 loc=$LOWER_CENTER leg_col=3 annotate # loc=$LOWER_CENTER leg_col=2
 # move_files . $root_wd/$DEST/regulation/baseline/regul-par20viewers
 
-# # delta regul
-# cd $root_wd/results/1ton/double/noregul-viewer-increase-double-longer-par20
-# avg_baseline=noregul-viewer-increase-double-longer-par20_2025-05-01-19-03-18_average_10.csv
-# avg_balloon=$root_wd/results/1ton/double/balloon-pid-viewer-increase-double-longer-par20/balloon-pid-viewer-increase-double-longer-par20_2025-05-01-19-01-11_average_10.csv
-# avg_cgroup=$root_wd/results/1ton/double/cgroups-regul-stddev-30-viewer-double-increase-par20/cgroups-regul-stddev-30-viewer-double-increase-par20_2025-05-01-18-59-48_average_10.csv
+# delta regul
+cd $root_wd/results/1ton/double/noregul-viewer-increase-double-longer-par20
+avg_baseline=noregul-viewer-increase-double-longer-par20_2025-05-01-19-03-18_average_10.csv
+avg_balloon=$root_wd/results/1ton/double/balloon-pid-viewer-increase-double-longer-par20/balloon-pid-viewer-increase-double-longer-par20_2025-05-01-19-01-11_average_10.csv
+avg_cgroup=$root_wd/results/1ton/double/cgroups-regul-stddev-30-viewer-double-increase-par20/cgroups-regul-stddev-30-viewer-double-increase-par20_2025-05-01-18-59-48_average_10.csv
 
 # $plot_exe $avg_baseline,$avg_balloon,$avg_cgroup $INDICATOR TIME PUBLISHER_BITRATE,VIEWER_BITRATE,PUBLISHER_RTT,VIEWER_DELAY loc=$LOWER_CENTER leg_col=3 annotate
-# move_files . $root_wd/$DEST/regulation/baseline/regul-par20viewers
+$plot_exe $avg_baseline,$avg_balloon,$avg_cgroup $INDICATOR TIME PUBLISHER_BITRATE,VIEWER_BITRATE loc=$LOWER_CENTER leg_col=3 annotate
+move_files . $root_wd/$DEST/regulation/baseline/regul-par20viewers
 
 
 # redis 
@@ -210,10 +207,10 @@ cd results/redis-10-again
 # file=cgroups-pid-mongodb_2025-10-30-15-03-33_average_10.csv
 # $plot_exe $file $INDICATOR TIME MEMORY_USED,VM_MEMORY_USAGE,SWAP loc=$LOWER_LEFT # loc=$LOWER_CENTER # leg_col=2
 
-cd $root_wd/results/baseline-pid-mongodb-latest
-file=baseline-pid-mongodb-latest_2025-10-31-17-30-58_average_11.csv
-$plot_exe $file $INDICATOR TIME MEMORY_USED,VM_MEMORY_USAGE,SWAP,VIRSH_AVAILABLE loc=$LOWER_CENTER leg_col=2 
-move_files . $root_wd/$DEST/db/baseline
+# cd $root_wd/results/baseline-pid-mongodb-latest
+# file=baseline-pid-mongodb-latest_2025-10-31-17-30-58_average_11.csv
+# $plot_exe $file $INDICATOR TIME MEMORY_USED,VM_MEMORY_USAGE,SWAP,VIRSH_AVAILABLE loc=$LOWER_CENTER leg_col=2 
+# move_files . $root_wd/$DEST/db/baseline
 
 # cd $root_wd/results/cgroups-pid-mongodb-latest
 # file=cgroups-pid-mongodb-latest_2025-10-31-11-11-35_average_11.csv
