@@ -1,148 +1,11 @@
 
-const FS = require("fs");
-
-const config = require('../config/config.json');
-const { title } = require("process");
-// Create csv logger to log all stats
-const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+import FS from "fs";
+import config from '../config/config.json' with { type: 'json' };
+import { DuckDBInstance, DuckDBDataChunk, VARCHAR, INTEGER, DOUBLE } from '@duckdb/node-api';
 
 class StatsLogger {
     constructor() {
-        this.csv_name = 'stats.csv';
-        this.csvWriter = undefined;
-        
-        // csv stats headers
-        this.headers = [
-            {id: 'time', title: 'TIME'},
-            {id: 'ram_usage', title: 'MEMORY USED'},
-            {id: 'ram_free', title: 'MEMORY FREE'},
-            {id: 'maxram', title: 'MEMORY MAX'},
-            {id: 'swap_usage', title: 'SWAP'},
-            {id: 'cgroup_cache', title: 'CGROUP CACHE FILES'},
-            {id: 'cgroup_swappable', title: 'CGROUP SWAPPABLE'},
-            {id: 'pressure_avg10', title: 'MEMORY PRESSURE AVG10'},
-            {id: 'pressure_avg60', title: 'MEMORY PRESSURE AVG60'},
-            {id: 'pressure_avg300', title: 'MEMORY PRESSURE AVG300'},
-            {id: 'pressure_total', title: 'MEMORY PRESSURE TOTAL'},
-            {id: 'virsh_actual', title: 'VIRSH ACTUAL'},
-            {id: 'virsh_unused', title: 'VIRSH UNUSED'},
-            {id: 'virsh_usable', title: 'VIRSH USABLE'},
-            {id: 'virsh_available', title: 'VIRSH AVAILABLE'},
-            {id: 'virsh_swap_in', title: 'VIRSH SWAP IN'},
-            {id: 'virsh_swap_out', title: 'VIRSH SWAP OUT'},
-            {id: 'virsh_minor_fault', title: 'VIRSH MINOR FAULT'},
-            {id: 'virsh_major_fault', title: 'VIRSH MAJOR FAULT'},
-            {id: 'publisher_bitrate', title: 'PUBLISHER BITRATE'},
-            {id: 'publisher_fps', title: 'PUBLISHER FPS'},
-            {id: 'publisher_res', title: 'PUBLISHER RESOLUTION'},
-            {id: 'publisher_rtt', title: 'PUBLISHER RTT'},
-            {id: 'publisher_pc_state', title: 'CONNECTION STATE'},
-            {id: 'viewer_count', title: 'VIEWER COUNT'},
-            {id: 'vm_ram_usage', title: 'VM MEMORY USAGE'},
-            {id: 'vm_ram_free', title: 'VM MEMORY FREE'},
-            {id: 'vm_cpu_usage', title: 'VM CPU USAGE'},
-            {id: 'vm_free_total', title: 'VM FREE TOTAL'},
-            {id: 'vm_free_used', title: 'VM FREE USED'},
-            {id: 'vm_free_bufcache', title: 'VM FREE BUFCACHE'},
-            {id: 'medooze_incoming_lost', title: 'MEDOOZE INCOMING LOST'},
-            {id: 'medooze_incoming_drop', title: 'MEDOOZE INCOMING DROP'},
-            {id: 'medooze_incoming_bitrate', title: 'MEDOOZE INCOMING BITRATE'},
-            {id: 'medooze_incoming_nack', title: 'MEDOOZE INCOMING NACK'},
-            {id: 'medooze_incoming_pli', title: 'MEDOOZE INCOMING PLI'},
-            {id: 'rx_packet', title: 'RX PACKET'},
-            {id: 'rx_dropped', title: 'RX DROPPED'},
-            {id: 'rx_errors', title: 'RX ERRORS'},
-            {id: 'rx_missed', title: 'RX MISSED'},
-            {id: 'tx_packet', title: 'TX PACKET'},
-            {id: 'tx_dropped', title: 'TX DROPPED'},
-            {id: 'tx_errors', title: 'TX ERRORS'},
-            {id: 'tx_missed', title: 'TX MISSED'},
-        ];
-
-        // Headers spécifiques pour les stats cgroup
-        this.cgroup_headers = [
-            { id: 'time', title: 'TIME' },
-            { id: 'anon', title: 'ANON' },
-            { id: 'file', title: 'FILE' },
-            { id: 'kernel', title: 'KERNEL' },
-            { id: 'kernel_stack', title: 'KERNEL STACK' },
-            { id: 'pagetables', title: 'PAGETABLES' },
-            { id: 'sec_pagetables', title: 'SEC PAGETABLES' },
-            { id: 'percpu', title: 'PERCPU' },
-            { id: 'sock', title: 'SOCK' },
-            { id: 'vmalloc', title: 'VMALLOC' },
-            { id: 'shmem', title: 'SHMEM' },
-            { id: 'zswap', title: 'ZSWAP' },
-            { id: 'zswapped', title: 'ZSWAPPED' },
-            { id: 'file_mapped', title: 'FILE MAPPED' },
-            { id: 'file_dirty', title: 'FILE DIRTY' },
-            { id: 'file_writeback', title: 'FILE WRITEBACK' },
-            { id: 'swapcached', title: 'SWAPCACHED' },
-            { id: 'anon_thp', title: 'ANON THP' },
-            { id: 'file_thp', title: 'FILE THP' },
-            { id: 'shmem_thp', title: 'SHMEM THP' },
-            { id: 'inactive_anon', title: 'INACTIVE ANON' },
-            { id: 'active_anon', title: 'ACTIVE ANON' },
-            { id: 'inactive_file', title: 'INACTIVE FILE' },
-            { id: 'active_file', title: 'ACTIVE FILE' },
-            { id: 'unevictable', title: 'UNEVICTABLE' },
-            { id: 'slab_reclaimable', title: 'SLAB RECLAIMABLE' },
-            { id: 'slab_unreclaimable', title: 'SLAB UNRECLAIMABLE' },
-            { id: 'slab', title: 'SLAB' },
-            { id: 'workingset_refault_anon', title: 'WORKINGSET REFAULT ANON' },
-            { id: 'workingset_refault_file', title: 'WORKINGSET REFAULT FILE' },
-            { id: 'workingset_activate_anon', title: 'WORKINGSET ACTIVATE ANON' },
-            { id: 'workingset_activate_file', title: 'WORKINGSET ACTIVATE FILE' },
-            { id: 'workingset_restore_anon', title: 'WORKINGSET RESTORE ANON' },
-            { id: 'workingset_restore_file', title: 'WORKINGSET RESTORE FILE' },
-            { id: 'workingset_nodereclaim', title: 'WORKINGSET NODERECLAIM' },
-            { id: 'pgdemote_kswapd', title: 'PGDEMOTE KSWAPD' },
-            { id: 'pgdemote_direct', title: 'PGDEMOTE DIRECT' },
-            { id: 'pgdemote_khugepaged', title: 'PGDEMOTE KHUGEPAGED' },
-            { id: 'pgpromote_success', title: 'PGPROMOTE SUCCESS' },
-            { id: 'pgscan', title: 'PGSCAN' },
-            { id: 'pgsteal', title: 'PGSTEAL' },
-            { id: 'pgscan_kswapd', title: 'PGSCAN KSWAPD' },
-            { id: 'pgscan_direct', title: 'PGSCAN DIRECT' },
-            { id: 'pgscan_khugepaged', title: 'PGSCAN KHUGEPAGED' },
-            { id: 'pgsteal_kswapd', title: 'PGSTEAL KSWAPD' },
-            { id: 'pgsteal_direct', title: 'PGSTEAL DIRECT' },
-            { id: 'pgsteal_khugepaged', title: 'PGSTEAL KHUGEPAGED' },
-            { id: 'pgfault', title: 'PGFAULT' },
-            { id: 'pgmajfault', title: 'PGMAJFAULT' },
-            { id: 'pgrefill', title: 'PGREFILL' },
-            { id: 'pgactivate', title: 'PGACTIVATE' },
-            { id: 'pgdeactivate', title: 'PGDEACTIVATE' },
-            { id: 'pglazyfree', title: 'PGLAZYFREE' },
-            { id: 'pglazyfreed', title: 'PGLAZYFREED' },
-            { id: 'swpin_zero', title: 'SWPIN ZERO' },
-            { id: 'swpout_zero', title: 'SWPOUT ZERO' },
-            { id: 'zswpin', title: 'ZSWPIN' },
-            { id: 'zswpout', title: 'ZSWPOUT' },
-            { id: 'zswpwb', title: 'ZSWPWB' },
-            { id: 'thp_fault_alloc', title: 'THP FAULT ALLOC' },
-            { id: 'thp_collapse_alloc', title: 'THP COLLAPSE ALLOC' },
-            { id: 'thp_swpout', title: 'THP SWPOUT' },
-            { id: 'thp_swpout_fallback', title: 'THP SWPOUT FALLBACK' },
-            { id: 'numa_pages_migrated', title: 'NUMA PAGES MIGRATED' },
-            { id: 'numa_pte_updates', title: 'NUMA PTE UPDATES' },
-            { id: 'numa_hint_faults', title: 'NUMA HINT FAULTS' },
-            { id: 'ram_usage', title: 'MEMORY CURRENT' },
-            { id: 'swap_usage', title: 'SWAP CURRENT' },
-            { id: 'maxram', title: 'MEMORY MAX' },
-            { id: 'pressure_avg10', title: 'PRESSURE AVG10' },
-            { id: 'summed_memory', title: 'SUMMED MEMORY' },
-            { id: 'vm_free_used', title: 'VM FREE USED'},
-            { id: 'vm_free_bufcache', title: 'VM FREE BUFCACHE'},
-            { id: 'swapin', title: 'SWAP IN'},
-            { id: 'swapout', title: 'SWAP OUT'},
-            { id: 'pgpgin', title: 'PGPG IN'},
-            { id: 'pgpgout', title: 'PGPG OUT'},
-            { id: 'host_cpu', title: 'HOST CPU'},
-            { id: 'load_average', title: 'LOAD AVERAGE'},
-        ];
-
-        this.headers_init_len = this.headers.length;
+        this.setup_duckdb();
 
         this.info = {
             // Not used, why not remove it ? I'll think about it
@@ -229,40 +92,193 @@ class StatsLogger {
             virsh_minor_fault: 0, // The number of page faults as reported by the guest OS since the start of the VM. Minor page faults happen quiet often, for example when first accessing newly allocated memory or on copy-on-write. 
             virsh_major_fault: 0, // The number of page faults as reported by the guest OS since the start of the VM. Major page faults on the other hand require disk IO as some data is accessed, which must be paged in from disk first.
 
+            viewers: new Map(),
             rooms: new Map()
         };
-
-        this.create_writer(false);
-
-        this.cgroupCsvWriter = createCsvWriter({
-            path: "cgroups_stats.csv",
-            header: this.cgroup_headers,
-            append: false
-        });
     }
 
-    add_header(id, title) {
-        this.headers.push({id : id, title : title});
+    set_exp_name(name) {
+        this.exp_name = name;
+        this.date = new Date().toLocaleString('fr-FR').replaceAll(' ', '-').replaceAll('/', '-').replaceAll(':', '-');
     }
 
-    sync_headers_sync(file) {
-        // If no viewers added, nothing to do
-        if(this.headers.length === this.headers_init_len) return;
+    async setup_duckdb() {
+        this.duck_promise = Promise.withResolvers();
 
-        // Else rewrite csv headers
-        const data =  FS.readFileSync(file, 'utf8');
-        const new_headers = this.headers.map((e) => e.title).join(",");
-        console.log(new_headers);
-        const newData = data.replace(/.*/, new_headers);
-        FS.writeFileSync(file, newData);
-    }
+        this.instance = await DuckDBInstance.create('results.db');
+        this.connection = await this.instance.connect()
 
-    create_writer(append) {
-        this.csvWriter = createCsvWriter({
-            path: this.csv_name,
-            header: this.headers,
-            append: append
-        }); 
+        await this.connection.run(`
+    CREATE TABLE IF NOT EXISTS virsh_stats (
+    exp_name                  VARCHAR,
+    date                      VARCHAR,
+    TIME                      BIGINT,
+    "VIRSH ACTUAL"            BIGINT,
+    "VIRSH UNUSED"            BIGINT,
+    "VIRSH USABLE"            BIGINT,
+    "VIRSH AVAILABLE"         BIGINT,
+    "VIRSH SWAP IN"           BIGINT,
+    "VIRSH SWAP OUT"          BIGINT,
+    "VIRSH MINOR FAULT"       BIGINT,
+    "VIRSH MAJOR FAULT"       BIGINT,
+    );
+
+    CREATE TABLE IF NOT EXISTS medooze_stats (
+    exp_name                     VARCHAR,
+    date                        VARCHAR,
+    TIME                        BIGINT,
+    "MEDOOZE INCOMING LOST"     BIGINT,
+    "MEDOOZE INCOMING DROP"     BIGINT,
+    "MEDOOZE INCOMING BITRATE"  BIGINT,
+    "MEDOOZE INCOMING NACK"     BIGINT,
+    "MEDOOZE INCOMING PLI"      BIGINT,
+    );
+
+    CREATE TABLE IF NOT EXISTS guest_stats (
+    exp_name                    VARCHAR,
+    date                        VARCHAR,
+    TIME                        BIGINT,
+    "VM MEMORY USAGE"           BIGINT,
+    "VM MEMORY FREE"            BIGINT,
+    "VM CPU USAGE"              DOUBLE,
+    "VM FREE TOTAL"             DOUBLE,
+    "VM FREE USED"              DOUBLE,
+    "VM FREE BUFCACHE"          DOUBLE,
+    "RX PACKET"                 BIGINT,
+    "RX DROPPED"                BIGINT,
+    "RX ERRORS"                 BIGINT,
+    "RX MISSED"                 BIGINT,
+    "TX PACKET"                 BIGINT,
+    "TX DROPPED"                BIGINT,
+    "TX ERRORS"                 BIGINT,
+    "TX MISSED"                 BIGINT,
+    );
+
+    CREATE TABLE IF NOT EXISTS publisher_stats (
+    exp_name                    VARCHAR,
+    date                        VARCHAR,
+    TIME                        BIGINT,
+    "PUBLISHER BITRATE"         BIGINT,
+    "PUBLISHER FPS"             BIGINT,
+    "PUBLISHER RESOLUTION"      VARCHAR,
+    "PUBLISHER RTT"             BIGINT,
+    "CONNECTION STATE"          BIGINT,
+    "VIEWER COUNT"              BIGINT,
+    );
+
+    CREATE TABLE IF NOT EXISTS cgroup_stats (
+    exp_name                  VARCHAR,
+    date                      VARCHAR,
+    TIME                      BIGINT,
+    ANON                      BIGINT,
+    FILE                      BIGINT,
+    KERNEL                    BIGINT,
+    "KERNEL STACK"              BIGINT,
+    PAGETABLES                BIGINT,
+    "SEC PAGETABLES"            BIGINT,
+    PERCPU                    BIGINT,
+    SOCK                      BIGINT,
+    VMALLOC                   BIGINT,
+    SHMEM                     BIGINT,
+    ZSWAP                     BIGINT,
+    ZSWAPPED                  BIGINT,
+    "FILE MAPPED"               BIGINT,
+    "FILE DIRTY"                BIGINT,
+    "FILE WRITEBACK"            BIGINT,
+    SWAPCACHED                BIGINT,
+    "ANON THP"                  BIGINT,
+    "FILE THP"                  BIGINT,
+    "SHMEM THP"                 BIGINT,
+    "INACTIVE ANON"             BIGINT,
+    "ACTIVE ANON"               BIGINT,
+    "INACTIVE FILE"             BIGINT,
+    "ACTIVE FILE"               BIGINT,
+    UNEVICTABLE               BIGINT,
+    "SLAB RECLAIMABLE"          BIGINT,
+    "SLAB UNRECLAIMABLE"        BIGINT,
+    SLAB                      BIGINT,
+    "WORKINGSET REFAULT ANON"   BIGINT,
+    "WORKINGSET REFAULT FILE"   BIGINT,
+    "WORKINGSET ACTIVATE ANON"  BIGINT,
+    "WORKINGSET ACTIVATE FILE"  BIGINT,
+    "WORKINGSET RESTORE ANON"   BIGINT,
+    "WORKINGSET RESTORE FILE"   BIGINT,
+    "WORKINGSET NODERECLAIM"    BIGINT,
+    "PGDEMOTE KSWAPD"           BIGINT,
+    "PGDEMOTE DIRECT"           BIGINT,
+    "PGDEMOTE KHUGEPAGED"       BIGINT,
+    "PGPROMOTE SUCCESS"         BIGINT,
+    PGSCAN                    BIGINT,
+    PGSTEAL                   BIGINT,
+    "PGSCAN KSWAPD"             BIGINT,
+    "PGSCAN DIRECT"             BIGINT,
+    "PGSCAN KHUGEPAGED"         BIGINT,
+    "PGSTEAL KSWAPD"            BIGINT,
+    "PGSTEAL DIRECT"            BIGINT,
+    "PGSTEAL KHUGEPAGED"        BIGINT,
+    PGFAULT                   BIGINT,
+    PGMAJFAULT                BIGINT,
+    PGREFILL                  BIGINT,
+    PGACTIVATE                BIGINT,
+    PGDEACTIVATE              BIGINT,
+    PGLAZYFREE                BIGINT,
+    PGLAZYFREED               BIGINT,
+    "SWPIN ZERO"                BIGINT,
+    "SWPOUT ZERO"               BIGINT,
+    ZSWPIN                    BIGINT,
+    ZSWPOUT                   BIGINT,
+    ZSWPWB                    BIGINT,
+    "THP FAULT ALLOC"           BIGINT,
+    "THP COLLAPSE ALLOC"        BIGINT,
+    "THP SWPOUT"                BIGINT,
+    "THP SWPOUT FALLBACK"       BIGINT,
+    "NUMA PAGES MIGRATED"       BIGINT,
+    "NUMA PTE UPDATES"          BIGINT,
+    "NUMA HINT FAULTS"          BIGINT,
+    "MEMORY CURRENT"            BIGINT,
+    "SWAP CURRENT"              BIGINT,
+    "MEMORY MAX"                BIGINT,
+    "PRESSURE AVG10"            DOUBLE,
+    "SUMMED MEMORY"             BIGINT,
+    "VM FREE USED"              DOUBLE,
+    "VM FREE BUFCACHE"          DOUBLE,
+    "SWAP IN"                   BIGINT,
+    "SWAP OUT"                  BIGINT,
+    "PGPG IN"                   BIGINT,
+    "PGPG OUT"                  BIGINT,
+    "HOST CPU"                  VARCHAR,
+    "LOAD AVERAGE"              VARCHAR
+    );
+
+    CREATE TABLE IF NOT EXISTS viewers_stats (
+    exp_name VARCHAR,
+    date VARCHAR,
+    client_id VARCHAR,
+    TIME INTEGER,
+    target INTEGER,
+    bitrate INTEGER,
+    rtt INTEGER,
+    delay INTEGER,
+    fps INTEGER,
+    resolution VARCHAR,
+    rid VARCHAR
+    );
+
+    CREATE TABLE IF NOT EXISTS room_receivers(
+    exp_name VARCHAR,
+    date VARCHAR,
+    room_id VARCHAR,
+    TIME BIGINT,
+    participant_id VARCHAR,
+    receiving_participant_id VARCHAR,
+    BITRATE BIGINT,
+    RTT BIGINT,
+    FPS BIGINT
+    )
+    `
+                      );
+
+        this.duck_promise.resolve();
     }
 
     async log_room() {
@@ -309,46 +325,97 @@ class StatsLogger {
             }
         }
     }
-    
+
+    async append_to_table(table_config) {
+        const appender = await this.connection.createAppender(table_config.name);
+        const chunk = DuckDBDataChunk.create(table_config.types);
+        chunk.setRows(table_config.values);
+
+        appender.appendDataChunk(chunk);
+        appender.flushSync();
+    }
+
     async log_info() {
-        // write a new line into the csv file
-        const records = [this.info];
-        await this.csvWriter.writeRecords(records);
+        await this.duck_promise.promise;
 
-        const memoryComponents = [
-            'anon',
-            'file',
-            'kernel_stack',
-            'pagetables',
-            'sec_pagetables',
-            'shmem',
-            'slab_reclaimable',
-            'slab_unreclaimable',
-            'sock',
-            'zswap',
-            'zswapped',
-            'percpu'
-        ];
-
-        // Calcul de la somme des composantes de la mémoire
-        let summedMemory = 0;
-        memoryComponents.forEach(component => {
-            if (this.info[component] !== undefined) {
-                summedMemory += this.info[component];
-            }
+        this.append_to_table({
+            name: 'virsh_stats',
+            types: [VARCHAR, VARCHAR, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER],
+            values: [[this.exp_name, this.date, this.info.time,
+             this.info.virsh_actual, this.info.virsh_unused, this.info.virsh_usable,
+             this.info.virsh_available, this.info.virsh_swap_in, this.info.virsh_swap_out,
+             this.info.virsh_minor_fault, this.info.virsh_major_fault]]
         });
 
-        // Ajout de la valeur calculée à l'objet info
-        this.info.summed_memory = summedMemory;
+        this.append_to_table({
+            name: 'medooze_stats',
+            types: [VARCHAR, VARCHAR, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER],
+            values: [[this.exp_name, this.date, this.info.time, this.info.medooze_incoming_lost, this.info.medooze_incoming_drop,
+                     this.info.medooze_incoming_bitrate, this.info.medooze_incoming_nack, this.info.medooze_incoming_pli]]
+        });
 
-        const cgroup_records = [this.info];
-        await this.cgroupCsvWriter.writeRecords(cgroup_records);
+        this.append_to_table({
+            name: 'guest_stats',
+            types: [VARCHAR, VARCHAR, INTEGER, INTEGER, INTEGER, DOUBLE, DOUBLE, DOUBLE, DOUBLE, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER],
+            values: [[this.exp_name, this.date, this.info.time, this.info.vm_ram_usage, this.info.vm_ram_free, this.info.vm_cpu_usage,
+                     this.info.vm_free_total, this.info.vm_free_used, this.info.vm_free_bufcache,
+                     this.info.rx_packet, this.info.rx_dropped, this.info.rx_missed, this.info.rx_errors,
+                     this.info.tx_packet, this.info.tx_dropped, this.info.tx_missed, this.info.tx_errors
+                    ]]
+        });
 
-        this.log_room();
+        this.append_to_table({
+            name: 'publisher_stats',
+            types: [VARCHAR, VARCHAR, INTEGER, INTEGER, INTEGER, VARCHAR, INTEGER, INTEGER, INTEGER],
+            values: [[this.exp_name, this.date, this.info.time, this.info.publisher_bitrate, this.info.publisher_fps,
+                     this.info.publisher_res, this.info.publisher_rtt, this.info.publisher_pc_state, this.info.viewer_count
+                    ]]
+        });
+
+        this.append_to_table({
+            name: 'cgroup_stats',
+            types: [VARCHAR, VARCHAR, INTEGER,
+                    INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER,
+                    INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER,
+                    INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER,
+                    INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER,
+                    INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER,
+                    INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER,
+                    INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER,
+                    DOUBLE, INTEGER, DOUBLE, DOUBLE, INTEGER, INTEGER, INTEGER, INTEGER, VARCHAR, VARCHAR
+                   ],
+            values: [[this.exp_name, this.date, this.info.time,this.info.anon,this.info.file,this.info.kernel,this.info.kernel_stack,
+                     this.info.pagetables,this.info.sec_pagetables,this.info.percpu,this.info.sock,this.info.vmalloc,this.info.shmem,
+                     this.info.zswap,this.info.zswapped,this.info.file_mapped,this.info.file_dirty,this.info.file_writeback,
+                     this.info.swapcached,this.info.anon_thp,this.info.file_thp,this.info.shmem_thp,this.info.inactive_anon,
+                     this.info.active_anon,this.info.inactive_file,this.info.active_file,this.info.unevictable,this.info.slab_reclaimable,
+                     this.info.slab_unreclaimable,this.info.slab,this.info.workingset_refault_anon,this.info.workingset_refault_file,
+                     this.info.workingset_activate_anon,this.info.workingset_activate_file,this.info.workingset_restore_anon,
+                     this.info.workingset_restore_file,this.info.workingset_nodereclaim,this.info.pgdemote_kswapd,
+                     this.info.pgdemote_direct,this.info.pgdemote_khugepaged,this.info.pgpromote_success,this.info.pgscan,
+                     this.info.pgsteal,this.info.pgscan_kswapd,this.info.pgscan_direct,this.info.pgscan_khugepaged,
+                     this.info.pgsteal_kswapd,this.info.pgsteal_direct,this.info.pgsteal_khugepaged,this.info.pgfault,
+                     this.info.pgmajfault,this.info.pgrefill,this.info.pgactivate,this.info.pgdeactivate,this.info.pglazyfree,
+                     this.info.pglazyfreed,this.info.swpin_zero,this.info.swpout_zero,this.info.zswpin,this.info.zswpout,
+                     this.info.zswpwb,this.info.thp_fault_alloc,this.info.thp_collapse_alloc,this.info.thp_swpout,
+                     this.info.thp_swpout_fallback,this.info.numa_pages_migrated,this.info.numa_pte_updates,this.info.numa_hint_faults,
+                     this.info.ram_usage,this.info.swap_usage,this.info.maxram,this.info.pressure_avg10,this.info.summed_memory,
+                     this.info.vm_free_used,this.info.vm_free_bufcache,this.info.swapin,this.info.swapout,this.info.pgpgin,
+                     this.info.pgpgout,this.info.host_cpu,this.info.load_average
+                    ]]
+        });
+
+        let viewer_rows = [];
+        this.info.viewers.forEach((v,k) => viewer_rows.push([this.exp_name, this.date, k, this.info.time, v.target, v.bitrate, v.rtt, v.e2e, v.fps, v.res, v.rid]));
+        this.append_to_table({
+            name: 'viewers_stats',
+            types: [VARCHAR, VARCHAR, VARCHAR, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, VARCHAR, VARCHAR],
+            values: viewer_rows
+        })
+
+        // this.log_room();
     }
 }
 
 // glogbal / singleton
-var logger = new StatsLogger;
-
-module.exports = logger;
+export var logger = new StatsLogger;
