@@ -12,3 +12,7 @@ results/
 *.db
 figure*
 .ipynb_checkpoints/
+*.pdf
+cgroup_mem_boot/
+initramfs-monitor/
+results-old/
