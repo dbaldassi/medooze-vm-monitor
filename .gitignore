@@ -9,3 +9,6 @@ screenlog*
 regulation-heuristics/
 run_all.sh
 results/
+*.db
+figure*
+.ipynb_checkpoints/
