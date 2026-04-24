@@ -1,0 +1,14 @@
+{
+  "nodeModulesDir": "auto",
+  "imports": {
+    "@duckdb/node-api": "npm:@duckdb/node-api@^1.5.2-r.1",
+    "express": "npm:express@4",
+    "os-utils": "npm:os-utils@^0.0.14"
+  },
+  "tasks": {
+    "dev": "deno run --allow-net --allow-env --allow-read --allow-ffi index.ts",
+    "check": "deno check index.ts",
+    "fmt": "deno fmt",
+    "lint": "deno lint"
+  }
+}
