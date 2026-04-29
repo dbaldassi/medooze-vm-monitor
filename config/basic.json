@@ -1,0 +1,10 @@
+{
+    "monitor_type": "basic",
+    "progress_host": "0.0.0.0",
+    "progress_port": 4578,
+    "runs": [{
+        "repet": 1,
+        "scenario": "basic_monitoring",
+        "domain": "win11"
+    }]
+}

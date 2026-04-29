@@ -1,5 +1,5 @@
 
-import { logger, StatsComponent, TableMetadata } from '../stats.js';
+import { logger, StatsComponent, TableMetadata } from '../stats.ts';
 import { DuckDBConnection, DuckDBDataChunk, DuckDBMaterializedResult, VARCHAR, INTEGER, DOUBLE } from 'npm:@duckdb/node-api';
 
 type CgroupStats = {
@@ -93,8 +93,90 @@ export class CgroupStatsComponent implements StatsComponent {
     private listener: StatsListener;
 
     constructor(listener: StatsListener) {
-        this.info = new CgroupStats;
         this.listener = listener;
+
+        this.info = {
+            anon: 0,
+            file: 0,
+            kernel: 0,
+            kernel_stack: 0,
+            pagetables: 0,
+            sec_pagetables: 0,
+            percpu: 0,
+            sock: 0,
+            vmalloc: 0,
+            shmem: 0,
+            zswap: 0,
+            zswapped: 0,
+            file_mapped: 0,
+            file_dirty: 0,
+            file_writeback: 0,
+            swapcached: 0,
+            anon_thp: 0,
+            file_thp: 0,
+            shmem_thp: 0,
+            inactive_anon: 0,
+            active_anon: 0,
+            inactive_file: 0,
+            active_file: 0,
+            unevictable: 0,
+            slab_reclaimable: 0,
+            slab_unreclaimable: 0,
+            slab: 0,
+            workingset_refault_anon: 0,
+            workingset_refault_file: 0,
+            workingset_activate_anon: 0,
+            workingset_activate_file: 0,
+            workingset_restore_anon: 0,
+            workingset_restore_file: 0,
+            workingset_nodereclaim: 0,
+            pgdemote_kswapd: 0,
+            pgdemote_direct: 0,
+            pgdemote_khugepaged: 0,
+            pgpromote_success: 0,
+            pgscan: 0,
+            pgsteal: 0,
+            pgscan_kswapd: 0,
+            pgscan_direct: 0,
+            pgscan_khugepaged: 0,
+            pgsteal_kswapd: 0,
+            pgsteal_direct: 0,
+            pgsteal_khugepaged: 0,
+            pgfault: 0,
+            pgmajfault: 0,
+            pgrefill: 0,
+            pgactivate: 0,
+            pgdeactivate: 0,
+            pglazyfree: 0,
+            pglazyfreed: 0,
+            swpin_zero: 0,
+            swpout_zero: 0,
+            zswpin: 0,
+            zswpout: 0,
+            zswpwb: 0,
+            thp_fault_alloc: 0,
+            thp_collapse_alloc: 0,
+            thp_swpout: 0,
+            thp_swpout_fallback: 0,
+            numa_pages_migrated: 0,
+            numa_pte_updates: 0,
+            numa_hint_faults: 0,
+            ram_usage: 0,
+            ram_free: 0,
+            swap_usage: 0,
+            maxram: 0,
+            pressure_avg10: 0,
+            summed_memory: 0,
+            vm_free_used: 0,
+            vm_free_bufcache: 0,
+            swapin: 0,
+            swapout: 0,
+            pgpgin: 0,
+            pgpgout: 0,
+            host_cpu: 0,
+            load_average: 0,
+        };
+
     }
 
     public fetch(): void {
@@ -204,7 +286,7 @@ CREATE TABLE IF NOT EXISTS cgroup_stats (
                     INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER,
                     INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER,
                     INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER,
-                    DOUBLE, INTEGER, DOUBLE, DOUBLE, INTEGER, INTEGER, INTEGER, INTEGER, VARCHAR, VARCHAR
+                    DOUBLE, INTEGER, DOUBLE, DOUBLE, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER
                    ],
             values: [[metadata.exp_name, metadata.date, metadata.time,this.info.anon,this.info.file,this.info.kernel,this.info.kernel_stack,
                      this.info.pagetables,this.info.sec_pagetables,this.info.percpu,this.info.sock,this.info.vmalloc,this.info.shmem,

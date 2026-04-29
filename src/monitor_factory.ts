@@ -1,9 +1,10 @@
-import { Monitor } from './monitor.ts'
-import { MedoozeMonitor } from './monitor_medooze.ts'
+import { Monitor } from './monitor.ts';
+import type { MonitorConfig } from './monitor.ts';
+import { MedoozeMonitor } from './monitor_medooze.ts';
 import { BasicMonitor } from './basic_monitor.ts';
 
 export class MonitorFactory {
-    public static create(monitor_config: MonitorConfig): Monitor {
+    public static create(monitor_config: MonitorConfig): Monitor|undefined {
         if (monitor_config.monitor_type === "basic") {
             return new BasicMonitor(monitor_config);
         }

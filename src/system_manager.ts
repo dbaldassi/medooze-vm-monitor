@@ -5,6 +5,7 @@ import os from 'npm:os-utils';
 import { exec, execSync } from 'node:child_process';
 import { StatsListener, CgroupStatsComponent } from './stats_components/cgroup_stats.ts';
 import { VirshStatsComponent } from './stats_components/virsh_stats.ts';
+import { logger } from './stats.ts';
 
 import config from '../config/config.json' with { type: 'json' };
 
@@ -29,44 +30,36 @@ type Pid = {
 }
 
 export class SystemManager implements StatsListener {
-    private ram_usage_path: string;
-    private ram_total_path: string;
-    private swap_usage_path: string;
-    private swap_event_path: string;
-    private memory_event_path: string;
-    private memory_pressure_path: string;
-    private memory_reclaim_path: string;
-    private memory_stat_file: string;
+    private ram_usage_path: string = "";
+    private ram_total_path: string = "";
+    private swap_usage_path: string = "";
+    private swap_event_path: string = "";
+    private memory_event_path: string = "";
+    private memory_pressure_path: string = "";
+    private memory_reclaim_path: string = "";
+    private memory_stat_file: string = "";
 
     private swappiness: number;
     private pid: Pid;
     private window_size: number = 30;
-    private inactive_anon_values: [number];
+    private inactive_anon_values: number[] = [];
     private threshold_percentage: number = 1;
 
-    private domain: string;
+    private domain: string = "";
 
     private cgroup_stats: CgroupStatsComponent;
     private virsh_stats: VirshStatsComponent;
-
-    private decoder: TextDecoder;
 
     private cgroup_path: string;
 
     constructor() {
         this.cgroup_path = "";
 
-        this.ram_usage_path  = Path.join(this.cgroup_path, config.ram_usage_file);
-        this.ram_total_path  = Path.join(this.cgroup_path, config.ram_total_file);
-        this.swap_usage_path = Path.join(this.cgroup_path, config.swap_usage_file);
-        this.swap_event_path = Path.join(this.cgroup_path, config.swap_event_file);
-        this.memory_event_path = Path.join(this.cgroup_path, config.memory_event_file);
-        this.memory_pressure_path = Path.join(this.cgroup_path, config.memory_pressure_file);
-        this.memory_reclaim_path = Path.join(this.cgroup_path, config.memory_reclaim_file);
-        this.memory_stat_file = Path.join(this.cgroup_path, config.memory_stat_file);
+        this.cgroup_stats = new CgroupStatsComponent(this);
+        this.virsh_stats = new VirshStatsComponent(this);
 
-        this.decoder = new TextDecoder("utf-8");
-
+        logger.register_component(this.cgroup_stats);
+        logger.register_component(this.virsh_stats);
 
         this.swappiness = 0;
 
@@ -141,12 +134,12 @@ export class SystemManager implements StatsListener {
         try {
             const data = FS.readFileSync(this.memory_stat_file, 'utf8');
 
-            for(let line of data.toString().split('\n')) {
+            for(const line of data.toString().split('\n')) {
                 const split = line.split(' ');
-                this.cgroup_stats.info[split[0]] = parseInt(split[1]);
+                this.cgroup_stats.info[split[0] as keyof typeof this.cgroup_stats.info] = parseInt(split[1]);
             }
         } catch(e) {
-
+            console.error(e);
         }
     }
 
@@ -180,10 +173,11 @@ export class SystemManager implements StatsListener {
             const some = data.toString().split('\n')[0];
             const pressure = some.split(' ');
 
+
             for(let p of pressure) {
                 const fields = p.split('=');
                 if(fields.length === 2) {
-                    this.cgroup_stats.info[`pressure_${fields[0]}`] = parseFloat(fields[1]);
+                    this.cgroup_stats.info[`pressure_${fields[0]}` as keyof typeof this.cgroup_stats.info] = parseFloat(fields[1]);
                 }
             }
         } catch(e) {}
@@ -197,11 +191,11 @@ export class SystemManager implements StatsListener {
                 return;
             }
 
-            let lines = output.split('\n');
-            for(let line of lines) {
-                let splitted = line.split(' ');
+            const lines = output.split('\n');
+            for(const line of lines) {
+                const splitted = line.split(' ');
                 if(splitted.length === 2) {
-                    this.virsh_stats.info[`virsh_${splitted[0]}`] = parseInt(splitted[1]);
+                    this.virsh_stats.info[`virsh_${splitted[0]}` as keyof typeof this.virsh_stats.info] = parseInt(splitted[1]);
                 }
             }
         });
@@ -218,16 +212,62 @@ export class SystemManager implements StatsListener {
         this.fetch_cpu_and_load();
     }
 
+    private get_domain_pid(): number | undefined {
+        const out = SystemManager.quick_exec_sync(`pgrep -f "/usr/bin/qemu-system-x86_64 -name guest=${this.domain}"`, {});
+
+        if(out) {
+            return parseInt(out);
+        }
+
+        return undefined;
+    }
+
+    private setup_cgroup() {
+        const pid = this.get_domain_pid();
+        if(pid === undefined) return;
+
+        const data = FS.readFileSync(`/proc/${pid}/cgroup`, 'utf8');
+        const split = data.split(':');
+
+        const path = split[2].split('/');
+        path.pop(); // remove /emulator
+        path.pop(); // remove /libvirt
+
+        this.cgroup_path = `/sys/fs/cgroup/${path.join("/")}`;
+
+        this.ram_usage_path  = Path.join(this.cgroup_path, config.ram_usage_file);
+        this.ram_total_path  = Path.join(this.cgroup_path, config.ram_total_file);
+        this.swap_usage_path = Path.join(this.cgroup_path, config.swap_usage_file);
+        this.swap_event_path = Path.join(this.cgroup_path, config.swap_event_file);
+        this.memory_event_path = Path.join(this.cgroup_path, config.memory_event_file);
+        this.memory_pressure_path = Path.join(this.cgroup_path, config.memory_pressure_file);
+        this.memory_reclaim_path = Path.join(this.cgroup_path, config.memory_reclaim_file);
+        this.memory_stat_file = Path.join(this.cgroup_path, config.memory_stat_file);
+
+        console.log(this.ram_usage_path);
+    }
+
+    public start_vm() {
+        SystemManager.quick_exec_sync(`virsh start ${this.domain}`, {});
+        this.setup_cgroup();
+    }
+
+    public stop_vm(): Promise<void> {
+        SystemManager.quick_exec_sync(`virsh shutdown ${this.domain}`, {});
+
+        return new Promise<void>(resolve => resolve());
+    }
+
     private pid_regul(target: number, measured: number): number {
-        let error = target - measured;
+        const error = target - measured;
 
         this.pid.integrator += error * this.pid.dt;
 
-        let p = this.pid.kp * error;
-        let i = this.pid.ki * this.pid.integrator;
-        let d = this.pid.kd * (this.pid.prevError - error) / this.pid.dt;
+        const p = this.pid.kp * error;
+        const i = this.pid.ki * this.pid.integrator;
+        const d = this.pid.kd * (this.pid.prevError - error) / this.pid.dt;
 
-        let out = p + i + d;
+        const out = p + i + d;
 
         this.pid.prevError = error;
 
@@ -312,7 +352,7 @@ export class SystemManager implements StatsListener {
         }
     }
 
-    private calculate_standard_seviation(values: [number]) {
+    private calculate_standard_seviation(values: number[]) {
         const mean = values.reduce((a:  number, b: number) => a + b, 0) / values.length;
         const variance = values.reduce((a: number, b: number) => a + Math.pow(b - mean, 2), 0) / values.length;
         return Math.sqrt(variance);
@@ -404,10 +444,20 @@ export class SystemManager implements StatsListener {
         });
     }
 
-    static quick_exec_sync(cmd: string, opts: any) {
-        execSync(cmd, opts, (err: string, output: string) => {
-            if(err) console.error(err);
-            else console.log(output);
-        });
+    static quick_exec_sync(cmd: string, opts: any): string|undefined {
+        try {
+            const proc = new Deno.Command("sh", {
+                args: ["-c", cmd],
+                stdout: "piped",
+                stderr: "piped"
+            });
+
+            const result = proc.outputSync();
+            const stdout = new TextDecoder().decode(result.stdout);
+            console.log(stdout);
+            return stdout;
+        } catch(err: any) {
+            console.error(`Error executing : ${cmd} : `, err);
+        }
     }
 }

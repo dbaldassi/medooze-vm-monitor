@@ -1,6 +1,7 @@
 import Express from 'npm:express';
 import CORS from 'npm:cors';
 import fs from 'node:fs';
+import process from 'node:process';
 import { createServer } from 'node:https';
 import { server as WebSocketServer } from 'npm:websocket';
 import config from './config/config.json' with { type: 'json' };
@@ -44,12 +45,18 @@ wss.on("request", (request: any) => {
 });
 
 if (process.argv.length >= 3) {
-    const decoder = new TextDecoder("utf-8");
-    const data = fs.readFileSync(process.argv[2]);
-    const monitor_config: MonitorConfig = JSON.parse(decoder.decode(data));
+    const data = fs.readFileSync(process.argv[2], 'utf8');
+    const monitor_config: MonitorConfig = JSON.parse(data);
     const monitor = MonitorFactory.create(monitor_config);
-    monitor.run();
+
+    if(monitor) monitor.run().then(() => exit());
 }
 else {
     console.error("No config provided for monitor");
+}
+
+function exit() {
+    console.log("Exiting");
+    server.closeAllConnections();
+    process.exit(0);
 }

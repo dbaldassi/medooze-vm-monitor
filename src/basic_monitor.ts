@@ -6,7 +6,17 @@ export class BasicMonitor extends Monitor {
         super(monitor_config);
     }
 
-    required_step(requirement: string) {
+    protected override on_start(): void {
+        console.log("Start");
+        logger.start_collection();
+    }
+
+    protected override on_stop(): void {
+        console.log("stop");
+        logger.stop_collection();
+    }
+    
+    required_step(_: string) {
         // nothing
     }
 }

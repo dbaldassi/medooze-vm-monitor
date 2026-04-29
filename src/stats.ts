@@ -12,36 +12,47 @@ export interface StatsComponent {
     fetch(): void;
     create_table(conn: DuckDBConnection): Promise<DuckDBMaterializedResult>;
     drop_table(conn: DuckDBConnection): void;
-    update_table(conn: DuckDBConnection, metadata: TableMetadata): void;
+    update_table(metadata: TableMetadata): void;
 }
 
 class StatsLogger {
     private metadata: TableMetadata;
-    private components: [StatsComponents];
+    private instance?: DuckDBInstance;
+    private connection?: DuckDBConnection;
+    private components: StatsComponent[];
+    private duck_promise: any = undefined;
+    private collector: number;
 
     constructor() {
         this.setup_duckdb();
-        this.metadata.time = 0;
+        this.metadata = {
+            time: 0,
+            exp_name: "",
+            date: ""
+        };
+        this.components = [];
+        this.collector = 0;
     }
 
     public set_exp_name(name: string): void {
         this.metadata.exp_name = name;
         this.metadata.date = new Date().toLocaleString('fr-FR').replaceAll(' ', '-').replaceAll('/', '-').replaceAll(':', '-');
+        this.metadata.time = 0;
     }
 
-    public async register_component(component: StatsComponent): void {
+    public async register_component(component: StatsComponent) {
         await this.duck_promise.promise;
 
-        await component.create_teable(this.connection);
+        await component.create_table(this.connection as DuckDBConnection);
 
         this.components.push(component);
     }
 
     public unregister_component(component: StatsComponent) {
-        this.component.splice(this.component.indexOf(component), 1);
+        this.components.splice(this.components.indexOf(component), 1);
     }
 
-    async setup_duckdb(): void {
+    async setup_duckdb() {
         this.duck_promise = Promise.withResolvers();
 
         this.instance = await DuckDBInstance.create('results.db');
@@ -50,13 +61,13 @@ class StatsLogger {
         this.duck_promise.resolve();
     }
 
-    public async append_to_table(table_config) {
-        const appender = await this.connection.createAppender(table_config.name);
+    public async append_to_table(table_config: any) {
+        const appender = await this.connection?.createAppender(table_config.name);
         const chunk = DuckDBDataChunk.create(table_config.types);
         chunk.setRows(table_config.values);
 
-        appender.appendDataChunk(chunk);
-        appender.flushSync();
+        appender?.appendDataChunk(chunk);
+        appender?.flushSync();
     }
 
     public async log_info() {
@@ -69,7 +80,18 @@ class StatsLogger {
             component.update_table(this.metadata);
         });
     }
+
+    public start_collection(): void {
+        this.collector = setInterval(() => {
+            this.metadata.time += config.time_interval;
+            this.log_info();
+        })
+    }
+
+    public stop_collection(): void {
+        clearTimeout(this.collector);
+    }
 }
 
 // glogbal / singleton
-export var logger = new StatsLogger;
+export const logger = new StatsLogger;

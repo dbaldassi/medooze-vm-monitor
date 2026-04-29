@@ -453,7 +453,7 @@ export class MedoozeMonitor extends Monitor {
 // 	    clearInterval(this.viewers_timeout[Symbol.toPrimitive]());
 //     }
 
-//     async required_step(requirement: string) {
+     async required_step(requirement: string) {
 //         // Wait for medooze to be connected
 //         if(requirement === "medooze_connected") {
 //             // Create promise in case monitor is not starting medooze by himself
@@ -472,6 +472,13 @@ export class MedoozeMonitor extends Monitor {
 //         }
 //         else if(requirement === "memory_filled") await this.process_promise.promise;
 //         else if(requirement === "room_created") await this.room_created_promise.promise;
-//     }
+     }
 
+    protected override on_start(): void {
+
+    }
+
+    protected override on_stop(): void {
+
+    }
 }
