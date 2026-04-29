@@ -73,8 +73,6 @@ class StatsLogger {
     public async log_info() {
         await this.duck_promise.promise;
 
-        this.metadata.time += config.time_interval;
-
         this.components.forEach(component => {
             component.fetch();
             component.update_table(this.metadata);
@@ -85,7 +83,7 @@ class StatsLogger {
         this.collector = setInterval(() => {
             this.metadata.time += config.time_interval;
             this.log_info();
-        })
+        }, config.time_interval);
     }
 
     public stop_collection(): void {
