@@ -2,7 +2,7 @@ import Path from "node:path";
 import FS from "node:fs";
 import os from 'npm:os-utils';
 
-import { exec, execSync } from 'node:child_process';
+import { exec, ExecOptions } from 'node:child_process';
 import { StatsListener, CgroupStatsComponent } from './stats_components/cgroup_stats.ts';
 import { VirshStatsComponent } from './stats_components/virsh_stats.ts';
 import { logger } from './stats.ts';
@@ -12,8 +12,6 @@ import config from '../config/config.json' with { type: 'json' };
 // Units
 const KILO: number = 1024;
 const MEGA:number = 1024 * KILO;
-const GIGA: number = 1024 * MEGA;
-const SECONDS: number = 1000;
 
 function clamp(value: number, lower: number, upper: number): number {
     return Math.min(Math.max(value, lower), upper);
@@ -29,21 +27,17 @@ type Pid = {
     dt: number;
 }
 
-export class SystemManager implements StatsListener {
+export class SystemManager extends EventTarget implements StatsListener {
     private ram_usage_path: string = "";
     private ram_total_path: string = "";
     private swap_usage_path: string = "";
-    private swap_event_path: string = "";
-    private memory_event_path: string = "";
     private memory_pressure_path: string = "";
     private memory_reclaim_path: string = "";
     private memory_stat_file: string = "";
 
-    private swappiness: number;
     private pid: Pid;
     private window_size: number = 30;
     private inactive_anon_values: number[] = [];
-    private threshold_percentage: number = 1;
 
     private domain: string = "";
 
@@ -52,7 +46,13 @@ export class SystemManager implements StatsListener {
 
     private cgroup_path: string;
 
+    private virsh_ready: boolean = false;
+
+    private vm_max: number = 0;
+
     constructor() {
+        super();
+
         this.cgroup_path = "";
 
         this.cgroup_stats = new CgroupStatsComponent(this);
@@ -60,8 +60,6 @@ export class SystemManager implements StatsListener {
 
         logger.register_component(this.cgroup_stats);
         logger.register_component(this.virsh_stats);
-
-        this.swappiness = 0;
 
         this.pid = {
             kp : 1/10, // to be tuned
@@ -77,6 +75,7 @@ export class SystemManager implements StatsListener {
 
     public set_domain(domain: string) {
         this.domain = domain;
+        this.vm_max = this.get_domain_max_memory();
     }
 
     private fetch_swap_stats() {
@@ -106,8 +105,8 @@ export class SystemManager implements StatsListener {
         try {
             // Read current memory usage from cgroup file
             const data = FS.readFileSync(this.ram_usage_path, 'utf8');
-            this.cgroup_stats.info.ram_usage = parseInt(data) / MEGA;
-        } catch(e) {
+            this.cgroup_stats.info.ram_usage = parseInt(data);
+        } catch(_) {
             this.cgroup_stats.info.ram_usage = 0;
         }
     }
@@ -115,8 +114,8 @@ export class SystemManager implements StatsListener {
     private fetch_ram_free() {
         try {
             const data = FS.readFileSync(this.ram_total_path, 'utf8');
-            this.cgroup_stats.info.ram_free = parseInt(data) / MEGA - this.cgroup_stats.info.ram_usage;
-        } catch(e) {
+            this.cgroup_stats.info.ram_free = parseInt(data) - this.cgroup_stats.info.ram_usage;
+        } catch(_) {
             this.cgroup_stats.info.ram_free = 0;
         }
     }
@@ -124,7 +123,7 @@ export class SystemManager implements StatsListener {
     private fetch_swap_usage() {
         try {
             const data = FS.readFileSync(this.swap_usage_path, 'utf8');
-            this.cgroup_stats.info.swap_usage = parseInt(data) / MEGA;
+            this.cgroup_stats.info.swap_usage = parseInt(data);
         } catch(e) {
             this.cgroup_stats.info.swap_usage = 0;
         }
@@ -152,7 +151,7 @@ export class SystemManager implements StatsListener {
             // Récupérer l'utilisation du CPU
             os.cpuUsage((cpuUsage: number) => {
                 this.cgroup_stats.info.host_cpu = cpuUsage * 100; // Convertir en pourcentage
-                console.log(`Load Average: ${loadAverage}, CPU Usage: ${cpuUsage * 100}%`);
+                // console.log(`Load Average: ${loadAverage}, CPU Usage: ${cpuUsage * 100}%`);
             });
         } catch (e) {
             console.error("Error fetching CPU and Load Average:", e);
@@ -162,7 +161,7 @@ export class SystemManager implements StatsListener {
     }
 
     private get_reclaimable_bytes(): number {
-        let cgroup_reclaimable = (this.cgroup_stats.info.slab_reclaimable + this.cgroup_stats.info.inactive_file) / (1024 * 1024);
+        const cgroup_reclaimable = (this.cgroup_stats.info.slab_reclaimable + this.cgroup_stats.info.inactive_file) / (1024 * 1024);
 
         return cgroup_reclaimable;
     }
@@ -196,6 +195,10 @@ export class SystemManager implements StatsListener {
                 const splitted = line.split(' ');
                 if(splitted.length === 2) {
                     this.virsh_stats.info[`virsh_${splitted[0]}` as keyof typeof this.virsh_stats.info] = parseInt(splitted[1]);
+
+                    if(!this.virsh_ready && splitted[0] === "available") {
+                        this.dispatchEvent(new Event("virsh_ready"));
+                    }
                 }
             }
         });
@@ -213,7 +216,7 @@ export class SystemManager implements StatsListener {
     }
 
     private get_domain_pid(): number | undefined {
-        const out = SystemManager.quick_exec_sync(`pgrep -f "/usr/bin/qemu-system-x86_64 -name guest=${this.domain}"`, {});
+        const out = SystemManager.quick_exec_sync(`pgrep -f "/usr/bin/qemu-system-x86_64 -name guest=${this.domain}"`);
 
         if(out) {
             return parseInt(out);
@@ -238,8 +241,6 @@ export class SystemManager implements StatsListener {
         this.ram_usage_path  = Path.join(this.cgroup_path, config.ram_usage_file);
         this.ram_total_path  = Path.join(this.cgroup_path, config.ram_total_file);
         this.swap_usage_path = Path.join(this.cgroup_path, config.swap_usage_file);
-        this.swap_event_path = Path.join(this.cgroup_path, config.swap_event_file);
-        this.memory_event_path = Path.join(this.cgroup_path, config.memory_event_file);
         this.memory_pressure_path = Path.join(this.cgroup_path, config.memory_pressure_file);
         this.memory_reclaim_path = Path.join(this.cgroup_path, config.memory_reclaim_file);
         this.memory_stat_file = Path.join(this.cgroup_path, config.memory_stat_file);
@@ -248,12 +249,12 @@ export class SystemManager implements StatsListener {
     }
 
     public start_vm() {
-        SystemManager.quick_exec_sync(`virsh start ${this.domain}`, {});
+        SystemManager.quick_exec_sync(`virsh start ${this.domain}`);
         this.setup_cgroup();
     }
 
     public stop_vm(): Promise<void> {
-        SystemManager.quick_exec_sync(`virsh shutdown ${this.domain}`, {});
+        SystemManager.quick_exec_sync(`virsh destroy ${this.domain}`);
 
         return new Promise<void>(resolve => resolve());
     }
@@ -358,7 +359,7 @@ export class SystemManager implements StatsListener {
         return Math.sqrt(variance);
     }
 
-    public cgroups_regul(threshold: number, dt: number) {
+    public cgroups_regul(threshold: number, _dt: number) {
         this.update_anon_window();
 
         const unused = this.cgroup_stats.info.ram_usage - (this.cgroup_stats.info.vm_free_used + this.cgroup_stats.info.vm_free_bufcache);
@@ -394,25 +395,44 @@ export class SystemManager implements StatsListener {
         this.reclaim_memory(Math.min(100,unused - threshold), undefined);
     }
 
+    // return in KiB
+    private get_domain_max_memory(): number {
+        const out = SystemManager.quick_exec_sync(`virsh dominfo ${this.domain}`);
+        if(out) {
+            const lines = out.split("\n");
+            for(const line of lines) {
+                if(line.startsWith("Max memory")) {
+                    const splitted = line.split(' ');
+                    console.log(splitted);
+                    return parseInt(splitted[6]);
+                }
+            }
+        }
+
+        return 0;
+    }
+
     public ballon_regul(threshold: number, dt: number): number {
         threshold *= 1024;
 
-        const max = 4 * 1024 * 1024 - (this.virsh_stats.info.virsh_available - this.virsh_stats.info.virsh_usable); // max ram is 4GB
+        const max = this.vm_max - (this.virsh_stats.info.virsh_available - this.virsh_stats.info.virsh_usable); // max ram is 4GB
         const min = 0;
         this.pid.dt = dt;
 
         const target = clamp(threshold + (this.virsh_stats.info.virsh_swap_out - this.virsh_stats.info.virsh_swap_in), min, max);
+        console.log({target});
 
         let out = this.pid_regul(target, this.virsh_stats.info.virsh_usable);
 
         out = ((this.virsh_stats.info.virsh_usable + out < target) ? target - this.virsh_stats.info.virsh_usable : Math.floor(out));
 
-        const LIMIT = 300;
-        if(out < -LIMIT * 1024) {
-            out = Math.sign(out) * LIMIT * 1024; // limit to 200K
-        }
+        // Nerf ballooning
+        // const LIMIT = 100;
+        // if(out < -LIMIT * 1024) {
+        //     out = Math.sign(out) * LIMIT * 1024; // limit to 100K
+        // }
 
-        let new_vm_size = Math.floor(clamp(this.virsh_stats.info.virsh_actual + out, target, 4 * 1024 * 1024));
+        const new_vm_size = Math.floor(clamp(this.virsh_stats.info.virsh_actual + out, target, this.vm_max));
 
         let time = 3;
         if(out < 0) {
@@ -420,6 +440,7 @@ export class SystemManager implements StatsListener {
             time = Math.max(time, 5); // min 1 sec because virsh report stats every second
         }
 
+        console.log({new_vm_size});
         SystemManager.quick_exec(`virsh setmem --domain ${this.domain} --size ${new_vm_size}K --current`, {});
 
         return time;
@@ -437,14 +458,14 @@ export class SystemManager implements StatsListener {
         SystemManager.quick_exec(`virsh setmem --domain ${this.domain} --size ${size}K --current`, {});
     }
 
-    static quick_exec(cmd: string, opts: any) {
+    static quick_exec(cmd: string, opts: (FS.ObjectEncodingOptions & ExecOptions) | undefined | null) {
         exec(cmd, opts, (err, output) => {
             if(err) console.error(err);
             else console.log(output);
         });
     }
 
-    static quick_exec_sync(cmd: string, opts: any): string|undefined {
+    static quick_exec_sync(cmd: string): string|undefined {
         try {
             const proc = new Deno.Command("sh", {
                 args: ["-c", cmd],
@@ -456,7 +477,7 @@ export class SystemManager implements StatsListener {
             const stdout = new TextDecoder().decode(result.stdout);
             console.log(stdout);
             return stdout;
-        } catch(err: any) {
+        } catch(err) {
             console.error(`Error executing : ${cmd} : `, err);
         }
     }

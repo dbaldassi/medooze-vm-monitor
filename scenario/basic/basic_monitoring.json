@@ -2,7 +2,7 @@
     "name": "basic_monitoring",
     "steps": [{
         "actions": [],
-        "wait": 20000,
+        "wait": 600000,
         "repeat": 1
     }]
 }

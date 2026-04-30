@@ -1,6 +1,6 @@
 
 import { logger, StatsComponent, TableMetadata } from '../stats.ts';
-import { DuckDBConnection, DuckDBDataChunk, DuckDBMaterializedResult, VARCHAR, INTEGER, DOUBLE } from 'npm:@duckdb/node-api';
+import { DuckDBConnection, DuckDBDataChunk, DuckDBMaterializedResult, VARCHAR, INTEGER, DOUBLE, BIGINT } from 'npm:@duckdb/node-api';
 
 type CgroupStats = {
     anon: number;
@@ -265,8 +265,8 @@ CREATE TABLE IF NOT EXISTS cgroup_stats (
     "SWAP OUT"                  BIGINT,
     "PGPG IN"                   BIGINT,
     "PGPG OUT"                  BIGINT,
-    "HOST CPU"                  BIGINT,
-    "LOAD AVERAGE"              BIGINT
+    "HOST CPU"                  DOUBLE,
+    "LOAD AVERAGE"              DOUBLE
     );
 `);
     }
@@ -278,34 +278,34 @@ CREATE TABLE IF NOT EXISTS cgroup_stats (
     public update_table(metadata: TableMetadata): void {
         logger.append_to_table({
             name: 'cgroup_stats',
-            types: [VARCHAR, VARCHAR, INTEGER,
-                    INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER,
-                    INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER,
-                    INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER,
-                    INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER,
-                    INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER,
-                    INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER,
-                    INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER,
-                    DOUBLE, INTEGER, DOUBLE, DOUBLE, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER
+            types: [VARCHAR, VARCHAR, BIGINT,
+                    BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT,
+                    BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT,
+                    BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT,
+                    BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT,
+                    BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT,
+                    BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT,
+                    BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT, BIGINT,
+                    DOUBLE, BIGINT, DOUBLE, DOUBLE, BIGINT, BIGINT, BIGINT, BIGINT, DOUBLE, DOUBLE
                    ],
-            values: [[metadata.exp_name, metadata.date, metadata.time,this.info.anon,this.info.file,this.info.kernel,this.info.kernel_stack,
-                     this.info.pagetables,this.info.sec_pagetables,this.info.percpu,this.info.sock,this.info.vmalloc,this.info.shmem,
-                     this.info.zswap,this.info.zswapped,this.info.file_mapped,this.info.file_dirty,this.info.file_writeback,
-                     this.info.swapcached,this.info.anon_thp,this.info.file_thp,this.info.shmem_thp,this.info.inactive_anon,
-                     this.info.active_anon,this.info.inactive_file,this.info.active_file,this.info.unevictable,this.info.slab_reclaimable,
-                     this.info.slab_unreclaimable,this.info.slab,this.info.workingset_refault_anon,this.info.workingset_refault_file,
-                     this.info.workingset_activate_anon,this.info.workingset_activate_file,this.info.workingset_restore_anon,
-                     this.info.workingset_restore_file,this.info.workingset_nodereclaim,this.info.pgdemote_kswapd,
-                     this.info.pgdemote_direct,this.info.pgdemote_khugepaged,this.info.pgpromote_success,this.info.pgscan,
-                     this.info.pgsteal,this.info.pgscan_kswapd,this.info.pgscan_direct,this.info.pgscan_khugepaged,
-                     this.info.pgsteal_kswapd,this.info.pgsteal_direct,this.info.pgsteal_khugepaged,this.info.pgfault,
-                     this.info.pgmajfault,this.info.pgrefill,this.info.pgactivate,this.info.pgdeactivate,this.info.pglazyfree,
-                     this.info.pglazyfreed,this.info.swpin_zero,this.info.swpout_zero,this.info.zswpin,this.info.zswpout,
-                     this.info.zswpwb,this.info.thp_fault_alloc,this.info.thp_collapse_alloc,this.info.thp_swpout,
-                     this.info.thp_swpout_fallback,this.info.numa_pages_migrated,this.info.numa_pte_updates,this.info.numa_hint_faults,
-                     this.info.ram_usage,this.info.swap_usage,this.info.maxram,this.info.pressure_avg10,this.info.summed_memory,
-                     this.info.vm_free_used,this.info.vm_free_bufcache,this.info.swapin,this.info.swapout,this.info.pgpgin,
-                     this.info.pgpgout,this.info.host_cpu,this.info.load_average
+            values: [[metadata.exp_name, metadata.date, BigInt(metadata.time),BigInt(this.info.anon),BigInt(this.info.file),BigInt(this.info.kernel),BigInt(this.info.kernel_stack),
+                     BigInt(this.info.pagetables),BigInt(this.info.sec_pagetables),BigInt(this.info.percpu),BigInt(this.info.sock),BigInt(this.info.vmalloc),BigInt(this.info.shmem),
+                     BigInt(this.info.zswap),BigInt(this.info.zswapped),BigInt(this.info.file_mapped),BigInt(this.info.file_dirty),BigInt(this.info.file_writeback),
+                     BigInt(this.info.swapcached),BigInt(this.info.anon_thp),BigInt(this.info.file_thp),BigInt(this.info.shmem_thp),BigInt(this.info.inactive_anon),
+                     BigInt(this.info.active_anon),BigInt(this.info.inactive_file),BigInt(this.info.active_file),BigInt(this.info.unevictable),BigInt(this.info.slab_reclaimable),
+                     BigInt(this.info.slab_unreclaimable),BigInt(this.info.slab),BigInt(this.info.workingset_refault_anon),BigInt(this.info.workingset_refault_file),
+                     BigInt(this.info.workingset_activate_anon),BigInt(this.info.workingset_activate_file),BigInt(this.info.workingset_restore_anon),
+                     BigInt(this.info.workingset_restore_file),BigInt(this.info.workingset_nodereclaim),BigInt(this.info.pgdemote_kswapd),
+                     BigInt(this.info.pgdemote_direct),BigInt(this.info.pgdemote_khugepaged),BigInt(this.info.pgpromote_success),BigInt(this.info.pgscan),
+                     BigInt(this.info.pgsteal),BigInt(this.info.pgscan_kswapd),BigInt(this.info.pgscan_direct),BigInt(this.info.pgscan_khugepaged),
+                     BigInt(this.info.pgsteal_kswapd),BigInt(this.info.pgsteal_direct),BigInt(this.info.pgsteal_khugepaged),BigInt(this.info.pgfault),
+                     BigInt(this.info.pgmajfault),BigInt(this.info.pgrefill),BigInt(this.info.pgactivate),BigInt(this.info.pgdeactivate),BigInt(this.info.pglazyfree),
+                     BigInt(this.info.pglazyfreed),BigInt(this.info.swpin_zero),BigInt(this.info.swpout_zero),BigInt(this.info.zswpin),BigInt(this.info.zswpout),
+                     BigInt(this.info.zswpwb),BigInt(this.info.thp_fault_alloc),BigInt(this.info.thp_collapse_alloc),BigInt(this.info.thp_swpout),
+                     BigInt(this.info.thp_swpout_fallback),BigInt(this.info.numa_pages_migrated),BigInt(this.info.numa_pte_updates),BigInt(this.info.numa_hint_faults),
+                     BigInt(this.info.ram_usage),BigInt(this.info.swap_usage),BigInt(this.info.maxram),this.info.pressure_avg10,BigInt(this.info.summed_memory),
+                     this.info.vm_free_used,this.info.vm_free_bufcache,BigInt(this.info.swapin),BigInt(this.info.swapout),BigInt(this.info.pgpgin),
+                     BigInt(this.info.pgpgout),this.info.host_cpu,this.info.load_average
                     ]]
         });
     }

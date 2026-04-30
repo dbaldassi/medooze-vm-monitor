@@ -32,7 +32,7 @@ export abstract class Monitor {
         this.monitor_config = monitor_config;
     }
 
-    protected abstract required_step(step: string) : void;
+    protected abstract required_step(step: string) : Promise<void> | undefined;
     protected abstract on_start(): void;
     protected abstract on_stop(): void;
 
@@ -48,7 +48,8 @@ export abstract class Monitor {
         for(const step of scenar.steps) {
             // Await for requirement to be fullfilled before performing the step
             if(step.require) {
-                this.required_step(step.require);
+                const promise = this.required_step(step.require);
+                if(promise) await promise;
             }
 
             // Number of times to repeat this step

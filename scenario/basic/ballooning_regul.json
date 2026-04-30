@@ -1,0 +1,29 @@
+{
+    "name": "basic_ballooning_regul_bigint",
+    "steps": [
+	{
+	    "require": "virsh_ready",
+            "actions": ["start_balloon_regul"],
+	    "start_balloon_regul": {
+		"timeout": 1,
+		"threshold": "{{threshold:200}}",
+                "pid": {
+                    "kp": "{{kp:0.1}}",
+                    "ki": "{{ki:0}}",
+                    "kd": "{{kd:1}}"
+                }
+	    },
+            "repeat": 1
+	},
+	{
+	    "actions": [],
+	    "wait": 120000,
+	    "repeat": 1
+	},
+	{
+	    "actions": ["stop_balloon_regul"],
+	    "stop_balloon_regul": {},
+	    "repeat": 1
+	}
+    ]
+}

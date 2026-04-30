@@ -4,7 +4,7 @@
     "progress_port": 4578,
     "runs": [{
         "repet": 1,
-        "scenario": "basic_monitoring",
+        "scenario": "basic/ballooning_regul",
         "domain": "win11"
     }]
 }

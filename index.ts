@@ -44,6 +44,12 @@ wss.on("request", (request: any) => {
     // update_listener();
 });
 
+// const listener = Deno.listen({ port: 4545, transport: 'vsock', cid:2  });
+// for await (const conn of listener) {
+//     console.log("WTF");
+//   conn.readable.pipeTo(conn.writable);
+// }
+
 if (process.argv.length >= 3) {
     const data = fs.readFileSync(process.argv[2], 'utf8');
     const monitor_config: MonitorConfig = JSON.parse(data);
